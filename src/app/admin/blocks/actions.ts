@@ -25,6 +25,7 @@ export async function renameBlock(id: string, name: string) {
   const { error } = await sb.from("blocks").update({ name }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/blocks");
+  revalidatePath(`/admin/blocks/${id}`);
 }
 
 /** Default blank content per block type. */

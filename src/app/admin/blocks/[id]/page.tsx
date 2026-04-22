@@ -45,6 +45,9 @@ export default async function EditBlock({
     const name = String(formData.get("name") ?? "").trim();
     if (!name) return;
     await renameBlock(id, name);
+    // Redirect forces the name <input> to remount so its defaultValue
+    // reflects the just-saved value.
+    redirect(`/admin/blocks/${id}?renamed=1`);
   }
 
   async function saveContent(content: unknown) {
