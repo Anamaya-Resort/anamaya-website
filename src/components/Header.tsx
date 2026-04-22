@@ -5,10 +5,16 @@ import { useEffect, useState } from "react";
 import { CALENDAR_CTA, LOGO } from "@/data/nav";
 import { useHeader } from "@/contexts/HeaderContext";
 import SideMenu from "./SideMenu";
+import HeaderAuth from "./HeaderAuth";
+import type { SSOUser } from "@/types/sso";
 
-const SCROLL_THRESHOLD_VH = 0.4; // % of viewport height before header flips to solid
+const SCROLL_THRESHOLD_VH = 0.4;
 
-export default function Header() {
+type Props = {
+  user?: SSOUser | null;
+};
+
+export default function Header({ user = null }: Props) {
   const { overVideo } = useHeader();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -27,8 +33,6 @@ export default function Header() {
     };
   }, []);
 
-  // "Light mode" = transparent over dark hero video (white text, white logo)
-  // "Dark mode"  = solid white (dark text, dark logo)
   const lightMode = overVideo && !scrolled;
 
   return (
@@ -43,6 +47,7 @@ export default function Header() {
       >
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="Anamaya home" className="flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={lightMode ? LOGO.light : LOGO.dark}
               alt="Anamaya Resort"
@@ -52,7 +57,7 @@ export default function Header() {
             />
           </Link>
 
-          <nav className="flex items-center gap-3">
+          <nav className="flex items-center gap-3 sm:gap-4">
             <Link
               href={CALENDAR_CTA.href}
               className={[
@@ -64,6 +69,8 @@ export default function Header() {
             >
               {CALENDAR_CTA.label}
             </Link>
+
+            <HeaderAuth user={user} lightMode={lightMode} />
 
             <button
               type="button"
