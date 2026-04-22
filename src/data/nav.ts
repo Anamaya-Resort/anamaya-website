@@ -131,10 +131,10 @@ export const CALENDAR_CTA = {
   href: "/rg-calendar/",
 };
 
-// Hosted on Supabase Storage (migrated from v2's media library).
+// Served from /public for edge caching + zero Supabase round-trip on first paint.
 export const LOGO = {
-  dark: "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2021/03/anamaya-logo-300.webp",
-  light: "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2018/12/anamaya-logo-white-on-clear-192x85.webp",
+  dark: "/anamaya-logo.webp",
+  light: "/anamaya-logo-white.webp",
   width: 300,
   height: 136,
 };

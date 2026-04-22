@@ -15,61 +15,60 @@ type Logo = {
   href: string | null;
 };
 
-const SUPA =
-  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images";
-
+// Served from /public/press so they hit Vercel's edge cache (fewer DNS lookups,
+// shorter TTFB) instead of Supabase Storage.
 const LOGOS: Logo[] = [
   {
     name: "Condé Nast Traveler",
-    src: `${SUPA}/v2/2019/11/logo.webp`,
+    src: "/press/cnt.webp",
     width: 1056, height: 326,
     href: null,
   },
   {
     name: "National Post",
-    src: `${SUPA}/v2/2021/09/nationalpost.webp`,
+    src: "/press/national-post.webp",
     width: 600, height: 100,
     href: "https://nationalpost.com/travel/salutation-to-the-fun-chill-out-in-a-good-way-on-a-costa-rican-yoga-retreat-2",
   },
   {
     name: "Elle",
-    src: `${SUPA}/v2/2018/12/elle-1.webp`,
+    src: "/press/elle.webp",
     width: 600, height: 217,
     href: "https://www.elle.com/es/living/viajes/news/a620018/viajes-para-yoguis/",
   },
   {
     name: "Forbes",
-    src: `${SUPA}/v2/2019/11/forbes.webp`,
+    src: "/press/forbes.webp",
     width: 713, height: 179,
     href: "https://www.forbes.com/sites/annabel/2019/08/20/5-yoga-retreats-to-book-for-fall-2019/",
   },
   {
     name: "National Geographic",
-    src: `${SUPA}/v2/2026/03/national-geographic-black-512px.webp`,
+    src: "/press/national-geographic.webp",
     width: 512, height: 151,
     href: "https://www.nationalgeographic.com/travel/best-of-the-world-2026/article/best-wellness-destinations",
   },
   {
     name: "The Independent",
-    src: `${SUPA}/v2/2019/11/independent.webp`,
+    src: "/press/independent.webp",
     width: 1563, height: 142,
     href: "https://www.independent.co.uk/travel/hotels/the-big-six-central-american-boutique-hotels-1869092.html",
   },
   {
     name: "Travel + Leisure",
-    src: `${SUPA}/v2/2026/03/travel-and-leisure-logo-whitetransp.webp`,
+    src: "/press/travel-and-leisure.webp",
     width: 465, height: 108,
     href: "https://www.travelandleisure.com/trip-ideas/yoga-wellness/best-yoga-retreats",
   },
   {
     name: "Fashion Magazine",
-    src: `${SUPA}/v2/2019/11/fashion.webp`,
+    src: "/press/fashion.webp",
     width: 963, height: 208,
     href: "https://fashionmagazine.com/wellness/health/exotic-resorts-bikini-body-prep/",
   },
   {
     name: "SmarterTravel",
-    src: `${SUPA}/v2/2019/11/smartertravel.webp`,
+    src: "/press/smartertravel.webp",
     width: 600, height: 67,
     href: "https://www.smartertravel.com/wellness-travel-101-vacation-your-way-to-a-better-you/",
   },
