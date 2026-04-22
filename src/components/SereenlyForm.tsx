@@ -4,15 +4,16 @@ import Script from "next/script";
 import DeferUntilVisible from "./DeferUntilVisible";
 
 // Wraps a Sereenly (GoHighLevel) inline form.
-// Heavy parts (the iframe + the form_embed.js auto-resize script) only load
-// when the wrapper scrolls near the viewport — keeps these off the critical
-// path for pages where the form is in the footer.
+// - iframe + form_embed.js load only when the wrapper scrolls near the viewport
+// - the iframe has no CSS min-height so form_embed.js is free to shrink it
+//   to match actual form content. Height starts at initialHeight (used while
+//   the script is still booting) and gets adjusted from postMessage.
 
 type Props = {
   formId: string;
   title?: string;
   formName?: string;
-  /** Initial height in px before auto-resize kicks in. v2 uses 402. */
+  /** Initial height in px before auto-resize kicks in. */
   initialHeight?: number;
   className?: string;
 };
@@ -29,12 +30,11 @@ export default function SereenlyForm({
 
   return (
     <DeferUntilVisible
-      minHeight={initialHeight}
       className={className}
       fallback={
         <div
           className="flex w-full items-center justify-center text-xs text-anamaya-charcoal/50"
-          style={{ minHeight: initialHeight }}
+          style={{ height: initialHeight }}
         >
           Loading…
         </div>
@@ -57,7 +57,8 @@ export default function SereenlyForm({
         data-form-id={formId}
         allow="autoplay; encrypted-media; gyroscope;"
         loading="lazy"
-        style={{ width: "100%", minHeight: initialHeight, border: "none" }}
+        // width only — no min-height — so form_embed.js can resize freely.
+        style={{ width: "100%", height: initialHeight, border: "none", display: "block" }}
       />
       <Script
         src="https://link.msgsndr.com/js/form_embed.js"
