@@ -1,13 +1,9 @@
 // "RECOMMENDED BY:" press logos bar.
-// Sits BELOW the video hero. Muted-teal bg matching v2 (rgba(122,165,158,0.8)).
+// Sits below the video hero. Muted-teal bg matching v2.
 //
-// Layout:
-//   - "Recommended by:" label
-//   - National Geographic centered on its own top row (featured)
-//   - 8 remaining logos in ONE uniform row (grid-cols-8 on desktop;
-//     wraps to 4 cols on narrow screens to stay readable)
-// Every other logo shares the same slot height so they balance regardless
-// of their native aspect ratios.
+// Single row of 9 logos with widths 10% 10% 10% 10% 20% 10% 10% 10% 10%.
+// National Geographic is the 5th (center) slot at 2× the width and 2× the
+// height of the others so it's the headline endorsement.
 
 import Link from "next/link";
 
@@ -22,21 +18,12 @@ type Logo = {
 const SUPA =
   "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images";
 
-const NAT_GEO: Logo = {
-  name: "National Geographic",
-  src: `${SUPA}/v2/2026/03/national-geographic-black-512px.webp`,
-  width: 512,
-  height: 151,
-  href: "https://www.nationalgeographic.com/travel/best-of-the-world-2026/article/best-wellness-destinations",
-};
-
-// Exactly 8 logos below — 4 visually left of where NatGeo sat, 4 right.
 const LOGOS: Logo[] = [
   {
     name: "Condé Nast Traveler",
     src: `${SUPA}/v2/2019/11/logo.webp`,
     width: 1056, height: 326,
-    href: null, // matches v2 — first slot unlinked
+    href: null,
   },
   {
     name: "National Post",
@@ -55,6 +42,12 @@ const LOGOS: Logo[] = [
     src: `${SUPA}/v2/2019/11/forbes.webp`,
     width: 713, height: 179,
     href: "https://www.forbes.com/sites/annabel/2019/08/20/5-yoga-retreats-to-book-for-fall-2019/",
+  },
+  {
+    name: "National Geographic",
+    src: `${SUPA}/v2/2026/03/national-geographic-black-512px.webp`,
+    width: 512, height: 151,
+    href: "https://www.nationalgeographic.com/travel/best-of-the-world-2026/article/best-wellness-destinations",
   },
   {
     name: "The Independent",
@@ -82,13 +75,14 @@ const LOGOS: Logo[] = [
   },
 ];
 
-function LogoImg({
-  logo,
-  heightClass,
-}: {
-  logo: Logo;
-  heightClass: string;
-}) {
+// Column widths sum to 100%. Middle slot (index 4, National Geographic) is 2× wide.
+const COL_WIDTHS = ["10%", "10%", "10%", "10%", "20%", "10%", "10%", "10%", "10%"];
+
+// Other logos sit at this height; NatGeo is 2× → h-16 (64 px).
+const LOGO_HEIGHT = "h-8 sm:h-10";
+const FEATURE_HEIGHT = "h-16 sm:h-20";
+
+function LogoImg({ logo, heightClass }: { logo: Logo; heightClass: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -106,50 +100,44 @@ function LogoImg({
 export default function PressBar() {
   return (
     <section className="bg-anamaya-teal-muted px-6 py-10">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <h2 className="mb-6 text-center text-xs font-semibold uppercase tracking-[0.3em] text-white/90">
           Recommended by:
         </h2>
 
-        {/* Featured — National Geographic, centered, on its own row */}
-        <div className="mb-6 flex justify-center">
-          {NAT_GEO.href ? (
-            <Link
-              href={NAT_GEO.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Read the article in ${NAT_GEO.name}`}
-              className="block transition-opacity hover:opacity-80"
-            >
-              <LogoImg logo={NAT_GEO} heightClass="h-10 sm:h-12" />
-            </Link>
-          ) : (
-            <LogoImg logo={NAT_GEO} heightClass="h-10 sm:h-12" />
-          )}
-        </div>
-
-        {/* 8 logos — one row on desktop, wrap to 4 cols on narrow screens */}
-        <ul className="grid grid-cols-4 gap-x-6 gap-y-4 md:grid-cols-8">
-          {LOGOS.map((logo) => (
-            <li
-              key={logo.name}
-              className="flex h-8 items-center justify-center sm:h-9"
-            >
-              {logo.href ? (
-                <Link
-                  href={logo.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Read the article in ${logo.name}`}
-                  className="block h-full transition-opacity hover:opacity-80"
-                >
-                  <LogoImg logo={logo} heightClass="h-full" />
-                </Link>
-              ) : (
-                <LogoImg logo={logo} heightClass="h-full" />
-              )}
-            </li>
-          ))}
+        <ul
+          className="grid items-center"
+          style={{ gridTemplateColumns: COL_WIDTHS.join(" ") }}
+        >
+          {LOGOS.map((logo, i) => {
+            const isFeature = i === 4;
+            return (
+              <li
+                key={logo.name}
+                className="flex items-center justify-center px-2 sm:px-3"
+              >
+                {logo.href ? (
+                  <Link
+                    href={logo.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Read the article in ${logo.name}`}
+                    className="block transition-opacity hover:opacity-80"
+                  >
+                    <LogoImg
+                      logo={logo}
+                      heightClass={isFeature ? FEATURE_HEIGHT : LOGO_HEIGHT}
+                    />
+                  </Link>
+                ) : (
+                  <LogoImg
+                    logo={logo}
+                    heightClass={isFeature ? FEATURE_HEIGHT : LOGO_HEIGHT}
+                  />
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </section>
