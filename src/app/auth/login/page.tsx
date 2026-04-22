@@ -1,57 +1,22 @@
-import Image from "next/image";
-import { SSOLoginButton } from "@/modules/auth/sso-login-button";
+"use client";
 
-export const metadata = { title: "Sign In — Anamaya" };
+import { useEffect } from "react";
+import { getSSOLoginUrl } from "@/config/sso";
 
-// Matches AO login layout (AnamayaOS_full_logo → h1/subtitle → button → dividers).
-// Reuses the same LightningWorks SSO so one login works on both ao.anamaya.com
-// and this site.
-export default function LoginPage() {
+// Any request that lands here goes straight to sso.lightningworks.io.
+// We don't render a button — the user already clicked "Sign In" somewhere
+// or was redirected from middleware.
+export default function LoginRedirect() {
+  useEffect(() => {
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    window.location.replace(getSSOLoginUrl(callbackUrl));
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-anamaya-brand-subtle p-4">
-      <div className="w-full max-w-[860px] space-y-16 text-center">
-        <Image
-          src="/anamaya-logo-admin.webp"
-          alt="Anamaya"
-          width={360}
-          height={72}
-          className="mx-auto"
-          priority
-        />
-
-        <Image
-          src="/flower-divider.png"
-          alt=""
-          width={640}
-          height={32}
-          className="mx-auto"
-        />
-
-        <div className="space-y-16">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-anamaya-charcoal">
-              Welcome back
-            </h1>
-            <p className="text-sm text-anamaya-charcoal/60">
-              Sign in with your LightningWorks account to access the admin
-              dashboard.
-            </p>
-          </div>
-
-          <div className="flex justify-center">
-            <div className="w-full max-w-xs">
-              <SSOLoginButton label="Sign In" />
-            </div>
-          </div>
-        </div>
-
-        <Image
-          src="/flower-divider.png"
-          alt=""
-          width={640}
-          height={32}
-          className="mx-auto rotate-180"
-        />
+    <div className="flex min-h-screen items-center justify-center bg-anamaya-brand-subtle">
+      <div className="text-center">
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-anamaya-brand-btn border-t-transparent" />
+        <p className="text-sm text-anamaya-charcoal/70">Redirecting to sign in…</p>
       </div>
     </div>
   );

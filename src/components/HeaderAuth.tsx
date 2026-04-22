@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import type { SSOUser } from "@/types/sso";
+import { getSSOLoginUrl } from "@/config/sso";
 
 type Props = {
   user: SSOUser | null;
-  /** True when the header is in transparent-over-dark-video mode. Controls text color. */
+  /** True when the header is in transparent-over-dark-video mode. */
   lightMode: boolean;
 };
 
@@ -17,11 +18,17 @@ function initials(name: string | undefined | null): string {
   return (first + last).toUpperCase() || name.slice(0, 1).toUpperCase();
 }
 
+function startSSOLogin() {
+  const callbackUrl = `${window.location.origin}/auth/callback`;
+  window.location.href = getSSOLoginUrl(callbackUrl);
+}
+
 export default function HeaderAuth({ user, lightMode }: Props) {
   if (!user) {
     return (
-      <Link
-        href="/auth/login"
+      <button
+        type="button"
+        onClick={startSSOLogin}
         className={[
           "hidden text-sm font-semibold uppercase tracking-wider transition-colors sm:inline-block",
           lightMode
@@ -30,7 +37,7 @@ export default function HeaderAuth({ user, lightMode }: Props) {
         ].join(" ")}
       >
         Sign In
-      </Link>
+      </button>
     );
   }
 

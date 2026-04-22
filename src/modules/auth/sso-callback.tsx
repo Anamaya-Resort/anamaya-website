@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /**
  * Handles the SSO redirect back from sso.lightningworks.io.
@@ -10,7 +10,9 @@ import { useRouter } from "next/navigation";
  */
 export function SSOCallbackHandler() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const [error, setError] = useState<{ title: string; detail?: string } | null>(null);
+  const next = searchParams.get("next") || "/";
 
   useEffect(() => {
     async function run() {
@@ -19,29 +21,58 @@ export function SSOCallbackHandler() {
       const accessToken = params.get("access_token");
 
       if (!accessToken) {
-        setError("No token received. Redirecting to login…");
-        setTimeout(() => router.push("/auth/login"), 2000);
+        setError({
+          title: "No token in callback",
+          detail:
+            "The SSO portal didn't return an access_token in the URL fragment. " +
+            "Double-check that the callback URL on this site is registered with LightningWorks SSO.",
+        });
         return;
       }
 
+      let res: Response;
       try {
-        const res = await fetch("/api/auth/verify", {
+        res = await fetch("/api/auth/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ access_token: accessToken }),
         });
-        const data = await res.json();
-        if (data.success) {
-          router.push("/admin");
-          router.refresh();
-        } else {
-          setError("Authentication failed. Redirecting…");
-          setTimeout(() => router.push("/auth/login"), 2000);
-        }
-      } catch {
-        setError("Authentication failed. Redirecting…");
-        setTimeout(() => router.push("/auth/login"), 2000);
+      } catch (e) {
+        setError({
+          title: "Could not reach /api/auth/verify",
+          detail: String(e),
+        });
+        return;
       }
+
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const body = await res.json();
+          if (body?.error) detail = `HTTP ${res.status}: ${body.error}`;
+        } catch {
+          // ignore body parse failures
+        }
+        setError({
+          title: "Verify endpoint returned an error",
+          detail:
+            detail +
+            ". This almost always means the SESSION_SECRET env var is missing " +
+            "or shorter than 32 characters on the deployment.",
+        });
+        return;
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        setError({ title: "Authentication failed", detail: data?.error || undefined });
+        return;
+      }
+
+      // Clean the hash off the URL and return to the origin page
+      window.history.replaceState(null, "", next);
+      router.push(next);
+      router.refresh();
     }
     run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -49,8 +80,21 @@ export function SSOCallbackHandler() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-anamaya-brand-subtle">
-        <p className="text-sm text-red-600">{error}</p>
+      <div className="flex min-h-screen items-center justify-center bg-anamaya-brand-subtle p-4">
+        <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+          <h1 className="text-lg font-semibold text-red-700">{error.title}</h1>
+          {error.detail && (
+            <p className="mt-2 whitespace-pre-wrap text-sm text-anamaya-charcoal/80">
+              {error.detail}
+            </p>
+          )}
+          <a
+            href="/"
+            className="mt-6 inline-block rounded-full bg-anamaya-brand-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-brand-btn-hover"
+          >
+            Back to site
+          </a>
+        </div>
       </div>
     );
   }

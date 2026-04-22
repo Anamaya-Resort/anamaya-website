@@ -3,13 +3,24 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SIDE_MENU, BOOK_CTA, type NavItem } from "@/data/nav";
+import { getSSOLoginUrl } from "@/config/sso";
+import type { SSOUser } from "@/types/sso";
 
 type Props = {
   open: boolean;
   onClose: () => void;
+  user?: SSOUser | null;
 };
 
-export default function SideMenu({ open, onClose }: Props) {
+function initials(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase() || name.slice(0, 1).toUpperCase();
+}
+
+export default function SideMenu({ open, onClose, user = null }: Props) {
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -62,6 +73,57 @@ export default function SideMenu({ open, onClose }: Props) {
         </div>
 
         <nav className="px-6 py-6">
+          {/* Auth block at top of drawer */}
+          {user ? (
+            <div className="mb-6 flex items-center gap-3 rounded-lg bg-white/5 px-3 py-3">
+              <span className="block h-10 w-10 overflow-hidden rounded-full bg-zinc-300 ring-1 ring-white">
+                {user.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.avatar_url}
+                    alt={user.display_name || user.email}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-700">
+                    {initials(user.display_name || user.email)}
+                  </span>
+                )}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-white">
+                  {user.display_name || user.username || user.email}
+                </div>
+                <div className="truncate text-xs text-white/60">{user.email}</div>
+              </div>
+              {(user.role === "admin" || user.role === "superadmin") && (
+                <Link
+                  href="/admin"
+                  onClick={onClose}
+                  className="shrink-0 rounded-full bg-anamaya-green px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+                >
+                  Admin
+                </Link>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                const callbackUrl = `${window.location.origin}/auth/callback`;
+                window.location.href = getSSOLoginUrl(callbackUrl);
+              }}
+              className="mb-6 flex w-full items-center gap-3 rounded-lg bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+              Sign In
+            </button>
+          )}
+
           <ul className="space-y-1">
             {SIDE_MENU.map((item) => (
               <MenuItem key={item.label} item={item} onNavigate={onClose} />

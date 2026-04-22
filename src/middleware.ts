@@ -1,8 +1,8 @@
 // Protect /admin via the LightningWorks SSO session cookie.
-// Matches AnamayaOS's pattern: unseal cookie → check validity → redirect if not.
+// If unauthenticated, redirect DIRECTLY to the SSO portal (no local login page).
 
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE } from "@/config/sso";
+import { SESSION_COOKIE, getSSOLoginUrl } from "@/config/sso";
 import { unsealSession } from "@/lib/session-edge";
 import { isAdminRole } from "@/lib/session-shared";
 
@@ -15,11 +15,12 @@ export async function middleware(request: NextRequest) {
   const session = sealed ? await unsealSession(sealed) : null;
 
   if (!session || !isAdminRole(session.user.role)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    // Preserve the page the admin was trying to reach
-    url.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    // Build the callback URL with `next` so the user lands back where they
+    // were trying to go after SSO.
+    const origin = request.nextUrl.origin;
+    const nextPath = request.nextUrl.pathname + request.nextUrl.search;
+    const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+    return NextResponse.redirect(getSSOLoginUrl(callbackUrl));
   }
 
   return NextResponse.next();

@@ -70,8 +70,6 @@ export default function Header({ user = null }: Props) {
               {CALENDAR_CTA.label}
             </Link>
 
-            <HeaderAuth user={user} lightMode={lightMode} />
-
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
@@ -90,11 +88,14 @@ export default function Header({ user = null }: Props) {
               </svg>
               MENU
             </button>
+
+            {/* Sign In / user avatar — upper-right corner */}
+            <HeaderAuth user={user} lightMode={lightMode} />
           </nav>
         </div>
       </header>
 
-      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} user={user} />
     </>
   );
 }
