@@ -1,14 +1,11 @@
 // "don't miss a thing..." newsletter block — replicates v2:
 //   - lowercase heading with ellipsis
-//   - Sereenly lead-capture iframe (same form id as v2, so submissions
-//     still land in the existing email list)
+//   - Sereenly lead-capture iframe (same form id as v2)
 //   - opt-in lifestyle photo on the left on desktop, above the form on mobile
-//
-// Form host: https://link.sereenly.com  |  form id: 3VbotiuGfLgRUdIpi2ro
 
-const SEREENLY_FORM_SRC =
-  "https://link.sereenly.com/widget/form/3VbotiuGfLgRUdIpi2ro";
+import SereenlyForm from "@/components/SereenlyForm";
 
+const HOME_NEWSLETTER_FORM_ID = "3VbotiuGfLgRUdIpi2ro";
 const OPT_IN_IMAGE =
   "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2019/07/opt-in.webp";
 
@@ -37,13 +34,12 @@ export default function Newsletter() {
             />
           </div>
 
-          <div className="overflow-hidden rounded-lg bg-white shadow-lg">
-            <iframe
+          <div className="rounded-lg bg-white shadow-lg">
+            <SereenlyForm
+              formId={HOME_NEWSLETTER_FORM_ID}
               title="Anamaya Newsletter Signup"
-              src={SEREENLY_FORM_SRC}
-              className="h-[420px] w-full border-0"
-              loading="lazy"
-              allow="autoplay; encrypted-media; gyroscope;"
+              formName="Newsletter Home Page"
+              initialHeight={402}
             />
           </div>
         </div>

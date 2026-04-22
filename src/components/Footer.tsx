@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FOOTER_LAYOUT, SOCIAL_LINKS, type FooterGroup } from "@/data/nav";
 import { SOCIAL_ICON_MAP } from "./SocialIcons";
+import SereenlyForm from "./SereenlyForm";
 
 // Matches v2 footer exactly:
 //   - bg #444444 (anamaya-charcoal)
@@ -9,8 +10,7 @@ import { SOCIAL_ICON_MAP } from "./SocialIcons";
 //   - 4 columns: Experience / Travel+Cookbook / Company+Social / Newsletter
 //   - bottom row: copyright + Terms | Privacy | credit line
 
-const FOOTER_NEWSLETTER_SRC =
-  "https://link.sereenly.com/widget/form/KStRA3wdDq5FUO6ah5Xe";
+const FOOTER_NEWSLETTER_FORM_ID = "KStRA3wdDq5FUO6ah5Xe";
 
 const currentYear = new Date().getFullYear();
 
@@ -94,13 +94,12 @@ export default function Footer() {
               Receive our newsletter
             </h3>
             <div className="mt-2 mb-4 h-px w-full bg-white/15" />
-            <div className="overflow-hidden rounded-sm bg-white">
-              <iframe
+            <div className="rounded-sm bg-white">
+              <SereenlyForm
+                formId={FOOTER_NEWSLETTER_FORM_ID}
                 title="Anamaya Newsletter Footer Signup"
-                src={FOOTER_NEWSLETTER_SRC}
-                className="h-[300px] w-full border-0"
-                loading="lazy"
-                allow="autoplay; encrypted-media; gyroscope;"
+                formName="Newsletter Footer"
+                initialHeight={380}
               />
             </div>
           </div>
