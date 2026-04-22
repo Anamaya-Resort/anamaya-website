@@ -1,48 +1,52 @@
-"use client";
+// "don't miss a thing..." newsletter block — replicates v2:
+//   - lowercase heading with ellipsis
+//   - Sereenly lead-capture iframe (same form id as v2, so submissions
+//     still land in the existing email list)
+//   - opt-in lifestyle photo on the left on desktop, above the form on mobile
+//
+// Form host: https://link.sereenly.com  |  form id: 3VbotiuGfLgRUdIpi2ro
 
-import { useState } from "react";
+const SEREENLY_FORM_SRC =
+  "https://link.sereenly.com/widget/form/3VbotiuGfLgRUdIpi2ro";
+
+const OPT_IN_IMAGE =
+  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2019/07/opt-in.webp";
 
 export default function Newsletter() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
   return (
-    <section className="bg-anamaya-olive px-6 py-16 text-white">
-      <div className="mx-auto max-w-3xl text-center">
-        <h2 className="text-2xl font-semibold uppercase tracking-widest sm:text-3xl">
-          Don&rsquo;t miss a thing...
-        </h2>
-        <p className="mt-4 text-base text-white/90">
-          Want to receive our emails for special promotions, discounts, and
-          first-time access?
-        </p>
-        {submitted ? (
-          <p className="mt-8 text-lg">Thanks for signing up!</p>
-        ) : (
-          <form
-            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
-            onSubmit={(e) => {
-              e.preventDefault();
-              // TODO: wire to actual email list (Mailchimp/Mailgun — already on current site)
-              setSubmitted(true);
-            }}
-          >
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="w-full max-w-sm rounded-full border-0 px-5 py-3 text-anamaya-charcoal placeholder-anamaya-charcoal/50 focus:outline-none focus:ring-2 focus:ring-white sm:flex-1"
+    <section className="bg-anamaya-cream px-6 py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <h2 className="text-3xl font-semibold tracking-wide text-anamaya-charcoal sm:text-4xl">
+            don&rsquo;t miss a thing...
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-base text-anamaya-charcoal/80">
+            Want to receive our emails for special promotions, discounts, and
+            first-time access?
+          </p>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 items-stretch gap-8 md:grid-cols-2">
+          <div className="overflow-hidden rounded-lg shadow-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={OPT_IN_IMAGE}
+              alt="Anamaya Resort — don't miss a thing"
+              className="h-full w-full object-cover"
+              loading="lazy"
             />
-            <button
-              type="submit"
-              className="rounded-full bg-anamaya-charcoal px-8 py-3 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-black"
-            >
-              Sign Up
-            </button>
-          </form>
-        )}
+          </div>
+
+          <div className="overflow-hidden rounded-lg bg-white shadow-lg">
+            <iframe
+              title="Anamaya Newsletter Signup"
+              src={SEREENLY_FORM_SRC}
+              className="h-[420px] w-full border-0"
+              loading="lazy"
+              allow="autoplay; encrypted-media; gyroscope;"
+            />
+          </div>
+        </div>
       </div>
     </section>
   );
