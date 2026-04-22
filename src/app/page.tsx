@@ -1,3 +1,6 @@
+// Render at request time so CMS edits (testimonials, etc.) appear without a redeploy.
+export const dynamic = "force-dynamic";
+
 import VideoHero from "@/components/VideoHero";
 import IntroSection from "@/components/home/IntroSection";
 import BookingSection from "@/components/home/BookingSection";
