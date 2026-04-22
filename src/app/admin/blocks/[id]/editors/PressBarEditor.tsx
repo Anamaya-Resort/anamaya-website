@@ -70,25 +70,27 @@ export default function PressBarEditor({
 
   return (
     <>
-      {/* Live preview — updates as you edit */}
+      {/* Live preview — renders at the true viewport width so it matches
+          the real site exactly (breaking out of the admin column). */}
       <section className="mb-8">
         <header className="mb-2 flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-anamaya-charcoal/60">
-            Live preview
+            Live preview (as it appears on the site)
           </h3>
           <span className="text-[10px] italic text-anamaya-charcoal/40">
             Updates as you type. Click &ldquo;Save&rdquo; to commit.
           </span>
         </header>
-        <div className="overflow-hidden rounded-md ring-1 ring-zinc-200">
-          {logos.length > 0 ? (
+        {logos.length > 0 ? (
+          // Full-bleed: 100vw wide, extending outside the admin column via negative margins.
+          <div style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
             <PressBarBlock content={previewContent} />
-          ) : (
-            <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/40">
-              Add a logo to see the preview
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex h-24 items-center justify-center rounded-md bg-zinc-100 text-xs text-anamaya-charcoal/40 ring-1 ring-zinc-200">
+            Add a logo to see the preview
+          </div>
+        )}
       </section>
 
     <form
