@@ -55,40 +55,63 @@ export const SIDE_MENU: NavItem[] = [
   },
 ];
 
-export const FOOTER_COLUMNS: { heading: string; items: NavItem[] }[] = [
-  {
-    heading: "The Experience",
-    items: [
-      { label: "Accommodations",         href: "/accommodations/" },
-      { label: "Cuisine",                href: "/cuisine" },
-      { label: "Map of Anamaya",         href: "/property-map/" },
-      { label: "Pool",                   href: "/infinity-pool/" },
-      { label: "Spa & Massages",         href: "/spa-massage/" },
-      { label: "Waterfall & Trails Map", href: "/waterfall-and-trails-map/" },
-      { label: "Yoga Decks",             href: "/photo-gallery/yoga-deck/" },
-      { label: "Bird Watching",          href: "/costa-rica-birdwatching/" },
-    ],
-  },
-  {
-    heading: "Travel & Contact",
-    items: [
-      { label: "Travel & Directions",   href: "/travel/" },
-      { label: "TripAdvisor Reviews",   href: "https://www.tripadvisor.com/Hotel_Review-g309278-d1593953-Reviews-Anamaya_Resort" },
-      { label: "Weather in Montezuma",  href: "/montezuma-weather/" },
-      { label: "Cookbook Membership",   href: "/cookbook-membership/" },
-      { label: "Cookbook Login",        href: "/cookbook-membership-dashboard/" },
-      { label: "Contact Us",            href: "/contact/" },
-    ],
-  },
-  {
-    heading: "Stories & Voices",
-    items: [
-      { label: "Featured Blog & Articles", href: "/yoga-blog-articles/" },
-      { label: "Press Coverage",           href: "/news-coverage-anamaya" },
-      { label: "Testimonials",             href: "/testimonials/" },
-    ],
-  },
-];
+// Each group (heading + links) as it appears on v2. Columns in the footer
+// may stack multiple groups — see FOOTER_LAYOUT below for that.
+export type FooterGroup = { heading: string; items: NavItem[] };
+
+const EXPERIENCE: FooterGroup = {
+  heading: "The Experience",
+  items: [
+    { label: "Accommodations",         href: "/accommodations/" },
+    { label: "Cuisine",                href: "/cuisine" },
+    { label: "Map of Anamaya",         href: "/property-map/" },
+    { label: "Pool",                   href: "/infinity-pool/" },
+    { label: "Spa & Massages",         href: "/spa-massage/" },
+    { label: "Waterfall & Trails Map", href: "/waterfall-and-trails-map/" },
+    { label: "Yoga Decks",             href: "/photo-gallery/yoga-deck/" },
+    { label: "Bird Watching",          href: "/costa-rica-birdwatching/" },
+  ],
+};
+
+const TRAVEL: FooterGroup = {
+  heading: "The Travel",
+  items: [
+    { label: "Travel & Directions",  href: "/travel/" },
+    { label: "TripAdvisor Reviews",  href: "https://www.tripadvisor.com/Hotel_Review-g309278-d1593953-Reviews-Anamaya_Resort_Retreat_Center-Montezuma_Province_of_Puntarenas.html" },
+    { label: "Weather in Montezuma", href: "/montezuma-weather/" },
+  ],
+};
+
+const COOKBOOK: FooterGroup = {
+  heading: "The Cookbook",
+  items: [
+    { label: "Cookbook Membership", href: "/cookbook-membership/" },
+    { label: "Cookbook Login",      href: "/cookbook-membership-dashboard/" },
+  ],
+};
+
+const COMPANY: FooterGroup = {
+  heading: "The Company",
+  items: [
+    { label: "Contact Us",               href: "/contact/" },
+    { label: "Featured Blog & Articles", href: "/yoga-blog-articles/" },
+    { label: "Press Coverage",           href: "/news-coverage-anamaya" },
+    { label: "Testimonials",             href: "/testimonials/" },
+  ],
+};
+
+// 4 columns, in visual order left → right. Column 2 stacks Travel + Cookbook.
+// Column 3 stacks Company + social (social is rendered inline in Footer.tsx).
+// Column 4 is the newsletter iframe (also inline).
+export const FOOTER_LAYOUT: {
+  col1: FooterGroup[];
+  col2: FooterGroup[];
+  col3: FooterGroup[];
+} = {
+  col1: [EXPERIENCE],
+  col2: [TRAVEL, COOKBOOK],
+  col3: [COMPANY],
+};
 
 export const SOCIAL_LINKS = [
   { label: "Facebook",  href: "https://www.facebook.com/Anamayaresort" },
