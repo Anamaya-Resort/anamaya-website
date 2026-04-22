@@ -1,17 +1,23 @@
 import VideoHero from "@/components/VideoHero";
 
-const HERO_VIDEO =
+// Match v2: YouTube video on desktop (HD), mp4 fallback on mobile.
+const HERO_YOUTUBE_ID = "9d5jqBsUpWI";
+const HERO_MP4 =
   "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2025/01/Anamaya-Phone-Header.mp4";
 
 export default function Home() {
   return (
     <>
-      <VideoHero videoSrc={HERO_VIDEO} overlayOpacity={25}>
+      <VideoHero
+        youtubeId={HERO_YOUTUBE_ID}
+        mp4Src={HERO_MP4}
+        overlayOpacity={20}
+      >
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
+          <h1 className="text-4xl font-semibold tracking-tight drop-shadow sm:text-6xl">
             Anamaya
           </h1>
-          <p className="mt-4 max-w-xl text-lg text-white/90 sm:text-xl">
+          <p className="mt-4 max-w-xl text-lg text-white/90 drop-shadow sm:text-xl">
             Wellness retreats & yoga teacher trainings on a clifftop in
             Montezuma, Costa Rica.
           </p>
@@ -23,8 +29,8 @@ export default function Home() {
           Placeholder content
         </h2>
         <p className="mt-4 text-zinc-600">
-          Scroll up — the header should flip from transparent (white logo) to
-          solid white (dark logo). Body of the homepage coming next.
+          Scroll up — the header flips from transparent (white logo) to solid
+          white (dark logo). Body of the homepage coming next.
         </p>
       </section>
     </>
