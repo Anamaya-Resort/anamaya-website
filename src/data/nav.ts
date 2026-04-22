@@ -102,3 +102,16 @@ export const BOOK_CTA = {
   label: "BOOK YOUR STAY",
   href: "/rg-calendar/",
 };
+
+export const CALENDAR_CTA = {
+  label: "CALENDAR",
+  href: "/rg-calendar/",
+};
+
+// Hosted on Supabase Storage (migrated from v2's media library).
+export const LOGO = {
+  dark: "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2021/03/anamaya-logo-300.webp",
+  light: "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2018/12/anamaya-logo-white-on-clear-192x85.webp",
+  width: 300,
+  height: 136,
+};
