@@ -116,28 +116,32 @@ export default async function EditTemplate({
         templateId={template.id}
         variant={defaultVariant}
         referenceWidth={REF_W}
-        rows={(rows ?? []).map((r) => {
-          const block = r.block as unknown as {
-            id: string;
-            slug: string;
-            name: string;
-            type_slug: string;
-            content: Record<string, unknown> | null;
-          };
-          const nativeH = computeNativeHeight(block);
-          return {
-            id: r.id,
-            sort_order: r.sort_order,
-            native_height: nativeH,
-            aspect_ratio: REF_W / nativeH,
-            block: {
-              id: block.id,
-              slug: block.slug,
-              name: block.name,
-              type_slug: block.type_slug,
-            },
-          };
-        })}
+        rows={(rows ?? [])
+          // Guard against rows whose block row is missing/stale. Accessing
+          // block.type_slug on a null would 500 the whole page.
+          .filter((r) => r.block != null)
+          .map((r) => {
+            const block = r.block as unknown as {
+              id: string;
+              slug: string;
+              name: string;
+              type_slug: string;
+              content: Record<string, unknown> | null;
+            };
+            const nativeH = Math.max(1, computeNativeHeight(block));
+            return {
+              id: r.id,
+              sort_order: r.sort_order,
+              native_height: nativeH,
+              aspect_ratio: REF_W / nativeH,
+              block: {
+                id: block.id,
+                slug: block.slug,
+                name: block.name,
+                type_slug: block.type_slug,
+              },
+            };
+          })}
         allBlocks={(allBlocks ?? []) as Array<{
           id: string;
           slug: string;
