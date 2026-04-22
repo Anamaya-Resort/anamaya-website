@@ -15,6 +15,7 @@ type Row = {
   id: string;
   sort_order: number;
   aspect_ratio: number;
+  native_height: number;
   block: { id: string; slug: string; name: string; type_slug: string };
 };
 type BlockOption = {
@@ -32,11 +33,13 @@ export default function TemplateEditor({
   variant,
   rows,
   allBlocks,
+  referenceWidth,
 }: {
   templateId: string;
   variant: Variant;
   rows: Row[];
   allBlocks: BlockOption[];
+  referenceWidth: number;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -106,9 +109,9 @@ export default function TemplateEditor({
         </div>
       )}
 
-      {/* Blocks stack flush (no gap, square corners). The eye/+ strip and
-          the floating info panel never change the iframe width — the
-          block preview is always at its natural (full) width. */}
+      {/* Blocks stack flush (no gap, square corners). Preview takes the
+          full admin-content width; eye/+/info are absolutely positioned
+          into the right gutter so the preview isn't shrunk by them. */}
       <div>
         {rows.map((row, idx) => (
           <TemplateRow
@@ -118,6 +121,7 @@ export default function TemplateEditor({
             isLast={idx === rows.length - 1}
             wireframeOn={!hiddenRows.has(row.id)}
             pending={pending}
+            referenceWidth={referenceWidth}
             onToggleWireframe={() => toggleWireframe(row.id)}
             onRemove={() => handleRemove(row.id)}
             onMoveUp={() => handleMove(row.id, -1)}
@@ -171,6 +175,7 @@ function TemplateRow({
   isLast,
   wireframeOn,
   pending,
+  referenceWidth,
   onToggleWireframe,
   onRemove,
   onMoveUp,
@@ -182,29 +187,42 @@ function TemplateRow({
   isLast: boolean;
   wireframeOn: boolean;
   pending: boolean;
+  referenceWidth: number;
   onToggleWireframe: () => void;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onInsertAfter: () => void;
 }) {
+  // Scale factor is computed at runtime via container-query units:
+  //   iframe at natural (referenceWidth × native_height) gets visually
+  //   scaled by (wrapper width ÷ referenceWidth) so contents match the
+  //   live site exactly. No content overflow, no scroll bars.
+  const nativeHeight = row.native_height;
+
   return (
-    // items-start so children keep their natural heights. In items-stretch,
-    // the preview wrapper would stretch to match the tallest flex sibling
-    // (the info panel) while the iframe stayed at its aspect-ratio height,
-    // producing empty white space below it — exactly what the user was
-    // seeing.
-    <section className="flex items-start">
-      {/* Preview cell — aspect-ratio lives on the wrapper so it matches
-          the live site proportions. Square corners, no vertical gap. */}
+    // position: relative on the row so the absolute-positioned controls
+    // can anchor their right gutter to the preview's right edge.
+    <section className="relative">
+      {/* Preview takes the full admin-content width. overflow-hidden so
+          the scaled-down native-size iframe is clipped to the wrapper. */}
       <div
-        className="relative flex-1 overflow-hidden bg-white"
-        style={{ aspectRatio: row.aspect_ratio }}
+        className="relative w-full overflow-hidden bg-white"
+        style={{
+          aspectRatio: row.aspect_ratio,
+          containerType: "inline-size",
+        }}
       >
         <iframe
           src={`/block-preview/${row.block.slug}`}
           title={`Preview of ${row.block.name}`}
-          className="block h-full w-full border-0"
+          className="absolute left-0 top-0 border-0"
+          style={{
+            width: referenceWidth,
+            height: nativeHeight,
+            transformOrigin: "top left",
+            transform: `scale(calc(100cqw / ${referenceWidth}px))`,
+          }}
         />
         {wireframeOn && (
           <div
@@ -214,50 +232,55 @@ function TemplateRow({
         )}
       </div>
 
-      {/* Eye + plus strip — self-stretch so it's exactly as tall as the
-          preview, so the plus can position itself on the row junction via
-          top: 100%. */}
-      <div className="relative shrink-0 self-stretch" style={{ width: ICON_BTN_SIZE }}>
-        {/* Eye — small square flush against the green line. Rounded on
-            its right side only. Moved down from the very top so it
-            doesn't crowd the plus on adjacent rows. */}
+      {/* Eye — small square flush against the right edge of the green
+          line, overflowing into the right gutter. Moved down 20 px from
+          the top so it doesn't collide with the + above it. */}
+      <button
+        type="button"
+        onClick={onToggleWireframe}
+        title={wireframeOn ? "Hide wireframe" : "Show wireframe"}
+        aria-pressed={wireframeOn}
+        className={`absolute flex items-center justify-center rounded-r-md text-white transition-colors ${
+          wireframeOn
+            ? "bg-anamaya-green hover:bg-anamaya-green-dark"
+            : "bg-zinc-400 hover:bg-zinc-500"
+        }`}
+        style={{
+          left: "100%",
+          top: 28,
+          width: ICON_BTN_SIZE,
+          height: ICON_BTN_SIZE,
+        }}
+      >
+        {wireframeOn ? <EyeIcon /> : <EyeOffIcon />}
+      </button>
+
+      {/* Plus — centered exactly on the row junction. Absolute position,
+          placed in the same right gutter column as the eye. */}
+      {!isLast && (
         <button
           type="button"
-          onClick={onToggleWireframe}
-          title={wireframeOn ? "Hide wireframe" : "Show wireframe"}
-          aria-pressed={wireframeOn}
-          className={`absolute left-0 flex items-center justify-center rounded-r-md text-white transition-colors ${
-            wireframeOn
-              ? "bg-anamaya-green hover:bg-anamaya-green-dark"
-              : "bg-zinc-400 hover:bg-zinc-500"
-          }`}
-          style={{ top: 28, width: ICON_BTN_SIZE, height: ICON_BTN_SIZE }}
+          onClick={onInsertAfter}
+          title="Insert a block here"
+          className="absolute z-10 flex items-center justify-center rounded-md bg-anamaya-charcoal text-white shadow hover:bg-black"
+          style={{
+            left: "100%",
+            top: "100%",
+            transform: "translateY(-50%)",
+            width: ICON_BTN_SIZE,
+            height: ICON_BTN_SIZE,
+          }}
         >
-          {wireframeOn ? <EyeIcon /> : <EyeOffIcon />}
+          <PlusIcon />
         </button>
+      )}
 
-        {!isLast && (
-          <button
-            type="button"
-            onClick={onInsertAfter}
-            title="Insert a block here"
-            className="absolute left-0 z-10 flex items-center justify-center rounded-md bg-anamaya-charcoal text-white shadow hover:bg-black"
-            style={{
-              width: ICON_BTN_SIZE,
-              height: ICON_BTN_SIZE,
-              top: "100%",
-              transform: "translateY(-50%)",
-            }}
-          >
-            <PlusIcon />
-          </button>
-        )}
-      </div>
-
-      {/* Info panel — small, minimal, right of the eye strip. self-start
-          so it stays at its natural height instead of stretching to the
-          preview's aspect height. */}
-      <aside className="w-48 shrink-0 self-start bg-white p-2.5 text-[11px] ring-1 ring-zinc-200">
+      {/* Info panel — further right, beyond the eye column. Compact and
+          self-contained. Doesn't stretch to the row's height. */}
+      <aside
+        className="absolute w-48 bg-white p-2.5 text-[11px] ring-1 ring-zinc-200"
+        style={{ left: "100%", top: 0, marginLeft: ICON_BTN_SIZE + 8 }}
+      >
         <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
           {row.block.type_slug}
         </div>

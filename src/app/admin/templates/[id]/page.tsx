@@ -5,20 +5,16 @@ import TemplateEditor from "@/components/admin/templates/TemplateEditor";
 
 export const dynamic = "force-dynamic";
 
-// Reference viewport we assume when picking aspect ratios for the admin
-// preview iframes. `hero` cover blocks specify height in vh, so they get
-// an aspect derived from a 1440×900 reference. Other block types have an
-// absolute pixel height — we combine that with the reference width.
+// Reference viewport for the admin previews. Each iframe renders at these
+// NATIVE pixel dimensions and is visually scaled down to fit the preview
+// wrapper — so proportions match the live site exactly regardless of how
+// wide the admin column is. Pixel sizes inside the iframe (logo heights,
+// text sizes, etc.) shrink proportionally instead of overflowing.
 const REF_W = 1440;
 const REF_H = 900;
 
-/**
- * Aspect ratio (width / height) for an iframe containing the given block.
- * The iframe fills the admin area's width and the browser computes its
- * height via `aspect-ratio` — that way the ratio matches the live site
- * exactly even as the admin width changes.
- */
-function computeAspectRatio(block: {
+/** Live-site height in px for the given block at the reference width. */
+function computeNativeHeight(block: {
   type_slug: string;
   content: Record<string, unknown> | null;
 }): number {
@@ -27,20 +23,20 @@ function computeAspectRatio(block: {
     case "hero": {
       if (c.fit === "cover") {
         const vh = typeof c.height_vh === "number" ? c.height_vh : 80;
-        return REF_W / (REF_H * (vh / 100));
+        return Math.round(REF_H * (vh / 100));
       }
-      return 16 / 9;
+      return Math.round(REF_W * (9 / 16)); // aspect-mode: 16:9 player
     }
     case "press_bar": {
       const h = typeof c.section_height_px === "number" ? c.section_height_px : 200;
-      return REF_W / h;
+      return h;
     }
     case "cta_banner":
-      return REF_W / 360;
+      return 360;
     case "rich_text":
-      return REF_W / 400;
+      return 400;
     default:
-      return REF_W / 360;
+      return 360;
   }
 }
 
@@ -107,6 +103,7 @@ export default async function EditTemplate({
       <TemplateEditor
         templateId={template.id}
         variant={defaultVariant}
+        referenceWidth={REF_W}
         rows={(rows ?? []).map((r) => {
           const block = r.block as unknown as {
             id: string;
@@ -115,10 +112,12 @@ export default async function EditTemplate({
             type_slug: string;
             content: Record<string, unknown> | null;
           };
+          const nativeH = computeNativeHeight(block);
           return {
             id: r.id,
             sort_order: r.sort_order,
-            aspect_ratio: computeAspectRatio(block),
+            native_height: nativeH,
+            aspect_ratio: REF_W / nativeH,
             block: {
               id: block.id,
               slug: block.slug,
