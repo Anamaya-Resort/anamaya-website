@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseServerOrNull } from "./supabase-server";
-import { extractMediaUrls, rewriteHtml } from "./wp-rewrite";
+import { candidateBaseUrls, rewriteHtml } from "./wp-rewrite";
 
 // Hosts whose absolute URLs inside content should be stripped to path-only
 // (so internal links become relative on the new site).
@@ -196,16 +196,21 @@ export async function getRetreatBySlug(slug: string): Promise<RetreatDetail | nu
     "";
 
   // Rewrite body HTML: swap WP media URLs to Supabase Storage and strip WP hosts.
-  const referenced = extractMediaUrls(rawBody, WP_HOSTS);
+  // Candidates include both exact URLs and base URLs (with WP's -WxH size
+  // variant stripped) so rewrites still resolve for thumbnails like -300x300.webp.
+  const candidates = candidateBaseUrls(rawBody, WP_HOSTS);
   const mediaMap = new Map<string, string>();
-  if (referenced.length > 0) {
-    const { data: found } = await sb
-      .from("media_items")
-      .select("source_url, storage_url")
-      .eq("source_site", "v2")
-      .in("source_url", referenced);
-    for (const m of found ?? []) {
-      if (m.storage_url) mediaMap.set(m.source_url, m.storage_url);
+  if (candidates.length > 0) {
+    // Chunk the IN query — Supabase can handle ~1k entries but we have lots of media.
+    for (let i = 0; i < candidates.length; i += 500) {
+      const { data: found } = await sb
+        .from("media_items")
+        .select("source_url, storage_url")
+        .eq("source_site", "v2")
+        .in("source_url", candidates.slice(i, i + 500));
+      for (const m of found ?? []) {
+        if (m.storage_url) mediaMap.set(m.source_url, m.storage_url);
+      }
     }
   }
   const body_html = rewriteHtml(rawBody, { sourceHosts: WP_HOSTS, mediaMap });

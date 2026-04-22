@@ -1,55 +1,76 @@
 // Utilities to rewrite URLs inside WordPress-rendered HTML for use on the new site.
-// Pure functions — take a string and a lookup map, return a string.
 //
-// Typical use:
-//   1. Extract all /wp-content/uploads/... URLs from content_rendered via extractMediaUrls()
-//   2. Look up those source_urls in media_items to get their storage_urls
-//   3. Call rewriteHtml() with the resulting source->storage map and the list of WP hosts
+// WordPress generates size variants on the fly (foo-300x300.webp, foo-800x600.webp, etc.)
+// that are NOT stored as separate rows in our media_items table. When they appear in
+// scraped HTML, we need to substitute them with the closest available original.
+//
+// Strategy:
+//   1. Find every /wp-content/uploads/... URL in the HTML
+//   2. For each one, try exact match in the media map first
+//   3. If no exact match, strip the -WIDTHxHEIGHT suffix and look up the base URL
+//   4. Substitute with the resolved storage_url (or leave as-is if no match)
 
-const WP_UPLOADS_RE = /\/wp-content\/uploads\/[^\s"'<>()]+/g;
+const UPLOADS_RE_SRC = /https?:\/\/[^\s"'<>()]+\/wp-content\/uploads\/[^\s"'<>()]+/g;
+const SIZE_SUFFIX_RE = /-\d{2,4}x\d{2,4}(?=\.(?:webp|jpg|jpeg|png|gif|avif)(?:\?|$))/i;
 
 export type RewriteOptions = {
-  // Hosts whose absolute URLs should be stripped to path-only (internal links).
-  // e.g. ["anamayastg.wpenginepowered.com", "anamaya.com"]
+  /** Hosts whose absolute URLs should be stripped to path-only (internal links). */
   sourceHosts: string[];
-  // source_url -> storage_url mapping for media files.
+  /** Known `source_url` → `storage_url` mapping for migrated media. */
   mediaMap: Map<string, string>;
 };
 
-/** Return all absolute /wp-content/uploads/... URLs referenced in the HTML. */
-export function extractMediaUrls(html: string, sourceHosts: string[]): string[] {
+/** Strip WP's -WIDTHxHEIGHT size variant from a URL to get the base file URL. */
+export function stripSizeVariant(url: string): string {
+  return url.replace(SIZE_SUFFIX_RE, "");
+}
+
+/** Every /wp-content/uploads/... URL referenced in the HTML. */
+export function extractMediaUrls(html: string, _sourceHosts: string[]): string[] {
+  // _sourceHosts unused but kept for API compatibility.
   const urls = new Set<string>();
-  for (const host of sourceHosts) {
-    const re = new RegExp(`https?://${host.replace(/\./g, "\\.")}\\/wp-content\\/uploads\\/[^\\s"'<>()]+`, "g");
-    for (const m of html.matchAll(re)) urls.add(m[0]);
-  }
-  // Also catch protocol-relative references (rare)
-  const protRel = html.matchAll(/(?:^|[^:])\/\/([^/\s"']+)(\/wp-content\/uploads\/[^\s"'<>()]+)/g);
-  for (const m of protRel) {
-    if (sourceHosts.includes(m[1])) urls.add(`https://${m[1]}${m[2]}`);
-  }
+  for (const m of html.matchAll(UPLOADS_RE_SRC)) urls.add(m[0]);
   return [...urls];
 }
 
-/** Rewrite absolute URLs in HTML. Images get swapped to storage_url; internal links lose host. */
+/**
+ * Return the de-duplicated list of candidate source URLs to query `media_items` for.
+ * Includes both the exact URL AND its base-without-size-variant.
+ */
+export function candidateBaseUrls(html: string, sourceHosts: string[]): string[] {
+  const all = new Set<string>();
+  for (const u of extractMediaUrls(html, sourceHosts)) {
+    all.add(u);
+    const base = stripSizeVariant(u);
+    if (base !== u) all.add(base);
+  }
+  return [...all];
+}
+
+/** Rewrite absolute URLs in HTML. Tries size-variant base fallback. */
 export function rewriteHtml(html: string, opts: RewriteOptions): string {
   let out = html;
 
-  // 1. Swap media URLs (longest first to avoid partial-match conflicts)
-  const mediaEntries = [...opts.mediaMap.entries()].sort(
-    (a, b) => b[0].length - a[0].length,
-  );
-  for (const [src, dst] of mediaEntries) {
-    // Split + join avoids regex escaping hell and is plenty fast for realistic N.
+  // Build an extended map that also maps size-variant URLs to the base's
+  // storage_url (when base is known).
+  const fullMap = new Map<string, string>(opts.mediaMap);
+  for (const u of extractMediaUrls(html, opts.sourceHosts)) {
+    if (fullMap.has(u)) continue;
+    const base = stripSizeVariant(u);
+    if (base !== u && fullMap.has(base)) fullMap.set(u, fullMap.get(base)!);
+  }
+
+  // Replace longest keys first to avoid partial-match collisions.
+  const entries = [...fullMap.entries()].sort((a, b) => b[0].length - a[0].length);
+  for (const [src, dst] of entries) {
     if (out.includes(src)) out = out.split(src).join(dst);
   }
 
-  // 2. Strip source hosts to make remaining internal links relative
+  // Strip source hosts on internal links so they become relative.
   for (const host of opts.sourceHosts) {
-    const absHttps = `https://${host}`;
-    const absHttp = `http://${host}`;
-    if (out.includes(absHttps)) out = out.split(absHttps).join("");
-    if (out.includes(absHttp)) out = out.split(absHttp).join("");
+    for (const prefix of [`https://${host}`, `http://${host}`]) {
+      if (out.includes(prefix)) out = out.split(prefix).join("");
+    }
   }
 
   return out;
