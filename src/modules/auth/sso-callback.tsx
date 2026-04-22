@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 /**
  * Handles the SSO redirect back from sso.lightningworks.io.
@@ -9,72 +9,86 @@ import { useRouter, useSearchParams } from "next/navigation";
  * hash fragments never hit the server — that's the SSO contract.
  */
 export function SSOCallbackHandler() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<{ title: string; detail?: string } | null>(null);
-  const next = searchParams.get("next") || "/";
 
   useEffect(() => {
+    let cancelled = false;
+
+    // Safe-guard against a hang: if nothing has resolved in 12 s, surface a
+    // "timed out" error instead of spinning forever.
+    const timeoutId = setTimeout(() => {
+      if (cancelled) return;
+      setError({
+        title: "Sign-in timed out",
+        detail: "The verify step didn't respond in 12 seconds. Check the browser Network tab for the /api/auth/verify request.",
+      });
+    }, 12_000);
+
     async function run() {
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get("access_token");
-
-      if (!accessToken) {
-        setError({
-          title: "No token in callback",
-          detail:
-            "The SSO portal didn't return an access_token in the URL fragment. " +
-            "Double-check that the callback URL on this site is registered with LightningWorks SSO.",
-        });
-        return;
-      }
-
-      let res: Response;
       try {
-        res = await fetch("/api/auth/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ access_token: accessToken }),
-        });
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get("access_token");
+
+        if (!accessToken) {
+          if (!cancelled) setError({
+            title: "No token in callback",
+            detail: "The SSO portal didn't include an access_token in the URL fragment. Check the Network tab of DevTools.",
+          });
+          return;
+        }
+
+        let res: Response;
+        try {
+          res = await fetch("/api/auth/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ access_token: accessToken }),
+          });
+        } catch (e) {
+          if (!cancelled) setError({
+            title: "Could not reach /api/auth/verify",
+            detail: String(e),
+          });
+          return;
+        }
+
+        let body: any = null;
+        try {
+          body = await res.json();
+        } catch {
+          // non-JSON response
+          body = { error: await res.text().catch(() => "(no body)") };
+        }
+
+        if (!res.ok || !body?.success) {
+          if (!cancelled) setError({
+            title: `Verify failed (HTTP ${res.status})`,
+            detail: body?.error ?? JSON.stringify(body).slice(0, 400),
+          });
+          return;
+        }
+
+        // Success — hard-navigate so the server re-reads the session cookie
+        // and (site)/layout.tsx picks up the freshly-signed-in user.
+        const next = searchParams.get("next") || "/";
+        clearTimeout(timeoutId);
+        window.location.assign(next);
       } catch (e) {
-        setError({
-          title: "Could not reach /api/auth/verify",
+        if (!cancelled) setError({
+          title: "Unexpected error",
           detail: String(e),
         });
-        return;
       }
-
-      if (!res.ok) {
-        let detail = `HTTP ${res.status}`;
-        try {
-          const body = await res.json();
-          if (body?.error) detail = `HTTP ${res.status}: ${body.error}`;
-        } catch {
-          // ignore body parse failures
-        }
-        setError({
-          title: "Verify endpoint returned an error",
-          detail:
-            detail +
-            ". This almost always means the SESSION_SECRET env var is missing " +
-            "or shorter than 32 characters on the deployment.",
-        });
-        return;
-      }
-
-      const data = await res.json();
-      if (!data.success) {
-        setError({ title: "Authentication failed", detail: data?.error || undefined });
-        return;
-      }
-
-      // Clean the hash off the URL and return to the origin page
-      window.history.replaceState(null, "", next);
-      router.push(next);
-      router.refresh();
     }
+
     run();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -88,12 +102,20 @@ export function SSOCallbackHandler() {
               {error.detail}
             </p>
           )}
-          <a
-            href="/"
-            className="mt-6 inline-block rounded-full bg-anamaya-brand-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-brand-btn-hover"
-          >
-            Back to site
-          </a>
+          <div className="mt-6 flex gap-3">
+            <a
+              href="/auth/login"
+              className="inline-block rounded-full bg-anamaya-brand-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-brand-btn-hover"
+            >
+              Try again
+            </a>
+            <a
+              href="/"
+              className="inline-block rounded-full border border-zinc-300 px-5 py-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal hover:bg-zinc-50"
+            >
+              Back to site
+            </a>
+          </div>
         </div>
       </div>
     );
