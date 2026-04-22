@@ -10,7 +10,7 @@ import PressBarEditor from "./editors/PressBarEditor";
 import RichTextEditor from "./editors/RichTextEditor";
 import HeroEditor from "./editors/HeroEditor";
 import CtaBannerEditor from "./editors/CtaBannerEditor";
-import VariantSwitcher from "@/components/admin/VariantSwitcher";
+import VariantCarousel from "@/components/admin/blocks/VariantCarousel";
 import type { BlockTypeSlug } from "@/types/blocks";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export default async function EditBlock({
     sb.from("block_usages").select("page_key, sort_order").eq("block_id", id),
     sb
       .from("blocks")
-      .select("id, name, content, updated_at")
+      .select("id, name, snapshot_url, updated_at")
       .eq("type_slug", block.type_slug)
       .order("updated_at", { ascending: false }),
     sb.from("block_types").select("name").eq("slug", block.type_slug).maybeSingle(),
@@ -53,13 +53,14 @@ export default async function EditBlock({
     redirect(`/admin/blocks/${id}?saved=1`);
   }
 
-  async function duplicate() {
+  // Accepts FormData because it's bound to a submit button's formAction.
+  async function duplicate(_: FormData) {
     "use server";
     const newId = await duplicateBlock(id);
     redirect(`/admin/blocks/${newId}`);
   }
 
-  async function remove() {
+  async function remove(_: FormData) {
     "use server";
     await deleteBlock(id);
     redirect("/admin/blocks");
@@ -71,6 +72,7 @@ export default async function EditBlock({
         <div className="text-xs uppercase tracking-wider text-anamaya-olive-dark">
           {block.type_slug}
         </div>
+        {/* Single form; action buttons override via formAction so we don't nest forms. */}
         <form action={saveName} className="mt-1 flex items-center gap-3">
           <input
             name="name"
@@ -83,24 +85,22 @@ export default async function EditBlock({
           >
             Rename
           </button>
-          <form action={duplicate} className="inline">
-            <button
-              type="submit"
-              className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal hover:bg-zinc-50"
-              title="Create a copy of this block as a new variant"
-            >
-              Duplicate
-            </button>
-          </form>
-          <form action={remove} className="inline">
-            <button
-              type="submit"
-              className="rounded-full border border-red-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
-              title="Delete this block (also removes all its page placements)"
-            >
-              Delete
-            </button>
-          </form>
+          <button
+            type="submit"
+            formAction={duplicate}
+            className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal hover:bg-zinc-50"
+            title="Create a copy of this block as a new variant"
+          >
+            Duplicate
+          </button>
+          <button
+            type="submit"
+            formAction={remove}
+            className="rounded-full border border-red-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
+            title="Delete this block (also removes all its page placements)"
+          >
+            Delete
+          </button>
         </form>
         <p className="mt-2 text-xs text-anamaya-charcoal/60">
           Used on:{" "}
@@ -112,7 +112,7 @@ export default async function EditBlock({
 
       {/* Main editor (with its live preview at the top of the form) */}
       {block.type_slug === "press_bar" && (
-        <PressBarEditor content={block.content} onSave={saveContent} />
+        <PressBarEditor blockId={id} content={block.content} onSave={saveContent} />
       )}
       {block.type_slug === "rich_text" && (
         <RichTextEditor content={block.content} onSave={saveContent} />
@@ -124,8 +124,8 @@ export default async function EditBlock({
         <CtaBannerEditor content={block.content} onSave={saveContent} />
       )}
 
-      {/* Variant carousel — scroll through other blocks of this type */}
-      <VariantSwitcher
+      {/* Variant carousel — WebP snapshots of other blocks of this type */}
+      <VariantCarousel
         currentId={block.id}
         typeSlug={block.type_slug as BlockTypeSlug}
         typeName={type?.name ?? block.type_slug}

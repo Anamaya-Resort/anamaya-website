@@ -60,6 +60,47 @@ export async function deleteBlock(id: string) {
   revalidatePath("/", "layout");
 }
 
+/**
+ * Persist a client-generated WebP snapshot of a block's live preview.
+ * Called immediately after a save so the variant carousel always shows
+ * a fresh thumbnail. Scales the incoming PNG/WebP to half resolution
+ * before storing to keep file sizes small.
+ */
+export async function uploadBlockSnapshot(
+  blockId: string,
+  formData: FormData,
+): Promise<{ url: string }> {
+  const file = formData.get("file") as File | null;
+  if (!file || typeof file === "string") throw new Error("No snapshot provided");
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const meta = await sharp(buf).metadata();
+  const targetWidth = Math.max(400, Math.floor((meta.width ?? 1200) / 2));
+  const webp = await sharp(buf)
+    .resize({ width: targetWidth, withoutEnlargement: true })
+    .webp({ quality: 78 })
+    .toBuffer();
+
+  const sb = supabaseServer();
+  const key = `uploads/block-snapshots/${blockId}-${Date.now()}.webp`;
+  const { error: upErr } = await sb.storage.from(BUCKET).upload(key, webp, {
+    contentType: "image/webp",
+    upsert: false,
+  });
+  if (upErr) throw new Error(`snapshot upload: ${upErr.message}`);
+  const { data: pub } = sb.storage.from(BUCKET).getPublicUrl(key);
+
+  const { error: rowErr } = await sb
+    .from("blocks")
+    .update({ snapshot_url: pub.publicUrl, snapshot_updated_at: new Date().toISOString() })
+    .eq("id", blockId);
+  if (rowErr) throw new Error(`snapshot row update: ${rowErr.message}`);
+
+  revalidatePath("/admin/blocks");
+  revalidatePath(`/admin/blocks/${blockId}`);
+  return { url: pub.publicUrl };
+}
+
 /** Copy an existing block's content into a new block. Returns the new id. */
 export async function duplicateBlock(id: string): Promise<string> {
   const sb = supabaseServer();
