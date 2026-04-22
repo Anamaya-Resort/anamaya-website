@@ -29,6 +29,54 @@ export default function HeroBlock({ content }: { content: HeroContent }) {
 }
 
 /**
+ * Simplified static renderer used only as a snapshot source. The live
+ * HeroBlock renders an autoplaying YouTube iframe and uses object-fit:
+ * cover on the poster — both of which html-to-image struggles with,
+ * leading to blank or stale snapshots. Here we render the poster as a
+ * CSS background-image (which html-to-image handles reliably) and
+ * omit the iframe/video entirely. Bands and overlay are identical to
+ * the live render, so the captured thumbnail is visually accurate.
+ */
+export function HeroBlockSnapshot({ content }: { content: HeroContent }) {
+  const top = content?.top;
+  const bottom = content?.bottom;
+  const fit = content?.fit ?? "aspect";
+  const overlay = (content?.overlay_opacity ?? 0) / 100;
+  const heightVh = content?.height_vh ?? 80;
+
+  const posterStyles: React.CSSProperties = content?.video_poster_url
+    ? {
+        backgroundImage: `url(${content.video_poster_url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : {};
+
+  const stageStyle: React.CSSProperties = {
+    ...posterStyles,
+    ...(fit === "cover" ? { height: `${heightVh}vh` } : { aspectRatio: "16 / 9" }),
+  };
+
+  return (
+    <section className="w-full">
+      {top?.enabled && <Band band={top} />}
+      <div
+        className="relative w-full overflow-hidden bg-anamaya-charcoal"
+        style={stageStyle}
+      >
+        {overlay > 0 && (
+          <div
+            className="absolute inset-0 bg-black"
+            style={{ opacity: overlay }}
+          />
+        )}
+      </div>
+      {bottom?.enabled && <Band band={bottom} />}
+    </section>
+  );
+}
+
+/**
  * Emits schema.org VideoObject JSON-LD so Google Video and other crawlers
  * can index the video. Same role as alt text for <img> — crucial for SEO.
  * Outputs nothing if the editor hasn't filled in at least a title.

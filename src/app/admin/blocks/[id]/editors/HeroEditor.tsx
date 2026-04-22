@@ -8,6 +8,7 @@ import LivePreview from "@/components/admin/blocks/LivePreview";
 import { captureAndUploadBlockSnapshot } from "@/components/admin/blocks/snapshot";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
+import { HeroBlockSnapshot } from "@/components/blocks/HeroBlock";
 import type { OrgBranding } from "@/config/brand-tokens";
 import { playClick } from "@/lib/click-sound";
 
@@ -86,6 +87,7 @@ export default function HeroEditor({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const videoFileRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const snapshotRef = useRef<HTMLDivElement>(null);
   const shortcode = `[#${slug}]`;
 
   function commit() {
@@ -148,8 +150,13 @@ export default function HeroEditor({
     setSaving(true);
     try {
       flushSync(() => setPreview(draft));
-      if (previewRef.current) {
-        await captureAndUploadBlockSnapshot(blockId, previewRef.current);
+      // Capture from the off-screen snapshot-only renderer, not the live
+      // preview. The live preview contains an autoplaying iframe that
+      // html-to-image can't rasterise; HeroBlockSnapshot paints the poster
+      // as a background-image so capture is reliable.
+      const captureNode = snapshotRef.current ?? previewRef.current;
+      if (captureNode) {
+        await captureAndUploadBlockSnapshot(blockId, captureNode);
       }
       await onSave(name, slug, draft);
     } finally {
@@ -159,6 +166,24 @@ export default function HeroEditor({
 
   return (
     <>
+      {/* Off-screen simplified renderer used only as the snapshot source.
+          Positioned far off-screen so it doesn't affect layout or
+          interactions, but still in the DOM (and paints against the real
+          viewport) so vh units and background-image resolve correctly. */}
+      <div
+        ref={snapshotRef}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: "-10000px",
+          top: 0,
+          width: "100vw",
+          pointerEvents: "none",
+        }}
+      >
+        <HeroBlockSnapshot content={preview} />
+      </div>
+
       <div className="mb-5 grid gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60">

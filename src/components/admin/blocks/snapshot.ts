@@ -1,23 +1,28 @@
 "use client";
 
-import { toBlob } from "html-to-image";
+import { toCanvas } from "html-to-image";
 import { uploadBlockSnapshot } from "@/app/admin/blocks/actions";
 
 /**
- * Captures the block's live-preview DOM node to a PNG and uploads it
+ * Captures the block's live-preview DOM node to a JPEG and uploads it
  * so the variant carousel tile refreshes.
  *
- * Gotchas this helper works around:
- *  1. Cross-origin iframes (the YouTube embed) throw SecurityError
- *     inside html-to-image, aborting the whole capture. We filter them
- *     out AND skip any ancestor div marked `data-snapshot-skip="true"`
- *     so the empty click-blocker overlay doesn't confuse the capture.
- *  2. HTMLVideoElements can't be rasterised to canvas reliably.
- *  3. If an <img> hasn't finished loading when toBlob runs, it renders
- *     as blank space — so we wait on every descendant image first.
+ * Produces JPEG (not PNG) because the PNG for a hero block can be 2+ MB
+ * — Next's default server-action body limit is 1 MB, so PNG uploads got
+ * rejected with 400. JPEG at quality 0.85 is typically ~150 KB for the
+ * same image. The server action resizes + re-encodes as WebP anyway;
+ * the wire format is purely a transport concern.
  *
- * Progress is logged to the console so the user can see what's
- * happening when a snapshot fails to update.
+ * Gotchas this helper works around:
+ *  1. Cross-origin iframes (YouTube embed) throw SecurityError inside
+ *     html-to-image, aborting capture. Filtered by tag + any ancestor
+ *     with data-snapshot-skip="true".
+ *  2. HTMLVideoElements can't be rasterised to canvas reliably. Same
+ *     filter handles them.
+ *  3. If an <img> hasn't finished loading when capture runs, it
+ *     renders as blank space — we await every descendant image first.
+ *
+ * Progress and errors are logged to the console so failures are visible.
  */
 export async function captureAndUploadBlockSnapshot(
   blockId: string,
@@ -27,7 +32,7 @@ export async function captureAndUploadBlockSnapshot(
     console.log("[snapshot] capturing", blockId);
     await waitForImagesLoaded(node);
     console.log("[snapshot] images ready");
-    const blob = await toBlob(node, {
+    const canvas = await toCanvas(node, {
       pixelRatio: 1,
       cacheBust: false,
       backgroundColor: "#ffffff",
@@ -39,10 +44,13 @@ export async function captureAndUploadBlockSnapshot(
         return true;
       },
     });
-    console.log("[snapshot] toBlob size:", blob?.size ?? "null");
-    if (!blob) return { ok: false, reason: "toBlob returned null" };
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.85),
+    );
+    console.log("[snapshot] jpeg size:", blob?.size ?? "null");
+    if (!blob) return { ok: false, reason: "canvas.toBlob returned null" };
     const fd = new FormData();
-    fd.append("file", new File([blob], `snap-${blockId}.png`, { type: "image/png" }));
+    fd.append("file", new File([blob], `snap-${blockId}.jpg`, { type: "image/jpeg" }));
     await uploadBlockSnapshot(blockId, fd);
     console.log("[snapshot] upload ok");
     return { ok: true };
@@ -61,7 +69,6 @@ async function waitForImagesLoaded(node: HTMLElement): Promise<void> {
         const done = () => resolve();
         img.addEventListener("load", done, { once: true });
         img.addEventListener("error", done, { once: true });
-        // Safety cap: never block capture for more than 3 s on a single img.
         setTimeout(done, 3000);
       });
     }),
