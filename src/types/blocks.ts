@@ -61,6 +61,12 @@ export type PressBarContent = {
   heading_font?: "body" | "heading";
   /** Regular-logo max height in px (default 48). Featured logos get 2× this. */
   logo_height_px?: number;
+  /**
+   * Section min-height in px. Content (heading + logos) is centered
+   * vertically within it. When omitted the section sizes to its content
+   * plus default padding. Default 200.
+   */
+  section_height_px?: number;
 };
 
 export type BlockTypeSlug = "rich_text" | "hero" | "cta_banner" | "press_bar";

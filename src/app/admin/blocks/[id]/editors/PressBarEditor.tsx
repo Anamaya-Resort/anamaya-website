@@ -249,29 +249,54 @@ export default function PressBarEditor({
             />
           </div>
 
-          <label className="block max-w-xs">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-              Logo height (px, featured is 2×)
-            </span>
-            <input
-              type="number"
-              min={24}
-              max={160}
-              className={inputCls}
-              value={draft.logo_height_px ?? 48}
-              onChange={(e) => {
-                const v = Number(e.target.value) || 48;
-                setDraft((d) => ({ ...d, logo_height_px: v }));
-              }}
-              onBlur={commit}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  commit();
-                }
-              }}
-            />
-          </label>
+          <div className="flex flex-wrap gap-4">
+            <label className="block w-40">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                Logo height (px, featured is 2×)
+              </span>
+              <input
+                type="number"
+                min={24}
+                max={160}
+                className={inputCls}
+                value={draft.logo_height_px ?? 48}
+                onChange={(e) => {
+                  const v = Number(e.target.value) || 48;
+                  setDraft((d) => ({ ...d, logo_height_px: v }));
+                }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commit();
+                  }
+                }}
+              />
+            </label>
+            <label className="block w-40">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                Section height (px, min)
+              </span>
+              <input
+                type="number"
+                min={80}
+                max={600}
+                className={inputCls}
+                value={draft.section_height_px ?? 200}
+                onChange={(e) => {
+                  const v = Number(e.target.value) || 200;
+                  setDraft((d) => ({ ...d, section_height_px: v }));
+                }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commit();
+                  }
+                }}
+              />
+            </label>
+          </div>
         </div>
 
         <label className="mt-4 block">

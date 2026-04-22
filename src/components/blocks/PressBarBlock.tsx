@@ -35,6 +35,7 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
   const { bg, fgDefault } = resolveBg(content);
   const logoHeight = content.logo_height_px ?? 48;
   const featuredHeight = logoHeight * 2;
+  const sectionHeight = content.section_height_px ?? 200;
   const headingCss = resolveBrandColor(heading_color) ?? fgDefault;
   const headingFontClass = heading_font === "body" ? "font-sans" : "font-heading";
 
@@ -44,7 +45,10 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
       : `repeat(${logos.length}, minmax(0, 1fr))`;
 
   return (
-    <section className="w-full px-6 py-10" style={{ backgroundColor: bg }}>
+    <section
+      className="flex w-full flex-col justify-center px-6 py-6"
+      style={{ backgroundColor: bg, minHeight: sectionHeight }}
+    >
       {/* Full-bleed — no max-width cap; logos fill the available width */}
       <div className="mx-auto w-full max-w-[1600px]">
         <h2
