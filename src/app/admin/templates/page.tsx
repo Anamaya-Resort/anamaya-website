@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { createTemplate } from "./actions";
+import TemplateCard, { type TemplateCardBlock } from "@/components/admin/templates/TemplateCard";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,36 @@ export default async function TemplatesIndex() {
     .from("page_templates")
     .select("id, slug, name, updated_at")
     .order("name");
+
+  // For each template, fetch its default variant + ordered block snapshots.
+  // Done sequentially — admin is low-volume, and Promise.all would just
+  // hammer Supabase with parallel requests for the same small index.
+  const cards: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    blocks: TemplateCardBlock[];
+  }> = [];
+  for (const t of templates ?? []) {
+    const { data: variant } = await sb
+      .from("page_template_variants")
+      .select("id")
+      .eq("page_template_id", t.id)
+      .eq("is_default", true)
+      .maybeSingle();
+    let blocks: TemplateCardBlock[] = [];
+    if (variant) {
+      const { data: rows } = await sb
+        .from("page_template_variant_blocks")
+        .select("sort_order, block:blocks(id, name, snapshot_url)")
+        .eq("page_template_variant_id", variant.id)
+        .order("sort_order");
+      blocks = (rows ?? [])
+        .map((r) => r.block as unknown as TemplateCardBlock | null)
+        .filter((b): b is TemplateCardBlock => !!b);
+    }
+    cards.push({ id: t.id, slug: t.slug, name: t.name, blocks });
+  }
 
   async function newTemplate(formData: FormData) {
     "use server";
@@ -29,7 +59,7 @@ export default async function TemplatesIndex() {
           <p className="mt-1 max-w-2xl text-sm text-anamaya-charcoal/70">
             A template is an ordered list of blocks that make up a page layout
             (Home, Retreat, Blog Post, …). Each template can have multiple
-            variants for A/B testing.
+            variants for A/B testing. Each card previews the live block stack.
           </p>
         </div>
         <form action={newTemplate} className="flex items-end gap-2">
@@ -63,26 +93,24 @@ export default async function TemplatesIndex() {
         </form>
       </header>
 
-      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {(templates ?? []).map((t) => (
-          <li key={t.id}>
-            <Link
-              href={`/admin/templates/${t.id}`}
-              className="block rounded-md border border-zinc-200 bg-white px-4 py-3 text-sm transition-shadow hover:shadow-sm"
-            >
-              <div className="font-semibold text-anamaya-charcoal">{t.name}</div>
-              <code className="mt-1 inline-block rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-anamaya-charcoal/80">
-                {t.slug}
-              </code>
-            </Link>
-          </li>
+      {/* Vertical cards — 300 px wide, up to 1200 px tall, flowing left-to-right
+          and wrapping. Fits 3-4 across on a typical admin viewport. */}
+      <div className="flex flex-wrap items-start gap-4">
+        {cards.map((c) => (
+          <TemplateCard
+            key={c.id}
+            id={c.id}
+            slug={c.slug}
+            name={c.name}
+            blocks={c.blocks}
+          />
         ))}
-        {(templates ?? []).length === 0 && (
-          <li className="text-sm italic text-anamaya-charcoal/50">
-            No templates yet — run migration 0012 or create one above.
-          </li>
+        {cards.length === 0 && (
+          <div className="text-sm italic text-anamaya-charcoal/50">
+            No templates yet — create one above.
+          </div>
         )}
-      </ul>
+      </div>
     </div>
   );
 }

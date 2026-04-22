@@ -16,6 +16,95 @@ export async function renameTemplate(id: string, name: string) {
   revalidatePath(`/admin/templates/${id}`);
 }
 
+/**
+ * Delete a template. Cascades to variants and variant_blocks via the FK
+ * definitions in migration 0013. Block rows themselves are untouched —
+ * only the template and its variant/block references go.
+ */
+export async function deleteTemplate(id: string) {
+  const sb = supabaseServer();
+  const { error } = await sb.from("page_templates").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/templates");
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Duplicate a template: copies the template row, every variant, and every
+ * variant-block reference. Block rows themselves are shared (templates
+ * reference the same blocks). Returns the new template id.
+ */
+export async function duplicateTemplate(id: string): Promise<string> {
+  const sb = supabaseServer();
+
+  const { data: source, error: sErr } = await sb
+    .from("page_templates")
+    .select("slug, name")
+    .eq("id", id)
+    .maybeSingle();
+  if (sErr || !source) throw new Error("Source template not found");
+
+  // Pick a unique slug.
+  const newSlug = await nextAvailableTemplateSlug(source.slug);
+
+  const { data: newTpl, error: tErr } = await sb
+    .from("page_templates")
+    .insert({ slug: newSlug, name: `${source.name} (copy)` })
+    .select("id")
+    .single();
+  if (tErr) throw new Error(tErr.message);
+
+  // Copy variants + their block references.
+  const { data: variants } = await sb
+    .from("page_template_variants")
+    .select("id, slug, name, is_default")
+    .eq("page_template_id", id);
+
+  for (const v of variants ?? []) {
+    const newVariantSlug = v.slug.replace(source.slug, newSlug);
+    const { data: newVar, error: vErr } = await sb
+      .from("page_template_variants")
+      .insert({
+        page_template_id: newTpl.id,
+        slug: newVariantSlug,
+        name: v.name,
+        is_default: v.is_default,
+      })
+      .select("id")
+      .single();
+    if (vErr) throw new Error(vErr.message);
+
+    const { data: blocks } = await sb
+      .from("page_template_variant_blocks")
+      .select("block_id, sort_order")
+      .eq("page_template_variant_id", v.id);
+    if (blocks && blocks.length > 0) {
+      const rows = blocks.map((b) => ({
+        page_template_variant_id: newVar.id,
+        block_id: b.block_id,
+        sort_order: b.sort_order,
+      }));
+      await sb.from("page_template_variant_blocks").insert(rows);
+    }
+  }
+
+  revalidatePath("/admin/templates");
+  return newTpl.id;
+}
+
+async function nextAvailableTemplateSlug(baseSlug: string): Promise<string> {
+  const sb = supabaseServer();
+  const { data } = await sb.from("page_templates").select("slug");
+  const used = new Set((data ?? []).map((r) => r.slug));
+  let candidate = `${baseSlug}-copy`;
+  let n = 2;
+  while (used.has(candidate)) {
+    candidate = `${baseSlug}-copy-${n}`;
+    n++;
+  }
+  return candidate;
+}
+
 /** Create a new empty page template + default variant. Returns the template id. */
 export async function createTemplate(slug: string, name: string): Promise<string> {
   const sb = supabaseServer();
