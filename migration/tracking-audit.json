@@ -1,0 +1,126 @@
+{
+  "source_site": "https://anamaya.com",
+  "last_audited": "2026-04-22",
+  "audit_scope": "9 representative pages scanned (see scan_findings below): homepage + 1 each of page/post/retreat/ytt/recipe/accommodation/guest_yoga_teacher + 1 thank-you page",
+  "tracking": {
+    "meta_pixel": [
+      {
+        "id": "331563397336091",
+        "status": "active",
+        "coverage": "all 7 content pages scanned",
+        "action": "carry-over",
+        "notes": "Fires fbq('init') + PageView on every content page"
+      },
+      {
+        "id": "518225776084188",
+        "status": "active",
+        "coverage": "all 7 content pages scanned",
+        "action": "carry-over",
+        "notes": "Second Meta pixel — confirm with marketing whether both are intentional. Running two pixels is unusual."
+      }
+    ],
+    "google_analytics_universal": {
+      "id": "UA-143256029-1",
+      "status": "dead",
+      "coverage": "all 8 pages scanned",
+      "action": "drop",
+      "reason": "Universal Analytics shut down July 2023. Tag still in HTML but sends nothing."
+    },
+    "google_analytics_4": {
+      "id": null,
+      "status": "misconfigured",
+      "action": "set-up-fresh-on-new-site",
+      "reason": "gtag config is called with empty id ('gtag(\"config\",\"\")') — unfinished setup"
+    },
+    "google_tag_manager":  { "status": "not-found", "action": "none" },
+    "google_ads_conversion": { "status": "not-found", "action": "none",
+      "notes": "No AW-* conversion pixels on any page, including thank-you pages" },
+    "microsoft_clarity":   { "status": "not-found", "action": "none" },
+    "linkedin_insight":    { "status": "not-found", "action": "none" },
+    "pinterest_tag":       { "status": "not-found", "action": "none" },
+    "tiktok_pixel":        { "status": "not-found", "action": "none" },
+    "hotjar":              { "status": "not-found", "action": "none" },
+    "crazy_egg": {
+      "status": "not-found",
+      "action": "decide",
+      "notes": "Mentioned in original migration plan as a separate integration track. Not deployed on current site — confirm if still wanted on new site."
+    }
+  },
+  "known_issues": [
+    "Meta Pixel is NOT present on /opt-in-thank-you/ — form-complete events are not firing to Meta. Fix on new site: ensure pixel runs on all thank-you pages.",
+    "Dead UA tag should be removed — it loads code that does nothing, small perf hit.",
+    "REST-derived URL /guest_yoga_teacher/breathwork-retreat-with-cristiane-machado/ returns 404. Some URLs in url_inventory are stale — needs a pass to flag unreachable URLs."
+  ],
+  "todo": [
+    "Confirm with marketing: are both Meta Pixels (331563397336091, 518225776084188) intentional?",
+    "Create a fresh GA4 property for anamaya.com and add measurement ID to new site",
+    "On new site, fire Meta Pixel PageView on every page INCLUDING thank-you pages",
+    "Decide: Crazy Egg yes or no",
+    "Add a URL-liveness pass to inventory (mark 404s in url_inventory)"
+  ],
+  "scan_findings": [
+    {
+      "label": "meta_pixel",
+      "id": "518225776084188",
+      "found_on": [
+        "https://anamaya.com/",
+        "https://anamaya.com/circus-retreat-for-beginners/",
+        "https://anamaya.com/into-the-elements-costa-rica-retreat/",
+        "https://anamaya.com/retreat/primal-return-retreat-costa-rica-sierra-kliscz/",
+        "https://anamaya.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamaya.com/recipes/gluten-free-tahini-chocolate-chip-cookies/",
+        "https://anamaya.com/accommodations/shiva-room/"
+      ]
+    },
+    {
+      "label": "meta_pixel",
+      "id": "331563397336091",
+      "found_on": [
+        "https://anamaya.com/",
+        "https://anamaya.com/circus-retreat-for-beginners/",
+        "https://anamaya.com/into-the-elements-costa-rica-retreat/",
+        "https://anamaya.com/retreat/primal-return-retreat-costa-rica-sierra-kliscz/",
+        "https://anamaya.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamaya.com/recipes/gluten-free-tahini-chocolate-chip-cookies/",
+        "https://anamaya.com/accommodations/shiva-room/"
+      ]
+    },
+    {
+      "label": "ga_universal",
+      "id": "UA-143256029-1",
+      "found_on": [
+        "https://anamaya.com/",
+        "https://anamaya.com/circus-retreat-for-beginners/",
+        "https://anamaya.com/into-the-elements-costa-rica-retreat/",
+        "https://anamaya.com/retreat/primal-return-retreat-costa-rica-sierra-kliscz/",
+        "https://anamaya.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamaya.com/recipes/gluten-free-tahini-chocolate-chip-cookies/",
+        "https://anamaya.com/accommodations/shiva-room/",
+        "https://anamaya.com/opt-in-thank-you/"
+      ]
+    },
+    {
+      "label": "facebook_conversions_api_script",
+      "id": null,
+      "found_on": [
+        "https://anamaya.com/",
+        "https://anamaya.com/circus-retreat-for-beginners/",
+        "https://anamaya.com/into-the-elements-costa-rica-retreat/",
+        "https://anamaya.com/retreat/primal-return-retreat-costa-rica-sierra-kliscz/",
+        "https://anamaya.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamaya.com/recipes/gluten-free-tahini-chocolate-chip-cookies/",
+        "https://anamaya.com/accommodations/shiva-room/",
+        "https://anamaya.com/opt-in-thank-you/"
+      ],
+      "notes": "Matches <script src=\"connect.facebook.net/.../fbevents.js\"> loader for Meta Pixel — same infrastructure, not a separate tool"
+    }
+  ],
+  "scan_summary": {
+    "pages_scanned": 9,
+    "pages_ok": 8,
+    "pages_failed": 1,
+    "failed_urls": [
+      "https://anamaya.com/guest_yoga_teacher/breathwork-retreat-with-cristiane-machado/"
+    ]
+  }
+}

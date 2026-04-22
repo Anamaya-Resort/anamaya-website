@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "extract:urls": "tsx scripts/extractor/discover-urls.ts"
+    "extract:urls": "tsx scripts/extractor/discover-urls.ts",
+    "extract:sitemap": "tsx scripts/extractor/discover-sitemap.ts",
+    "scan:tracking": "tsx scripts/extractor/scan-tracking.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",
@@ -23,6 +25,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "fast-xml-parser": "^5.7.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
