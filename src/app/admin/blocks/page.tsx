@@ -22,18 +22,10 @@ export default async function BlocksIndex() {
       .order("name");
     return (fb.data ?? []).map((b) => ({ ...b, slug: `${b.type_slug}_?` }));
   }
-  const [{ data: types }, blocks, { data: usages }] = await Promise.all([
+  const [{ data: types }, blocks] = await Promise.all([
     sb.from("block_types").select("slug, name, description").order("name"),
     fetchBlocks(),
-    sb.from("block_usages").select("block_id, page_key"),
   ]);
-
-  const usageByBlock = new Map<string, string[]>();
-  for (const u of usages ?? []) {
-    const arr = usageByBlock.get(u.block_id) ?? [];
-    arr.push(u.page_key);
-    usageByBlock.set(u.block_id, arr);
-  }
 
   const byType = new Map<string, any[]>();
   for (const b of blocks) {
@@ -91,23 +83,22 @@ export default async function BlocksIndex() {
                 <li key={b.id}>
                   <Link
                     href={`/admin/blocks/${b.id}`}
-                    className="flex items-stretch gap-3 rounded-md border border-zinc-200 bg-white transition-shadow hover:shadow-sm"
+                    className="grid items-stretch rounded-md border border-zinc-200 bg-white transition-shadow hover:shadow-sm"
+                    style={{ gridTemplateColumns: "1fr 1fr" }}
                   >
-                    {/* Left: text details */}
-                    <div className="flex-1 px-4 py-3 text-sm">
-                      <div className="font-semibold text-anamaya-charcoal">{b.name}</div>
-                      <code className="mt-1 inline-block rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-anamaya-charcoal/80">
+                    {/* Left: text details — wraps to accommodate the
+                        50/50 split so the thumbnail on the right gets
+                        maximum breathing room. */}
+                    <div className="min-w-0 px-4 py-3 text-sm">
+                      <div className="break-words font-semibold text-anamaya-charcoal">
+                        {b.name}
+                      </div>
+                      <code className="mt-1 inline-block max-w-full truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-anamaya-charcoal/80">
                         [#{b.slug}]
                       </code>
-                      <div className="mt-1 text-xs text-anamaya-charcoal/60">
-                        Used on:{" "}
-                        {(usageByBlock.get(b.id) ?? []).length > 0
-                          ? (usageByBlock.get(b.id) ?? []).join(", ")
-                          : "(unused — not placed on any page yet)"}
-                      </div>
                     </div>
-                    {/* Right: WebP snapshot (if saved) */}
-                    <div className="w-48 shrink-0 overflow-hidden rounded-r-md bg-zinc-50">
+                    {/* Right: WebP snapshot (if saved) — 50% of the card. */}
+                    <div className="overflow-hidden rounded-r-md bg-zinc-50">
                       {b.snapshot_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
