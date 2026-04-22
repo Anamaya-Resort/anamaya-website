@@ -5,20 +5,13 @@ import { useEffect, useState } from "react";
 import { SIDE_MENU, BOOK_CTA, type NavItem } from "@/data/nav";
 import { getSSOLoginUrl } from "@/config/sso";
 import type { SSOUser } from "@/types/sso";
+import UserAvatar from "./UserAvatar";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   user?: SSOUser | null;
 };
-
-function initials(name: string | null | undefined): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (first + last).toUpperCase() || name.slice(0, 1).toUpperCase();
-}
 
 export default function SideMenu({ open, onClose, user = null }: Props) {
   useEffect(() => {
@@ -76,20 +69,7 @@ export default function SideMenu({ open, onClose, user = null }: Props) {
           {/* Auth block at top of drawer */}
           {user ? (
             <div className="mb-6 flex items-center gap-3 rounded-lg bg-white/5 px-3 py-3">
-              <span className="block h-10 w-10 overflow-hidden rounded-full bg-zinc-300 ring-1 ring-white">
-                {user.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={user.avatar_url}
-                    alt={user.display_name || user.email}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-700">
-                    {initials(user.display_name || user.email)}
-                  </span>
-                )}
-              </span>
+              <UserAvatar user={user} size="h-10 w-10" ringColor="white" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-white">
                   {user.display_name || user.username || user.email}
