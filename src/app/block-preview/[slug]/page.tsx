@@ -21,8 +21,12 @@ export default async function BlockPreview({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            html, body { height: 100%; margin: 0; padding: 0; }
-            section[data-hero-cover="true"] { height: 100% !important; }
+            html, body { margin: 0; padding: 0; }
+            /* The hero's inline \`height: 80vh\` resolves against the
+               iframe's viewport and leaves empty space below. Force it
+               to fill the iframe exactly. 100vh (not 100%) so it works
+               regardless of ancestor heights. */
+            section[data-hero-cover="true"] { height: 100vh !important; }
           `,
         }}
       />

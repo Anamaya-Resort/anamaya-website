@@ -189,15 +189,22 @@ function TemplateRow({
   onInsertAfter: () => void;
 }) {
   return (
-    <section className="flex items-stretch">
-      {/* Preview cell — iframe fills this with aspect-ratio so it matches
+    // items-start so children keep their natural heights. In items-stretch,
+    // the preview wrapper would stretch to match the tallest flex sibling
+    // (the info panel) while the iframe stayed at its aspect-ratio height,
+    // producing empty white space below it — exactly what the user was
+    // seeing.
+    <section className="flex items-start">
+      {/* Preview cell — aspect-ratio lives on the wrapper so it matches
           the live site proportions. Square corners, no vertical gap. */}
-      <div className="relative flex-1 overflow-hidden bg-white">
+      <div
+        className="relative flex-1 overflow-hidden bg-white"
+        style={{ aspectRatio: row.aspect_ratio }}
+      >
         <iframe
           src={`/block-preview/${row.block.slug}`}
           title={`Preview of ${row.block.name}`}
-          className="block w-full border-0"
-          style={{ aspectRatio: row.aspect_ratio }}
+          className="block h-full w-full border-0"
         />
         {wireframeOn && (
           <div
@@ -205,82 +212,30 @@ function TemplateRow({
             aria-hidden="true"
           />
         )}
-
-        {/* Floating info panel — small, top-right corner, always visible.
-            Toggling the eye ONLY hides the green wireframe; this panel
-            stays because it's how the editor identifies the block. */}
-        <aside className="pointer-events-auto absolute right-2 top-2 z-20 w-48 rounded-md bg-white/95 p-2.5 text-[11px] shadow-lg ring-1 ring-zinc-200 backdrop-blur-sm">
-          <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
-            {row.block.type_slug}
-          </div>
-          <div className="truncate font-semibold text-anamaya-charcoal">
-            {row.block.name}
-          </div>
-          <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
-            [#{row.block.slug}]
-          </code>
-          <div className="mt-1.5 flex items-center gap-1">
-            <Link
-              href={`/admin/blocks/${row.block.id}`}
-              target="_blank"
-              className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
-            >
-              Edit ↗
-            </Link>
-            <button
-              type="button"
-              onClick={onMoveUp}
-              disabled={isFirst || pending}
-              className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
-              title="Move up"
-            >
-              ↑
-            </button>
-            <button
-              type="button"
-              onClick={onMoveDown}
-              disabled={isLast || pending}
-              className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
-              title="Move down"
-            >
-              ↓
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={pending}
-            className="mt-1 w-full rounded border border-red-300 bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 disabled:opacity-50"
-          >
-            Remove
-          </button>
-        </aside>
       </div>
 
-      {/* Right strip holding eye + plus. Width matches the icon button
-          size so the column looks clean. */}
-      <div className="relative shrink-0" style={{ width: ICON_BTN_SIZE }}>
+      {/* Eye + plus strip — self-stretch so it's exactly as tall as the
+          preview, so the plus can position itself on the row junction via
+          top: 100%. */}
+      <div className="relative shrink-0 self-stretch" style={{ width: ICON_BTN_SIZE }}>
         {/* Eye — small square flush against the green line. Rounded on
-            its right side only. Always visible, even when wireframe is
-            off, so the green lines can be toggled back on. */}
+            its right side only. Moved down from the very top so it
+            doesn't crowd the plus on adjacent rows. */}
         <button
           type="button"
           onClick={onToggleWireframe}
           title={wireframeOn ? "Hide wireframe" : "Show wireframe"}
           aria-pressed={wireframeOn}
-          className={`absolute left-0 top-2 flex items-center justify-center rounded-r-md text-white transition-colors ${
+          className={`absolute left-0 flex items-center justify-center rounded-r-md text-white transition-colors ${
             wireframeOn
               ? "bg-anamaya-green hover:bg-anamaya-green-dark"
               : "bg-zinc-400 hover:bg-zinc-500"
           }`}
-          style={{ width: ICON_BTN_SIZE, height: ICON_BTN_SIZE }}
+          style={{ top: 28, width: ICON_BTN_SIZE, height: ICON_BTN_SIZE }}
         >
           {wireframeOn ? <EyeIcon /> : <EyeOffIcon />}
         </button>
 
-        {/* Plus — same size as the eye. Centre sits exactly on the line
-            where this block and the next one meet, to indicate "insert
-            between these". Hidden on the last row. */}
         {!isLast && (
           <button
             type="button"
@@ -298,6 +253,56 @@ function TemplateRow({
           </button>
         )}
       </div>
+
+      {/* Info panel — small, minimal, right of the eye strip. self-start
+          so it stays at its natural height instead of stretching to the
+          preview's aspect height. */}
+      <aside className="w-48 shrink-0 self-start bg-white p-2.5 text-[11px] ring-1 ring-zinc-200">
+        <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
+          {row.block.type_slug}
+        </div>
+        <div className="truncate font-semibold text-anamaya-charcoal">
+          {row.block.name}
+        </div>
+        <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
+          [#{row.block.slug}]
+        </code>
+        <div className="mt-1.5 flex items-center gap-1">
+          <Link
+            href={`/admin/blocks/${row.block.id}`}
+            target="_blank"
+            className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+          >
+            Edit ↗
+          </Link>
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={isFirst || pending}
+            className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
+            title="Move up"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={isLast || pending}
+            className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
+            title="Move down"
+          >
+            ↓
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={pending}
+          className="mt-1 w-full rounded border border-red-300 bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 disabled:opacity-50"
+        >
+          Remove
+        </button>
+      </aside>
     </section>
   );
 }

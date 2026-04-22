@@ -104,44 +104,37 @@ export default async function EditTemplate({
         </div>
       </header>
 
-      {/* Break out of the admin's max-w-6xl container so the block
-          previews can render at close to full browser width — matches
-          how they look on the real site. */}
-      <div style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
-        <div className="px-4">
-          <TemplateEditor
-            templateId={template.id}
-            variant={defaultVariant}
-            rows={(rows ?? []).map((r) => {
-              const block = r.block as unknown as {
-                id: string;
-                slug: string;
-                name: string;
-                type_slug: string;
-                content: Record<string, unknown> | null;
-              };
-              return {
-                id: r.id,
-                sort_order: r.sort_order,
-                aspect_ratio: computeAspectRatio(block),
-                block: {
-                  id: block.id,
-                  slug: block.slug,
-                  name: block.name,
-                  type_slug: block.type_slug,
-                },
-              };
-            })}
-            allBlocks={(allBlocks ?? []) as Array<{
-              id: string;
-              slug: string;
-              name: string;
-              type_slug: string;
-              snapshot_url: string | null;
-            }>}
-          />
-        </div>
-      </div>
+      <TemplateEditor
+        templateId={template.id}
+        variant={defaultVariant}
+        rows={(rows ?? []).map((r) => {
+          const block = r.block as unknown as {
+            id: string;
+            slug: string;
+            name: string;
+            type_slug: string;
+            content: Record<string, unknown> | null;
+          };
+          return {
+            id: r.id,
+            sort_order: r.sort_order,
+            aspect_ratio: computeAspectRatio(block),
+            block: {
+              id: block.id,
+              slug: block.slug,
+              name: block.name,
+              type_slug: block.type_slug,
+            },
+          };
+        })}
+        allBlocks={(allBlocks ?? []) as Array<{
+          id: string;
+          slug: string;
+          name: string;
+          type_slug: string;
+          snapshot_url: string | null;
+        }>}
+      />
     </div>
   );
 }
