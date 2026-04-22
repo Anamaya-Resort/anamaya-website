@@ -154,7 +154,7 @@ export async function getRetreatBySlug(slug: string): Promise<RetreatDetail | nu
   const [{ data: ci }, featuredMedia, author, termRows, seoMeta] = await Promise.all([
     sb
       .from("content_items")
-      .select("content_rendered, excerpt_rendered")
+      .select("content_rendered, excerpt_rendered, scraped_body_html")
       .eq("url_inventory_id", row.id)
       .maybeSingle(),
     row.featured_media_wp_id
@@ -187,7 +187,13 @@ export async function getRetreatBySlug(slug: string): Promise<RetreatDetail | nu
       .then((r) => r.data ?? null),
   ]);
 
-  const rawBody = ci?.content_rendered ?? "";
+  // Prefer the full scraped body (Elementor Theme Builder renders extra
+  // sections that WP REST doesn't expose). Fall back to content_rendered
+  // if we haven't scraped this retreat yet.
+  const rawBody =
+    ((ci as any)?.scraped_body_html as string | null) ||
+    ci?.content_rendered ||
+    "";
 
   // Rewrite body HTML: swap WP media URLs to Supabase Storage and strip WP hosts.
   const referenced = extractMediaUrls(rawBody, WP_HOSTS);
