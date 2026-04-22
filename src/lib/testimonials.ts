@@ -1,5 +1,5 @@
 import "server-only";
-import { supabaseServer } from "./supabase-server";
+import { supabaseServerOrNull } from "./supabase-server";
 
 export type Testimonial = {
   id: string;
@@ -20,7 +20,12 @@ export type TestimonialSet = {
 };
 
 export async function getTestimonialSet(slug: string): Promise<TestimonialSet | null> {
-  const sb = supabaseServer();
+  const sb = supabaseServerOrNull();
+  if (!sb) {
+    // eslint-disable-next-line no-console
+    console.warn("[testimonials] Supabase env vars missing; returning empty set");
+    return null;
+  }
 
   const { data: set, error: setErr } = await sb
     .from("testimonial_sets")
