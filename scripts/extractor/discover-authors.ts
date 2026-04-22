@@ -21,7 +21,7 @@ async function tryGraphQLAuthors(baseUrl: string): Promise<AuthorInfo[] | null> 
 
   while (true) {
     const q = `query ($after: String) { users(first: 100, after: $after) { pageInfo { hasNextPage endCursor } nodes { databaseId slug name description uri } } }`;
-    const res = await fetch(`${baseUrl}/graphql`, {
+    const res: Response | null = await fetch(`${baseUrl}/graphql`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: q, variables: { after } }),

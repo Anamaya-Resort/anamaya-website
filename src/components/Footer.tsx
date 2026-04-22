@@ -1,0 +1,73 @@
+import Link from "next/link";
+import { FOOTER_COLUMNS, SOCIAL_LINKS } from "@/data/nav";
+
+const currentYear = new Date().getFullYear();
+
+export default function Footer() {
+  return (
+    <footer className="bg-zinc-800 text-zinc-300">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <h3 className="mb-3 text-lg font-semibold tracking-wide text-amber-300">
+              Anamaya Resort
+            </h3>
+            <p className="text-sm leading-6 text-zinc-400">
+              Wellness retreats and yoga teacher trainings on a clifftop in
+              Montezuma, Costa Rica.
+            </p>
+            <ul className="mt-6 flex flex-wrap gap-3">
+              {SOCIAL_LINKS.map((s) => (
+                <li key={s.label}>
+                  <Link
+                    href={s.href}
+                    aria-label={s.label}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-zinc-200 transition-colors hover:bg-amber-600 hover:text-white"
+                  >
+                    {s.label.slice(0, 2)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {FOOTER_COLUMNS.map((col) => (
+            <div key={col.heading}>
+              <h3 className="mb-3 text-lg font-semibold tracking-wide text-amber-300">
+                {col.heading}
+              </h3>
+              <ul className="space-y-2 text-sm">
+                {col.items.map((item) => (
+                  <li key={item.label}>
+                    <Link
+                      href={item.href ?? "#"}
+                      className="transition-colors hover:text-white"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-6 text-xs text-zinc-500 sm:flex-row sm:items-center">
+          <p>© {currentYear} Anamaya Resort. All rights reserved.</p>
+          <ul className="flex flex-wrap gap-4">
+            <li>
+              <Link href="/terms-service-anamaya-website/" className="hover:text-white">
+                Terms of Use
+              </Link>
+            </li>
+            <li>
+              <Link href="/terms-service-anamaya-website/" className="hover:text-white">
+                Privacy Policy
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+  );
+}
