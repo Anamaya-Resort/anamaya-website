@@ -43,6 +43,19 @@ export async function captureAndUploadBlockSnapshot(
         if (el.dataset?.snapshotSkip === "true") return false;
         return true;
       },
+      // Strip the off-screen positioning the editor puts on its snapshot
+      // source (position: fixed; left: -10000px). Without this the clone
+      // ends up outside the SVG viewport and capture comes back blank.
+      style: {
+        position: "static",
+        transform: "none",
+        margin: "0",
+        left: "0",
+        top: "0",
+        right: "auto",
+        bottom: "auto",
+        inset: "auto",
+      },
     });
     const blob: Blob | null = await new Promise((resolve) =>
       canvas.toBlob(resolve, "image/jpeg", 0.85),
