@@ -28,6 +28,9 @@ export default async function EditBlock({
     .eq("id", id)
     .maybeSingle();
   if (!block) notFound();
+  // Local constants so the inline server actions below don't lose
+  // TypeScript narrowing on `block` when captured inside closures.
+  const currentName = block.name;
 
   const [{ data: usages }, { data: siblings }, { data: type }, brandTokens] = await Promise.all([
     sb.from("block_usages").select("page_key, sort_order").eq("block_id", id),
@@ -40,16 +43,20 @@ export default async function EditBlock({
     getBrandTokens(),
   ]);
 
-  async function saveName(formData: FormData) {
+  /** Save both the name and the content in one action — the press-bar
+      editor's Save button covers both. */
+  async function saveAll(name: string, content: unknown) {
     "use server";
-    const name = String(formData.get("name") ?? "").trim();
-    if (!name) return;
-    await renameBlock(id, name);
-    // Redirect forces the name <input> to remount so its defaultValue
-    // reflects the just-saved value.
-    redirect(`/admin/blocks/${id}?renamed=1`);
+    const trimmed = name.trim();
+    if (trimmed && trimmed !== currentName) {
+      await renameBlock(id, trimmed);
+    }
+    await updateBlockContent(id, content);
+    redirect(`/admin/blocks/${id}?saved=1`);
   }
 
+  /** Content-only save — kept so the older rich_text / hero / cta_banner
+      editors that don't yet own the name field keep working. */
   async function saveContent(content: unknown) {
     "use server";
     await updateBlockContent(id, content);
@@ -71,23 +78,21 @@ export default async function EditBlock({
 
   return (
     <div>
-      <header className="mb-6">
-        <div className="text-xs uppercase tracking-wider text-anamaya-olive-dark">
-          {block.type_slug}
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-anamaya-olive-dark">
+            {block.type_slug}
+          </div>
+          <p className="mt-1 text-xs text-anamaya-charcoal/60">
+            Used on:{" "}
+            {(usages ?? []).length > 0
+              ? (usages ?? []).map((u) => u.page_key).join(", ")
+              : "(unused — not placed on any page yet)"}
+          </p>
         </div>
-        {/* Single form; action buttons override via formAction so we don't nest forms. */}
-        <form action={saveName} className="mt-1 flex items-center gap-3">
-          <input
-            name="name"
-            defaultValue={block.name}
-            className="w-full max-w-lg rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-lg font-semibold text-anamaya-charcoal focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
-          />
-          <button
-            type="submit"
-            className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal hover:bg-zinc-50"
-          >
-            Rename
-          </button>
+        {/* Standalone form for the non-save actions. Buttons override via
+            formAction so a single form can route to either server action. */}
+        <form className="flex items-center gap-2">
           <button
             type="submit"
             formAction={duplicate}
@@ -105,12 +110,6 @@ export default async function EditBlock({
             Delete
           </button>
         </form>
-        <p className="mt-2 text-xs text-anamaya-charcoal/60">
-          Used on:{" "}
-          {(usages ?? []).length > 0
-            ? (usages ?? []).map((u) => u.page_key).join(", ")
-            : "(unused — not placed on any page yet)"}
-        </p>
       </header>
 
       {/* Main editor. LivePreview + VariantCarousel render inside it, above
@@ -118,8 +117,9 @@ export default async function EditBlock({
       {block.type_slug === "press_bar" && (
         <PressBarEditor
           blockId={id}
+          name={block.name}
           content={block.content}
-          onSave={saveContent}
+          onSave={saveAll}
           brandTokens={brandTokens}
           variants={siblings ?? []}
           typeName={type?.name ?? block.type_slug}

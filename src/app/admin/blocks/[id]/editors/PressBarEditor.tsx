@@ -42,8 +42,12 @@ function normalize(content: PressBarContent | null | undefined): PressBarContent
 
 type Variant = { id: string; name: string; snapshot_url: string | null };
 
+const saveButtonCls =
+  "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark disabled:opacity-50";
+
 export default function PressBarEditor({
   blockId,
+  name: initialName,
   content,
   onSave,
   brandTokens,
@@ -51,8 +55,9 @@ export default function PressBarEditor({
   typeName,
 }: {
   blockId: string;
+  name: string;
   content: PressBarContent;
-  onSave: (content: unknown) => Promise<void>;
+  onSave: (name: string, content: unknown) => Promise<void>;
   brandTokens: Required<OrgBranding>;
   variants: Variant[];
   typeName: string;
@@ -63,6 +68,7 @@ export default function PressBarEditor({
   // Discrete controls (checkbox, select, upload, reorder, add/remove) update
   // both at once via patch().
   const initial = normalize(content);
+  const [name, setName] = useState(initialName);
   const [draft, setDraft] = useState<PressBarContent>(initial);
   const [preview, setPreview] = useState<PressBarContent>(initial);
   const [saving, setSaving] = useState(false);
@@ -158,7 +164,7 @@ export default function PressBarEditor({
       // Capture the snapshot *before* onSave — onSave's server action calls
       // redirect(), which throws NEXT_REDIRECT and aborts anything after.
       await captureAndUploadSnapshot();
-      await onSave(draft);
+      await onSave(name, draft);
     } finally {
       setSaving(false);
     }
@@ -176,6 +182,18 @@ export default function PressBarEditor({
 
   return (
     <>
+      <div className="mb-4">
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+          Block name
+        </span>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full max-w-lg rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-lg font-semibold text-anamaya-charcoal focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+          placeholder="Untitled block"
+        />
+      </div>
+
       {preview.logos.length > 0 ? (
         <LivePreview
           ref={previewRef}
@@ -249,7 +267,7 @@ export default function PressBarEditor({
             />
           </div>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap items-end gap-4">
             <label className="block w-40">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
                 Logo height (px, featured is 2×)
@@ -296,6 +314,15 @@ export default function PressBarEditor({
                 }}
               />
             </label>
+            {/* Duplicate of the bottom Save, placed up here for quick
+                commits while editing colors/fonts without scrolling. */}
+            <button
+              type="submit"
+              disabled={saving}
+              className={`${saveButtonCls} ml-auto`}
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
           </div>
         </div>
 
@@ -485,13 +512,11 @@ export default function PressBarEditor({
           </div>
         </section>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="mt-6 rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark disabled:opacity-50"
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
+        <div className="mt-6 flex justify-end">
+          <button type="submit" disabled={saving} className={saveButtonCls}>
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
       </form>
     </>
   );
