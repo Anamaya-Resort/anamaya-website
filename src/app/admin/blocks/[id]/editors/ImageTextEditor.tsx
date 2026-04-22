@@ -4,6 +4,7 @@ import BlockEditorChrome, {
   type BlockEditorVariant,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
+import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ImageTextContent } from "@/types/blocks";
 
@@ -44,16 +45,24 @@ export default function ImageTextEditor(props: {
       normalize={normalize}
       renderForm={({ draft, setDraft, commit, patch, brandTokens }) => (
         <>
-          <label className="block">
-            <span className={labelCls}>Image URL</span>
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <span className={labelCls}>Image</span>
+              <ImageUploadButton
+                value={draft.image_url}
+                onUploaded={(url) => patch({ image_url: url })}
+                kind="split-images"
+                maxWidth={2000}
+              />
+            </div>
             <input
               className={inputCls}
               value={draft.image_url ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, image_url: e.target.value }))}
               onBlur={commit}
-              placeholder="/images/feature.webp"
+              placeholder="Paste a URL or use Upload →"
             />
-          </label>
+          </div>
 
           <div className="flex flex-wrap items-end gap-4">
             <label className="block w-40">

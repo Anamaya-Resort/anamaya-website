@@ -4,6 +4,7 @@ import BlockEditorChrome, {
   type BlockEditorVariant,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
+import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { RichBgContent } from "@/types/blocks";
 
@@ -73,16 +74,24 @@ export default function RichBgEditor(props: {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-            <label className="block">
-              <span className={labelCls}>Background image URL (optional)</span>
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <span className={labelCls}>Background image (optional)</span>
+                <ImageUploadButton
+                  value={draft.bg_image_url}
+                  onUploaded={(url) => patch({ bg_image_url: url })}
+                  kind="backgrounds"
+                  maxWidth={2400}
+                />
+              </div>
               <input
                 className={inputCls}
                 value={draft.bg_image_url ?? ""}
                 onChange={(e) => setDraft((d) => ({ ...d, bg_image_url: e.target.value }))}
                 onBlur={commit}
-                placeholder="/images/texture.png"
+                placeholder="Paste a URL or use Upload →"
               />
-            </label>
+            </div>
             <label className="block">
               <span className={labelCls}>Fit</span>
               <select

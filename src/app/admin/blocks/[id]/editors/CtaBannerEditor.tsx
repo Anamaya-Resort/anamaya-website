@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { CtaBannerContent } from "@/types/blocks";
+import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -45,13 +46,25 @@ export default function CtaBannerEditor({
           onChange={(e) => setState((s) => ({ ...s, subheading: e.target.value }))}
         />
       </Field>
-      <Field label="Background image URL">
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+            Background image
+          </span>
+          <ImageUploadButton
+            value={state.bg_image_url}
+            onUploaded={(url) => setState((s) => ({ ...s, bg_image_url: url }))}
+            kind="cta-banners"
+            maxWidth={2400}
+          />
+        </div>
         <input
           className={inputCls}
           value={state.bg_image_url ?? ""}
           onChange={(e) => setState((s) => ({ ...s, bg_image_url: e.target.value }))}
+          placeholder="Paste a URL or use Upload →"
         />
-      </Field>
+      </div>
       <Field label="CTA button label">
         <input
           className={inputCls}

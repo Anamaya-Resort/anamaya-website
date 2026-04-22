@@ -228,6 +228,55 @@ export async function duplicateBlock(id: string): Promise<string> {
 }
 
 /**
+ * Upload an image for use inside any block type (hero poster, overlay
+ * background, split-image, etc.). Normalises to WebP and downscales to
+ * `maxWidth` so stored files stay small. `kind` controls the storage
+ * sub-folder purely for organisation — keeps uploads/ tidy.
+ */
+export async function uploadBlockImage(
+  formData: FormData,
+): Promise<{ url: string; width: number; height: number }> {
+  const file = formData.get("file") as File | null;
+  if (!file || typeof file === "string") throw new Error("No file provided");
+  if (file.size > 10 * 1024 * 1024) throw new Error("Image too large (max 10 MB)");
+
+  const maxWidth = Math.min(4000, Math.max(200, Number(formData.get("maxWidth") ?? 2000)));
+  const rawKind = String(formData.get("kind") ?? "blocks");
+  const kind = rawKind.replace(/[^a-z0-9_-]+/gi, "").toLowerCase() || "blocks";
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const meta = await sharp(buf).metadata();
+  const targetWidth = Math.min(meta.width ?? maxWidth, maxWidth);
+  const out = await sharp(buf)
+    .resize({ width: targetWidth, withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+  const outMeta = await sharp(out).metadata();
+
+  const safeName =
+    (file.name || "image")
+      .toLowerCase()
+      .replace(/\.[a-z0-9]+$/i, "")
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "image";
+  const key = `uploads/${kind}/${randomUUID().slice(0, 8)}-${safeName}.webp`;
+
+  const sb = supabaseServer();
+  const { error } = await sb.storage.from(BUCKET).upload(key, out, {
+    contentType: "image/webp",
+    upsert: false,
+  });
+  if (error) throw new Error(`upload: ${error.message}`);
+  const { data: pub } = sb.storage.from(BUCKET).getPublicUrl(key);
+  return {
+    url: pub.publicUrl,
+    width: outMeta.width ?? targetWidth,
+    height: outMeta.height ?? 0,
+  };
+}
+
+/**
  * Upload an MP4/WebM video file for a Hero With Video block. Returns
  * the public URL. Size-capped at 100 MB; no transcoding — the file is
  * stored as-is, so editors should upload reasonably-sized source.

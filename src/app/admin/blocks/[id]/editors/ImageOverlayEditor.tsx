@@ -6,6 +6,7 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
+import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ImageOverlayContent, ImageOverlayLine } from "@/types/blocks";
 
@@ -61,16 +62,24 @@ function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
   const { draft, setDraft, commit, patch } = state;
   return (
     <>
-      <label className="block">
-        <span className={labelCls}>Image URL</span>
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <span className={labelCls}>Image</span>
+          <ImageUploadButton
+            value={draft.image_url}
+            onUploaded={(url) => patch({ image_url: url })}
+            kind="overlays"
+            maxWidth={2000}
+          />
+        </div>
         <input
           className={inputCls}
           value={draft.image_url ?? ""}
           onChange={(e) => setDraft((d) => ({ ...d, image_url: e.target.value }))}
           onBlur={commit}
-          placeholder="/images/banner.webp"
+          placeholder="Paste a URL or use Upload →"
         />
-      </label>
+      </div>
 
       <div className="flex flex-wrap items-end gap-4">
         <label className="block w-32">

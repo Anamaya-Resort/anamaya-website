@@ -8,6 +8,7 @@ import LivePreview from "@/components/admin/blocks/LivePreview";
 import { captureAndUploadBlockSnapshot } from "@/components/admin/blocks/snapshot";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
+import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import { HeroBlockSnapshot } from "@/components/blocks/HeroBlock";
 import type { OrgBranding } from "@/config/brand-tokens";
 import { playClick } from "@/lib/click-sound";
@@ -372,10 +373,18 @@ export default function HeroEditor({
             </div>
           )}
 
-          <label className="mt-3 block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-              Poster image URL (optional)
-            </span>
+          <div className="mt-3">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                Poster image (optional)
+              </span>
+              <ImageUploadButton
+                value={draft.video_poster_url}
+                onUploaded={(url) => patch({ video_poster_url: url })}
+                kind="hero-posters"
+                maxWidth={2400}
+              />
+            </div>
             <input
               className={inputCls}
               value={draft.video_poster_url ?? ""}
@@ -387,9 +396,9 @@ export default function HeroEditor({
                   commit();
                 }
               }}
-              placeholder="/images/hero-poster.webp"
+              placeholder="Paste a URL or use Upload →"
             />
-          </label>
+          </div>
 
           {uploadError && (
             <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">

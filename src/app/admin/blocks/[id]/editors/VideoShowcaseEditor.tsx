@@ -7,6 +7,7 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
+import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { VideoShowcaseContent } from "@/types/blocks";
 import { uploadHeroVideo } from "../../actions";
@@ -177,20 +178,42 @@ function Form({ state }: { state: BlockEditorState<VideoShowcaseContent> }) {
             {uploadError}
           </div>
         )}
-        <label className="mt-3 block max-w-xs">
-          <span className={labelCls}>Max width (px)</span>
-          <input
-            type="number"
-            min={200}
-            max={1920}
-            className={inputCls}
-            value={draft.video_max_width_px ?? 800}
-            onChange={(e) =>
-              setDraft((d) => ({ ...d, video_max_width_px: Number(e.target.value) || 800 }))
-            }
-            onBlur={commit}
-          />
-        </label>
+        <div className="mt-3 flex flex-wrap items-start gap-4">
+          <label className="block max-w-xs">
+            <span className={labelCls}>Max width (px)</span>
+            <input
+              type="number"
+              min={200}
+              max={1920}
+              className={inputCls}
+              value={draft.video_max_width_px ?? 800}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, video_max_width_px: Number(e.target.value) || 800 }))
+              }
+              onBlur={commit}
+            />
+          </label>
+          <div className="flex-1 min-w-[240px]">
+            <div className="mb-1 flex items-center justify-between">
+              <span className={labelCls}>Poster image (optional)</span>
+              <ImageUploadButton
+                value={draft.video_poster_url}
+                onUploaded={(url) => patch({ video_poster_url: url })}
+                kind="video-posters"
+                maxWidth={1800}
+              />
+            </div>
+            <input
+              className={inputCls}
+              value={draft.video_poster_url ?? ""}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, video_poster_url: e.target.value }))
+              }
+              onBlur={commit}
+              placeholder="Paste a URL or use Upload →"
+            />
+          </div>
+        </div>
       </section>
 
       <TitleGroup label="Bottom title" state={state} prefix="title_bottom" />
