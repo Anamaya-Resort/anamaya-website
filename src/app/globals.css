@@ -4,9 +4,12 @@
   --color-anamaya-green: #97c03b;
   --color-anamaya-green-dark: #7ca32b;
   --color-anamaya-teal: #54afaa;
+  --color-anamaya-teal-muted: #7aa59e;   /* darker sage used on v2 section bgs */
+  --color-anamaya-mint: #b8d3cf;          /* light mint used on Experience/Testimonials */
   --color-anamaya-accent: #ae564b;
   --color-anamaya-charcoal: #444444;
   --color-anamaya-olive: #8f993e;
+  --color-anamaya-olive-dark: #636a26;   /* darker olive used for headings on colored bgs */
   --color-anamaya-cream: #fbfbfb;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;

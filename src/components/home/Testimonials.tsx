@@ -43,22 +43,37 @@ const TESTIMONIALS = [
   },
 ];
 
+const MANDALA_BG =
+  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2020/02/mandala_lower-left_369.webp";
+
 export default function Testimonials() {
   return (
-    <section className="bg-white px-6 py-20">
-      <div className="mx-auto max-w-7xl">
-        <h2 className="text-center text-3xl font-semibold uppercase tracking-wider text-anamaya-charcoal sm:text-4xl">
+    <section className="relative overflow-hidden bg-anamaya-mint px-6 py-20">
+      {/* Mandala decoration in the lower-left, matching v2 */}
+      <div
+        className="pointer-events-none absolute bottom-0 left-0 h-80 w-80 opacity-30"
+        style={{
+          backgroundImage: `url(${MANDALA_BG})`,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "bottom left",
+          backgroundSize: "contain",
+        }}
+        aria-hidden="true"
+      />
+
+      <div className="relative mx-auto max-w-7xl">
+        <h2 className="text-center text-3xl font-semibold uppercase tracking-wider text-anamaya-olive-dark sm:text-4xl">
           Testimonials
         </h2>
-        <div className="mx-auto mt-4 h-0.5 w-16 bg-anamaya-green" />
+        <div className="mx-auto mt-4 h-0.5 w-16 bg-anamaya-olive-dark/40" />
 
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {TESTIMONIALS.map((t, i) => (
             <figure
               key={i}
-              className="flex flex-col rounded-lg bg-anamaya-cream p-6 shadow-sm ring-1 ring-anamaya-charcoal/10"
+              className="flex flex-col rounded-lg bg-white p-6 shadow-md ring-1 ring-anamaya-charcoal/10"
             >
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-anamaya-olive">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
                 &ldquo;{t.headline}&rdquo;
               </h3>
               <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-anamaya-charcoal/80">

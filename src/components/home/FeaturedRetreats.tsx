@@ -48,12 +48,13 @@ const RETREATS: Retreat[] = [
 
 export default function FeaturedRetreats() {
   return (
-    <section className="bg-white px-6 py-20">
+    <section className="bg-anamaya-teal-muted px-6 py-20">
       <div className="mx-auto max-w-7xl">
-        <h2 className="text-center text-3xl font-semibold tracking-tight text-anamaya-charcoal sm:text-4xl">
+        <h2 className="text-center text-3xl font-semibold uppercase tracking-wider text-white sm:text-4xl">
           Featured Retreats
         </h2>
-        <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto mt-4 h-0.5 w-16 bg-white/60" />
+        <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {RETREATS.map((r) => (
             <article
               key={r.title}

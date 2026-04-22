@@ -1,13 +1,19 @@
 import Link from "next/link";
 
+// Real masthead photo from v2 Supabase Storage
+const MASTHEAD_BG =
+  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2021/03/masthead30-scaled-30.webp";
+
 export default function HostRetreatCTA() {
   return (
-    <section className="relative overflow-hidden bg-anamaya-charcoal px-6 py-20 text-white">
-      {/* TODO: replace with a real panoramic photo from Supabase Storage */}
+    <section className="relative overflow-hidden px-6 py-24 text-white">
       <div
-        className="absolute inset-0 bg-gradient-to-r from-anamaya-charcoal via-anamaya-olive/30 to-anamaya-teal/40"
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${MASTHEAD_BG})` }}
         aria-hidden="true"
       />
+      <div className="absolute inset-0 bg-anamaya-charcoal/60" aria-hidden="true" />
+
       <div className="relative mx-auto max-w-4xl text-center">
         <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           Looking for a location in Costa Rica to host your own retreat?

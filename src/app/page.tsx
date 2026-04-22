@@ -8,9 +8,9 @@ import AccommodationsTeaser from "@/components/home/AccommodationsTeaser";
 import Newsletter from "@/components/home/Newsletter";
 import LocationSection from "@/components/home/LocationSection";
 import ExperienceList from "@/components/home/ExperienceList";
+import ExperienceVideo from "@/components/home/ExperienceVideo";
 import Testimonials from "@/components/home/Testimonials";
 
-// Match v2: YouTube video on desktop (HD), mp4 fallback on mobile.
 const HERO_YOUTUBE_ID = "9d5jqBsUpWI";
 const HERO_MP4 =
   "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2025/01/Anamaya-Phone-Header.mp4";
@@ -33,6 +33,7 @@ export default function Home() {
       <Newsletter />
       <LocationSection />
       <ExperienceList />
+      <ExperienceVideo />
       <Testimonials />
     </>
   );
