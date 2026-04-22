@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import VideoHero from "@/components/VideoHero";
+import PressBar from "@/components/home/PressBar";
 import IntroSection from "@/components/home/IntroSection";
 import BookingSection from "@/components/home/BookingSection";
 import FeaturedRetreats from "@/components/home/FeaturedRetreats";
@@ -24,6 +25,8 @@ const HERO_POSTER = "/yoga_retreat_costarica.webp";
 export default function Home() {
   return (
     <>
+      <PressBar />
+
       <VideoHero
         youtubeId={HERO_YOUTUBE_ID}
         mp4Src={HERO_MP4}

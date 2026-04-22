@@ -4,10 +4,6 @@ export default function IntroSection() {
   return (
     <section className="bg-white px-6 py-20 text-center">
       <div className="mx-auto max-w-4xl">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-anamaya-olive">
-          Recommended by Travel + Leisure, Forbes, Condé Nast
-        </p>
-
         <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight text-anamaya-charcoal sm:text-5xl">
           ANAMAYA™: Your Transformational
           <br className="hidden sm:inline" /> Experience Awaits
