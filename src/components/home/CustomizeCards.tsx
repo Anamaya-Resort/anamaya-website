@@ -31,7 +31,7 @@ export default function CustomizeCards() {
               key={c.title}
               className="group flex flex-col rounded-lg bg-white p-8 shadow-md ring-1 ring-anamaya-charcoal/10 transition-all hover:-translate-y-1 hover:shadow-xl"
             >
-              <h3 className="text-xl font-semibold uppercase tracking-wider text-anamaya-olive">
+              <h3 className="font-heading text-2xl font-semibold uppercase tracking-wider text-anamaya-olive">
                 {c.title}
               </h3>
               <div className="mt-4 h-0.5 w-12 bg-anamaya-green" />

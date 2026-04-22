@@ -42,7 +42,7 @@ export default async function Testimonials({ setSlug = "homepage" }: Props) {
       />
 
       <div className="relative mx-auto max-w-5xl">
-        <h2 className="text-center text-3xl font-semibold uppercase tracking-wider text-anamaya-olive-dark sm:text-4xl">
+        <h2 className="font-heading text-center text-4xl font-semibold uppercase tracking-wider text-anamaya-olive-dark sm:text-5xl">
           Testimonials
         </h2>
         <div className="mx-auto mt-4 mb-12 h-0.5 w-16 bg-anamaya-olive-dark/40" />

@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+// Display / all-caps heading font used on v1 + v2 for labels like
+// "RECOMMENDED BY:", "EXPERIENCE Anamaya", "TESTIMONIALS", "LOCATION".
+const oswald = Oswald({
+  variable: "--font-oswald",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   display: "swap",
@@ -21,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${oswald.variable} h-full antialiased`}>
       <head>
         {/* LCP image on the homepage — preload so it starts loading while the
             HTML is still being parsed (~500 ms shaved off LCP). */}

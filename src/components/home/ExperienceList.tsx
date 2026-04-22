@@ -18,7 +18,7 @@ export default function ExperienceList() {
   return (
     <section className="bg-anamaya-cream px-6 py-20">
       <div className="mx-auto max-w-5xl">
-        <h2 className="text-center text-3xl font-semibold uppercase tracking-wider text-anamaya-charcoal sm:text-4xl">
+        <h2 className="font-heading text-center text-4xl font-semibold uppercase tracking-wider text-anamaya-charcoal sm:text-5xl">
           Yoga and So Much More at Anamaya
         </h2>
         <div className="mx-auto mt-4 h-0.5 w-16 bg-anamaya-green" />

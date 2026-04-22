@@ -22,6 +22,9 @@
   --color-anamaya-brand-divider:  #9CB5B1;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Oswald — used on v2 for all-caps section headings ("RECOMMENDED BY:",
+     "EXPERIENCE ANAMAYA", etc.). Access via className="font-heading". */
+  --font-heading: var(--font-oswald), "Oswald", ui-sans-serif, sans-serif;
 }
 
 body {

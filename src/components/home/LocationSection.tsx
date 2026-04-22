@@ -16,7 +16,7 @@ export default function LocationSection() {
     <section className="bg-white px-6 py-20">
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 md:grid-cols-2">
         <div>
-          <h2 className="text-3xl font-semibold uppercase tracking-wider text-anamaya-charcoal sm:text-4xl">
+          <h2 className="font-heading text-4xl font-semibold uppercase tracking-wider text-anamaya-charcoal sm:text-5xl">
             Location
           </h2>
           <div className="mt-4 h-0.5 w-16 bg-anamaya-green" />

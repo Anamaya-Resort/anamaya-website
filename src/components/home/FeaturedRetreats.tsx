@@ -50,7 +50,7 @@ export default function FeaturedRetreats() {
   return (
     <section className="bg-anamaya-teal-muted px-6 py-20">
       <div className="mx-auto max-w-7xl">
-        <h2 className="text-center text-3xl font-semibold uppercase tracking-wider text-white sm:text-4xl">
+        <h2 className="font-heading text-center text-4xl font-semibold uppercase tracking-wider text-white sm:text-5xl">
           Featured Retreats
         </h2>
         <div className="mx-auto mt-4 h-0.5 w-16 bg-white/60" />

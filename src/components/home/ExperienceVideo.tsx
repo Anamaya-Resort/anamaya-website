@@ -11,7 +11,7 @@ export default function ExperienceVideo() {
   return (
     <section className="relative overflow-hidden bg-anamaya-mint px-6 py-20">
       <div className="relative mx-auto max-w-5xl text-center">
-        <h2 className="text-3xl font-semibold uppercase tracking-wider text-anamaya-olive-dark sm:text-4xl">
+        <h2 className="font-heading text-4xl font-semibold uppercase tracking-wider text-anamaya-olive-dark sm:text-5xl">
           Experience Anamaya
         </h2>
         <div className="mx-auto mt-4 h-0.5 w-16 bg-anamaya-olive-dark/40" />

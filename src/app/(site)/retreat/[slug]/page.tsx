@@ -72,7 +72,7 @@ export default async function RetreatPage({
         <div className="absolute inset-0 bg-black/45" />
         <div className="relative flex h-full flex-col items-center justify-center px-6 text-center text-white">
           {r.category && (
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-white/85">
+            <p className="font-heading mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-white/85">
               {r.category}
             </p>
           )}

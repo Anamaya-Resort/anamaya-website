@@ -17,7 +17,7 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
   return (
     <section className="bg-anamaya-teal-muted px-6 py-10">
       <div className="mx-auto max-w-7xl">
-        <h2 className="mb-6 text-center text-xs font-semibold uppercase tracking-[0.3em] text-white/90">
+        <h2 className="font-heading mb-6 text-center text-sm font-semibold uppercase tracking-[0.3em] text-white/90">
           {heading}
         </h2>
         <ul className="grid items-center" style={{ gridTemplateColumns }}>
