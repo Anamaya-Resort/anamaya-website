@@ -1,10 +1,15 @@
-import DeferUntilVisible from "@/components/DeferUntilVisible";
+// Static map image that links out to the interactive Google Maps page.
+// Replaces the ~50+ requests / hundreds of KB that a live embed pulls.
 
-// Coordinates lifted from the place pin (!3d / !4d) in the shared Maps URL —
-// Anamaya's actual clifftop location above Montezuma Beach, not the village.
+import Link from "next/link";
+
 const ANAMAYA_LAT = 9.6566781;
 const ANAMAYA_LNG = -85.0655563;
-const MAPS_EMBED_SRC = `https://maps.google.com/maps?q=${ANAMAYA_LAT},${ANAMAYA_LNG}&z=15&output=embed`;
+
+// Google Maps "place" URL centered on Anamaya's actual clifftop coords.
+const MAPS_LINK = `https://www.google.com/maps/place/Anamaya+Resort/@${ANAMAYA_LAT},${ANAMAYA_LNG},15z`;
+
+const MAP_IMAGE = "/montezuma_map.webp";
 
 export default function LocationSection() {
   return (
@@ -30,25 +35,27 @@ export default function LocationSection() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-lg shadow-lg ring-1 ring-anamaya-charcoal/10">
-          <DeferUntilVisible
-            minHeight={384}
-            fallback={
-              <div className="flex h-96 w-full items-center justify-center bg-anamaya-mint/30 text-sm text-anamaya-charcoal/60">
-                Loading map…
-              </div>
-            }
-          >
-            <iframe
-              title="Anamaya Resort location in Montezuma, Costa Rica"
-              src={MAPS_EMBED_SRC}
-              className="h-96 w-full border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
-          </DeferUntilVisible>
-        </div>
+        <Link
+          href={MAPS_LINK}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open Anamaya Resort location in Google Maps"
+          className="group relative block overflow-hidden rounded-lg shadow-lg ring-1 ring-anamaya-charcoal/10 transition-shadow hover:shadow-xl"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={MAP_IMAGE}
+            alt="Map showing Anamaya Resort in Montezuma, Costa Rica"
+            width={1248}
+            height={776}
+            loading="lazy"
+            decoding="async"
+            className="block h-auto w-full"
+          />
+          <span className="absolute bottom-4 right-4 rounded-full bg-anamaya-charcoal/90 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white opacity-90 transition-opacity group-hover:opacity-100">
+            View on Google Maps →
+          </span>
+        </Link>
       </div>
     </section>
   );
