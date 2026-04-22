@@ -5,10 +5,9 @@
 import TestimonialCarousel from "@/components/TestimonialCarousel";
 import { getTestimonialSet } from "@/lib/testimonials";
 
-const MANDALA_LEFT =
-  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2020/02/mandala_lower-left_369.webp";
-const MANDALA_RIGHT =
-  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2018/12/mandala_upper-right-406.webp";
+// Optimized (28 KB / 30 KB), served from /public so Vercel caches them at the edge.
+const MANDALA_LEFT = "/mandala_lower-left.webp";
+const MANDALA_RIGHT = "/mandala_upper-right.webp";
 
 type Props = {
   setSlug?: string;

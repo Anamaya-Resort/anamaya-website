@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
+// Restrict to the weights actually used in the codebase:
+// 400 default, 500 font-medium, 600 font-semibold. Dropping the other six
+// weights shaves ~200 KB of font payload.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 

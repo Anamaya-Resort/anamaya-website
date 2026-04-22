@@ -6,17 +6,6 @@ const EXPERIENCE_YT_ID = "5tiGSZ4KAJU";
 export default function ExperienceVideo() {
   return (
     <section className="relative overflow-hidden bg-anamaya-mint px-6 py-20">
-      {/* Subtle background swirl, matching v2's SVG overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: `url(https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2020/11/swirls-background.svg)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-        aria-hidden="true"
-      />
-
       <div className="relative mx-auto max-w-5xl text-center">
         <h2 className="text-3xl font-semibold uppercase tracking-wider text-anamaya-olive-dark sm:text-4xl">
           Experience Anamaya

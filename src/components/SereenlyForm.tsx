@@ -1,11 +1,12 @@
 "use client";
 
 import Script from "next/script";
+import DeferUntilVisible from "./DeferUntilVisible";
 
-// Wraps a Sereenly (GoHighLevel) inline form embed the way v2 does it —
-// iframe with the full set of data-* attrs + the form_embed.js script that
-// listens for postMessage from the form and auto-resizes the iframe to
-// match content. Without the script you get an ugly scrollbar.
+// Wraps a Sereenly (GoHighLevel) inline form.
+// Heavy parts (the iframe + the form_embed.js auto-resize script) only load
+// when the wrapper scrolls near the viewport — keeps these off the critical
+// path for pages where the form is in the footer.
 
 type Props = {
   formId: string;
@@ -27,7 +28,18 @@ export default function SereenlyForm({
   const iframeId = `inline-${formId}`;
 
   return (
-    <>
+    <DeferUntilVisible
+      minHeight={initialHeight}
+      className={className}
+      fallback={
+        <div
+          className="flex w-full items-center justify-center text-xs text-anamaya-charcoal/50"
+          style={{ minHeight: initialHeight }}
+        >
+          Loading…
+        </div>
+      }
+    >
       <iframe
         src={src}
         id={iframeId}
@@ -45,14 +57,12 @@ export default function SereenlyForm({
         data-form-id={formId}
         allow="autoplay; encrypted-media; gyroscope;"
         loading="lazy"
-        className={className}
         style={{ width: "100%", minHeight: initialHeight, border: "none" }}
       />
-      {/* GoHighLevel / Sereenly iframe-resize script — same as v2 */}
       <Script
         src="https://link.msgsndr.com/js/form_embed.js"
         strategy="lazyOnload"
       />
-    </>
+    </DeferUntilVisible>
   );
 }
