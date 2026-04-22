@@ -5,38 +5,42 @@ import TemplateEditor from "@/components/admin/templates/TemplateEditor";
 
 export const dynamic = "force-dynamic";
 
-// Reference viewport height we pretend the admin iframes render inside.
-// Hero `cover` blocks specify height as a vh percentage; this lets us
-// compute a concrete pixel height so the iframe is exactly the block's
-// rendered height (no empty space below).
-const REFERENCE_VH_PX = 900;
+// Reference viewport we assume when picking aspect ratios for the admin
+// preview iframes. `hero` cover blocks specify height in vh, so they get
+// an aspect derived from a 1440×900 reference. Other block types have an
+// absolute pixel height — we combine that with the reference width.
+const REF_W = 1440;
+const REF_H = 900;
 
-/** Best-guess pixel height for an iframe that should contain the given block. */
-function computeIframeHeight(block: {
+/**
+ * Aspect ratio (width / height) for an iframe containing the given block.
+ * The iframe fills the admin area's width and the browser computes its
+ * height via `aspect-ratio` — that way the ratio matches the live site
+ * exactly even as the admin width changes.
+ */
+function computeAspectRatio(block: {
   type_slug: string;
   content: Record<string, unknown> | null;
 }): number {
   const c = (block.content ?? {}) as Record<string, unknown>;
   switch (block.type_slug) {
     case "hero": {
-      const fit = c.fit === "cover" ? "cover" : "aspect";
-      if (fit === "cover") {
+      if (c.fit === "cover") {
         const vh = typeof c.height_vh === "number" ? c.height_vh : 80;
-        return Math.round((vh / 100) * REFERENCE_VH_PX);
+        return REF_W / (REF_H * (vh / 100));
       }
-      // 16:9 aspect at a typical admin preview width (~1100px wide).
-      return Math.round(1100 * (9 / 16));
+      return 16 / 9;
     }
     case "press_bar": {
       const h = typeof c.section_height_px === "number" ? c.section_height_px : 200;
-      return h;
+      return REF_W / h;
     }
     case "cta_banner":
-      return 360;
+      return REF_W / 360;
     case "rich_text":
-      return 400;
+      return REF_W / 400;
     default:
-      return 360;
+      return REF_W / 360;
   }
 }
 
@@ -100,37 +104,44 @@ export default async function EditTemplate({
         </div>
       </header>
 
-      <TemplateEditor
-        templateId={template.id}
-        variant={defaultVariant}
-        rows={(rows ?? []).map((r) => {
-          const block = r.block as unknown as {
-            id: string;
-            slug: string;
-            name: string;
-            type_slug: string;
-            content: Record<string, unknown> | null;
-          };
-          return {
-            id: r.id,
-            sort_order: r.sort_order,
-            iframe_height: computeIframeHeight(block),
-            block: {
-              id: block.id,
-              slug: block.slug,
-              name: block.name,
-              type_slug: block.type_slug,
-            },
-          };
-        })}
-        allBlocks={(allBlocks ?? []) as Array<{
-          id: string;
-          slug: string;
-          name: string;
-          type_slug: string;
-          snapshot_url: string | null;
-        }>}
-      />
+      {/* Break out of the admin's max-w-6xl container so the block
+          previews can render at close to full browser width — matches
+          how they look on the real site. */}
+      <div style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
+        <div className="px-4">
+          <TemplateEditor
+            templateId={template.id}
+            variant={defaultVariant}
+            rows={(rows ?? []).map((r) => {
+              const block = r.block as unknown as {
+                id: string;
+                slug: string;
+                name: string;
+                type_slug: string;
+                content: Record<string, unknown> | null;
+              };
+              return {
+                id: r.id,
+                sort_order: r.sort_order,
+                aspect_ratio: computeAspectRatio(block),
+                block: {
+                  id: block.id,
+                  slug: block.slug,
+                  name: block.name,
+                  type_slug: block.type_slug,
+                },
+              };
+            })}
+            allBlocks={(allBlocks ?? []) as Array<{
+              id: string;
+              slug: string;
+              name: string;
+              type_slug: string;
+              snapshot_url: string | null;
+            }>}
+          />
+        </div>
+      </div>
     </div>
   );
 }

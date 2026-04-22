@@ -14,7 +14,7 @@ type Variant = { id: string; slug: string; name: string; is_default: boolean } |
 type Row = {
   id: string;
   sort_order: number;
-  iframe_height: number;
+  aspect_ratio: number;
   block: { id: string; slug: string; name: string; type_slug: string };
 };
 type BlockOption = {
@@ -25,9 +25,6 @@ type BlockOption = {
   snapshot_url: string | null;
 };
 
-// Small icon buttons sized identically so the eye and + line up on the
-// right edge of each row. Kept tiny + neutral so they don't compete
-// with the block previews.
 const ICON_BTN_SIZE = 26;
 
 export default function TemplateEditor({
@@ -43,6 +40,8 @@ export default function TemplateEditor({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // Per-row wireframe visibility. Toggle with the eye tab. ONLY controls
+  // the green outline — the info panel stays visible regardless.
   const [hiddenRows, setHiddenRows] = useState<Set<string>>(() => new Set());
   const [inserterAt, setInserterAt] =
     useState<null | { beforeRowId?: string; afterAll?: boolean }>(null);
@@ -107,9 +106,9 @@ export default function TemplateEditor({
         </div>
       )}
 
-      {/* Blocks stack flush (no gap, square corners). Tabs (eye / +) live
-          in a thin right-hand strip outside the preview so they never
-          cover content. */}
+      {/* Blocks stack flush (no gap, square corners). The eye/+ strip and
+          the floating info panel never change the iframe width — the
+          block preview is always at its natural (full) width. */}
       <div>
         {rows.map((row, idx) => (
           <TemplateRow
@@ -190,17 +189,15 @@ function TemplateRow({
   onInsertAfter: () => void;
 }) {
   return (
-    <section className="relative flex items-stretch">
-      {/* Block preview. Square corners, no rounding. iframe is exactly as
-          tall as the block's natural content — computed server-side. */}
-      <div
-        className="relative flex-1 overflow-hidden bg-white"
-        style={{ height: row.iframe_height }}
-      >
+    <section className="flex items-stretch">
+      {/* Preview cell — iframe fills this with aspect-ratio so it matches
+          the live site proportions. Square corners, no vertical gap. */}
+      <div className="relative flex-1 overflow-hidden bg-white">
         <iframe
           src={`/block-preview/${row.block.slug}`}
           title={`Preview of ${row.block.name}`}
-          className="block h-full w-full border-0"
+          className="block w-full border-0"
+          style={{ aspectRatio: row.aspect_ratio }}
         />
         {wireframeOn && (
           <div
@@ -208,20 +205,70 @@ function TemplateRow({
             aria-hidden="true"
           />
         )}
+
+        {/* Floating info panel — small, top-right corner, always visible.
+            Toggling the eye ONLY hides the green wireframe; this panel
+            stays because it's how the editor identifies the block. */}
+        <aside className="pointer-events-auto absolute right-2 top-2 z-20 w-48 rounded-md bg-white/95 p-2.5 text-[11px] shadow-lg ring-1 ring-zinc-200 backdrop-blur-sm">
+          <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
+            {row.block.type_slug}
+          </div>
+          <div className="truncate font-semibold text-anamaya-charcoal">
+            {row.block.name}
+          </div>
+          <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
+            [#{row.block.slug}]
+          </code>
+          <div className="mt-1.5 flex items-center gap-1">
+            <Link
+              href={`/admin/blocks/${row.block.id}`}
+              target="_blank"
+              className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+            >
+              Edit ↗
+            </Link>
+            <button
+              type="button"
+              onClick={onMoveUp}
+              disabled={isFirst || pending}
+              className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
+              title="Move up"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              onClick={onMoveDown}
+              disabled={isLast || pending}
+              className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
+              title="Move down"
+            >
+              ↓
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={pending}
+            className="mt-1 w-full rounded border border-red-300 bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            Remove
+          </button>
+        </aside>
       </div>
 
-      {/* Thin right strip holding both the Eye (top) and Plus (at the row
-          junction). The strip itself has zero background; it's just the
-          layout container for the two small buttons. */}
-      <div className="relative w-10 shrink-0">
-        {/* Eye — small rounded square, attached to the right edge of the
-            green wireframe. Left corners flush, right corners rounded. */}
+      {/* Right strip holding eye + plus. Width matches the icon button
+          size so the column looks clean. */}
+      <div className="relative shrink-0" style={{ width: ICON_BTN_SIZE }}>
+        {/* Eye — small square flush against the green line. Rounded on
+            its right side only. Always visible, even when wireframe is
+            off, so the green lines can be toggled back on. */}
         <button
           type="button"
           onClick={onToggleWireframe}
           title={wireframeOn ? "Hide wireframe" : "Show wireframe"}
           aria-pressed={wireframeOn}
-          className={`absolute left-0 top-2 flex items-center justify-center text-white rounded-l-none rounded-r-md transition-colors ${
+          className={`absolute left-0 top-2 flex items-center justify-center rounded-r-md text-white transition-colors ${
             wireframeOn
               ? "bg-anamaya-green hover:bg-anamaya-green-dark"
               : "bg-zinc-400 hover:bg-zinc-500"
@@ -231,9 +278,9 @@ function TemplateRow({
           {wireframeOn ? <EyeIcon /> : <EyeOffIcon />}
         </button>
 
-        {/* Plus — small fully-rounded square centered on the bottom edge
-            of this row (so its centre sits on the line where this block
-            and the next one meet). Hidden on the last row. */}
+        {/* Plus — same size as the eye. Centre sits exactly on the line
+            where this block and the next one meet, to indicate "insert
+            between these". Hidden on the last row. */}
         {!isLast && (
           <button
             type="button"
@@ -251,57 +298,6 @@ function TemplateRow({
           </button>
         )}
       </div>
-
-      {/* Info panel — to the right of the icon strip, outside the preview.
-          Shown only when the wireframe is on so a "clean" view hides it. */}
-      {wireframeOn && (
-        <aside className="flex w-60 shrink-0 flex-col justify-between border-l border-zinc-200 bg-white p-3 text-xs">
-          <div>
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
-              {row.block.type_slug}
-            </div>
-            <div className="font-semibold text-anamaya-charcoal">{row.block.name}</div>
-            <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
-              [#{row.block.slug}]
-            </code>
-            <div className="mt-2 flex items-center gap-1">
-              <Link
-                href={`/admin/blocks/${row.block.id}`}
-                target="_blank"
-                className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
-              >
-                Edit ↗
-              </Link>
-              <button
-                type="button"
-                onClick={onMoveUp}
-                disabled={isFirst || pending}
-                className="rounded border border-zinc-300 px-2 py-1 text-[10px] hover:bg-zinc-50 disabled:opacity-40"
-                title="Move up"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                onClick={onMoveDown}
-                disabled={isLast || pending}
-                className="rounded border border-zinc-300 px-2 py-1 text-[10px] hover:bg-zinc-50 disabled:opacity-40"
-                title="Move down"
-              >
-                ↓
-              </button>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={pending}
-            className="mt-2 w-full rounded border border-red-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 disabled:opacity-50"
-          >
-            Remove
-          </button>
-        </aside>
-      )}
     </section>
   );
 }

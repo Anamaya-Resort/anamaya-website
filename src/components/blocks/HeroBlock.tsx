@@ -209,6 +209,7 @@ function CoverStage({ content }: { content: HeroContent }) {
   return (
     <section
       className="relative w-full overflow-hidden bg-anamaya-charcoal"
+      data-hero-cover="true"
       style={{ height: `${heightVh}vh` }}
     >
       {content.video_poster_url && (
