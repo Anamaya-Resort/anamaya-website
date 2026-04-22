@@ -66,9 +66,16 @@ async function nextAvailableSlug(typeSlug: string): Promise<string> {
 function emptyContentFor(typeSlug: string): unknown {
   switch (typeSlug) {
     case "rich_text":  return { html: "" };
-    case "hero":       return { title: "" };
+    case "hero":       return {
+      video_source: "youtube",
+      youtube_url: "",
+      video_url: "",
+      video_poster_url: "",
+      top:    { enabled: false },
+      bottom: { enabled: false },
+    };
     case "cta_banner": return { heading: "", cta: { label: "", href: "" } };
-    case "press_bar":  return { heading: "Recommended by:", logos: [], bg_color: "teal-muted" };
+    case "press_bar":  return { heading: "Recommended by:", logos: [], bg_color: "brandDivider" };
     default:           return {};
   }
 }
@@ -161,6 +168,42 @@ export async function duplicateBlock(id: string): Promise<string> {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/blocks");
   return data.id;
+}
+
+/**
+ * Upload an MP4/WebM video file for a Hero With Video block. Returns
+ * the public URL. Size-capped at 100 MB; no transcoding — the file is
+ * stored as-is, so editors should upload reasonably-sized source.
+ */
+export async function uploadHeroVideo(
+  formData: FormData,
+): Promise<{ url: string }> {
+  const file = formData.get("file") as File | null;
+  if (!file || typeof file === "string") throw new Error("No file provided");
+  if (file.size > 100 * 1024 * 1024) throw new Error("Video too large (max 100 MB)");
+  if (!/^video\/(mp4|webm|quicktime)$/.test(file.type)) {
+    throw new Error(`Unsupported video type: ${file.type}`);
+  }
+
+  const ext = file.type === "video/webm" ? "webm" : "mp4";
+  const safeName =
+    (file.name || "video")
+      .toLowerCase()
+      .replace(/\.[a-z0-9]+$/i, "")
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "video";
+  const key = `uploads/hero-videos/${randomUUID().slice(0, 8)}-${safeName}.${ext}`;
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const sb = supabaseServer();
+  const { error } = await sb.storage.from(BUCKET).upload(key, buf, {
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) throw new Error(`video upload: ${error.message}`);
+  const { data: pub } = sb.storage.from(BUCKET).getPublicUrl(key);
+  return { url: pub.publicUrl };
 }
 
 /**

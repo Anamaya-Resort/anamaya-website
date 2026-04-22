@@ -5,6 +5,7 @@ import type { BlockTypeSlug } from "@/types/blocks";
 import PressBarBlock from "@/components/blocks/PressBarBlock";
 import RichTextBlock from "@/components/blocks/RichTextBlock";
 import CtaBannerBlock from "@/components/blocks/CtaBannerBlock";
+import HeroBlock from "@/components/blocks/HeroBlock";
 import VariantCarousel from "./VariantCarousel";
 
 /**
@@ -88,6 +89,8 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
       return <RichTextBlock content={content} />;
     case "cta_banner":
       return <CtaBannerBlock content={content} />;
+    case "hero":
+      return <HeroBlock content={content} />;
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">
