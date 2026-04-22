@@ -1,8 +1,9 @@
-// Render at request time so CMS edits (testimonials, etc.) appear without a redeploy.
+// Render at request time so CMS edits appear without a redeploy.
+// The [#...] blocks below are fully server-rendered — their HTML (text,
+// logos, schema.org JSON-LD) is in the SSR response for SEO.
 export const dynamic = "force-dynamic";
 
-import VideoHero from "@/components/VideoHero";
-import { BlockByType } from "@/components/blocks/BlockRenderer";
+import Shortcode from "@/components/blocks/Shortcode";
 import IntroSection from "@/components/home/IntroSection";
 import BookingSection from "@/components/home/BookingSection";
 import FeaturedRetreats from "@/components/home/FeaturedRetreats";
@@ -15,21 +16,14 @@ import ExperienceList from "@/components/home/ExperienceList";
 import ExperienceVideo from "@/components/home/ExperienceVideo";
 import Testimonials from "@/components/home/Testimonials";
 
-// Desktop/tablet plays the YouTube HD clip; mobile just shows the poster
-// (the 2.6 MB mp4 was the dominant download on mobile so we skip it).
-const HERO_YOUTUBE_ID = "9d5jqBsUpWI";
-const HERO_POSTER = "/yoga_retreat_costarica.webp";
-
 export default function Home() {
   return (
     <>
-      <VideoHero
-        youtubeId={HERO_YOUTUBE_ID}
-        poster={HERO_POSTER}
-        overlayOpacity={15}
-      />
+      {/* [#hero_vid_1] — homepage hero. Edit at /admin/blocks. */}
+      <Shortcode slug="hero_vid_1" />
 
-      <BlockByType pageKey="homepage" typeSlug="press_bar" />
+      {/* [#press_bar_1] — "Recommended by" logo row. */}
+      <Shortcode slug="press_bar_1" />
 
       <IntroSection />
       <BookingSection />

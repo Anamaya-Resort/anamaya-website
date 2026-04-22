@@ -51,6 +51,17 @@ export type HeroContent = {
   overlay_opacity?: number;
   top?: HeroBandContent;
   bottom?: HeroBandContent;
+  /**
+   * SEO metadata emitted as schema.org VideoObject JSON-LD. Crawlers like
+   * Google Video use this to understand the video. Analogous to alt text
+   * for images — not user-visible, but essential for discoverability.
+   */
+  seo_title?: string;
+  seo_description?: string;
+  /** ISO-8601 date string, e.g. "2024-06-01". */
+  seo_upload_date?: string;
+  /** Runtime in seconds; emitted as ISO-8601 duration (PT…S). */
+  seo_duration_seconds?: number;
 };
 
 export type CtaBannerContent = {

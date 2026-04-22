@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { HeroContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import { useHeaderOptional } from "@/contexts/HeaderContext";
 
 /**
  * Hero With Video: optional top band, video, optional bottom band.
@@ -19,10 +20,46 @@ export default function HeroBlock({ content }: { content: HeroContent }) {
   const bottom = content?.bottom;
   return (
     <section className="w-full">
+      <VideoSchemaJsonLd content={content} />
       {top?.enabled && <Band band={top} />}
       <VideoStage content={content} />
       {bottom?.enabled && <Band band={bottom} />}
     </section>
+  );
+}
+
+/**
+ * Emits schema.org VideoObject JSON-LD so Google Video and other crawlers
+ * can index the video. Same role as alt text for <img> — crucial for SEO.
+ * Outputs nothing if the editor hasn't filled in at least a title.
+ */
+function VideoSchemaJsonLd({ content }: { content: HeroContent }) {
+  if (!content?.seo_title) return null;
+  const embedUrl =
+    content.video_source === "youtube" && content.youtube_url
+      ? `https://www.youtube.com/watch?v=${extractYoutubeId(content.youtube_url)}`
+      : undefined;
+  const contentUrl =
+    content.video_source === "upload" && content.video_url ? content.video_url : undefined;
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: content.seo_title,
+  };
+  if (content.seo_description) schema.description = content.seo_description;
+  if (content.video_poster_url) schema.thumbnailUrl = content.video_poster_url;
+  if (content.seo_upload_date) schema.uploadDate = content.seo_upload_date;
+  if (content.seo_duration_seconds && content.seo_duration_seconds > 0) {
+    schema.duration = `PT${Math.round(content.seo_duration_seconds)}S`;
+  }
+  if (embedUrl) schema.embedUrl = embedUrl;
+  if (contentUrl) schema.contentUrl = contentUrl;
+  return (
+    <script
+      type="application/ld+json"
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
   );
 }
 
@@ -95,6 +132,16 @@ function AspectStage({ content }: { content: HeroContent }) {
  */
 function CoverStage({ content }: { content: HeroContent }) {
   const [videoReady, setVideoReady] = useState(false);
+  const header = useHeaderOptional();
+
+  // Tell the site header to go transparent while a cover hero is mounted.
+  // Safe no-op in the admin where HeaderProvider isn't mounted.
+  useEffect(() => {
+    if (!header) return;
+    header.setOverVideo(true);
+    return () => header.setOverVideo(false);
+  }, [header]);
+
   useEffect(() => {
     const schedule =
       (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: unknown) => number })

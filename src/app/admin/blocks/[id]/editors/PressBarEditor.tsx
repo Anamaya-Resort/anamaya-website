@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { toBlob } from "html-to-image";
 import type { PressBarContent, PressBarLogo } from "@/types/blocks";
-import { uploadPressLogo, uploadBlockSnapshot } from "../../actions";
+import { uploadPressLogo } from "../../actions";
 import LivePreview from "@/components/admin/blocks/LivePreview";
+import { captureAndUploadBlockSnapshot } from "@/components/admin/blocks/snapshot";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import type { OrgBranding } from "@/config/brand-tokens";
+import { playClick } from "@/lib/click-sound";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -47,8 +48,15 @@ export type Variant = {
   snapshot_url: string | null;
 };
 
-const saveButtonCls =
-  "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark disabled:opacity-50";
+const saveIdleCls =
+  "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark active:bg-anamaya-brand-btn disabled:opacity-50";
+const saveBusyCls =
+  "rounded-full bg-anamaya-brand-btn px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white disabled:opacity-70";
+
+/** Tailwind class string for the Save button — terra cotta while saving. */
+function saveClass(saving: boolean) {
+  return saving ? saveBusyCls : saveIdleCls;
+}
 
 export default function PressBarEditor({
   blockId,
@@ -156,25 +164,6 @@ export default function PressBarEditor({
     setOpenMenuIdx(null);
   }
 
-  async function captureAndUploadSnapshot() {
-    const node = previewRef.current;
-    if (!node) return;
-    try {
-      const blob = await toBlob(node, {
-        pixelRatio: 1,
-        cacheBust: true,
-        backgroundColor: "#ffffff",
-      });
-      if (!blob) return;
-      const fd = new FormData();
-      fd.append("file", new File([blob], `snap-${blockId}.png`, { type: "image/png" }));
-      await uploadBlockSnapshot(blockId, fd);
-    } catch (e) {
-      // Non-fatal: save already succeeded. Just log.
-      console.warn("snapshot capture failed:", e);
-    }
-  }
-
   async function handleSave() {
     setSaving(true);
     try {
@@ -183,7 +172,9 @@ export default function PressBarEditor({
       flushSync(() => setPreview(draft));
       // Capture the snapshot *before* onSave — onSave's server action calls
       // redirect(), which throws NEXT_REDIRECT and aborts anything after.
-      await captureAndUploadSnapshot();
+      if (previewRef.current) {
+        await captureAndUploadBlockSnapshot(blockId, previewRef.current);
+      }
       await onSave(name, slug, draft);
     } finally {
       setSaving(false);
@@ -373,7 +364,8 @@ export default function PressBarEditor({
             <button
               type="submit"
               disabled={saving}
-              className={`${saveButtonCls} ml-auto`}
+              onClick={playClick}
+              className={`${saveClass(saving)} ml-auto`}
             >
               {saving ? "Saving…" : "Save"}
             </button>
@@ -567,7 +559,7 @@ export default function PressBarEditor({
         </section>
 
         <div className="mt-6 flex justify-end">
-          <button type="submit" disabled={saving} className={saveButtonCls}>
+          <button type="submit" disabled={saving} onClick={playClick} className={saveClass(saving)}>
             {saving ? "Saving…" : "Save"}
           </button>
         </div>

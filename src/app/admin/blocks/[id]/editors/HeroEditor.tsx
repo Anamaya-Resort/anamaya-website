@@ -2,19 +2,25 @@
 
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { toBlob } from "html-to-image";
 import type { HeroBandContent, HeroContent } from "@/types/blocks";
-import { uploadBlockSnapshot, uploadHeroVideo } from "../../actions";
+import { uploadHeroVideo } from "../../actions";
 import LivePreview from "@/components/admin/blocks/LivePreview";
+import { captureAndUploadBlockSnapshot } from "@/components/admin/blocks/snapshot";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import type { OrgBranding } from "@/config/brand-tokens";
+import { playClick } from "@/lib/click-sound";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
 
-const saveButtonCls =
-  "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark disabled:opacity-50";
+const saveIdleCls =
+  "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark active:bg-anamaya-brand-btn disabled:opacity-50";
+const saveBusyCls =
+  "rounded-full bg-anamaya-brand-btn px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white disabled:opacity-70";
+function saveClass(saving: boolean) {
+  return saving ? saveBusyCls : saveIdleCls;
+}
 
 type Variant = { id: string; name: string; slug: string; snapshot_url: string | null };
 
@@ -41,6 +47,10 @@ function normalize(content: HeroContent | null | undefined): HeroContent {
     fit: content?.fit ?? "aspect",
     height_vh: content?.height_vh ?? 80,
     overlay_opacity: content?.overlay_opacity ?? 0,
+    seo_title: content?.seo_title ?? "",
+    seo_description: content?.seo_description ?? "",
+    seo_upload_date: content?.seo_upload_date ?? "",
+    seo_duration_seconds: content?.seo_duration_seconds ?? 0,
     top: { ...defaultBand(), ...(content?.top ?? {}) },
     bottom: { ...defaultBand(), ...(content?.bottom ?? {}) },
   };
@@ -134,25 +144,13 @@ export default function HeroEditor({
     }
   }
 
-  async function captureAndUploadSnapshot() {
-    const node = previewRef.current;
-    if (!node) return;
-    try {
-      const blob = await toBlob(node, { pixelRatio: 1, cacheBust: true, backgroundColor: "#ffffff" });
-      if (!blob) return;
-      const fd = new FormData();
-      fd.append("file", new File([blob], `snap-${blockId}.png`, { type: "image/png" }));
-      await uploadBlockSnapshot(blockId, fd);
-    } catch (e) {
-      console.warn("snapshot capture failed:", e);
-    }
-  }
-
   async function handleSave() {
     setSaving(true);
     try {
       flushSync(() => setPreview(draft));
-      await captureAndUploadSnapshot();
+      if (previewRef.current) {
+        await captureAndUploadBlockSnapshot(blockId, previewRef.current);
+      }
       await onSave(name, slug, draft);
     } finally {
       setSaving(false);
@@ -223,7 +221,7 @@ export default function HeroEditor({
             <h3 className="text-sm font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
               Video
             </h3>
-            <button type="submit" disabled={saving} className={saveButtonCls}>
+            <button type="submit" disabled={saving} onClick={playClick} className={saveClass(saving)}>
               {saving ? "Saving…" : "Save"}
             </button>
           </header>
@@ -373,6 +371,70 @@ export default function HeroEditor({
               {uploadError}
             </div>
           )}
+
+          {/* ── Video SEO ──
+              Emitted as schema.org VideoObject JSON-LD. Fill these in the
+              same spirit as alt text for images: crawlers use them to
+              understand the video, and Google Video search surfaces them. */}
+          <div className="mt-5 rounded-md border border-dashed border-zinc-300 p-3">
+            <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60">
+              Video SEO (schema.org VideoObject)
+            </h4>
+            <div className="space-y-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                  Title
+                </span>
+                <input
+                  className={inputCls}
+                  value={draft.seo_title ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, seo_title: e.target.value }))}
+                  onBlur={commit}
+                  placeholder='e.g. "Welcome to Anamaya Resort"'
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                  Description
+                </span>
+                <textarea
+                  rows={2}
+                  className={inputCls}
+                  value={draft.seo_description ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, seo_description: e.target.value }))}
+                  onBlur={commit}
+                  placeholder="A sentence or two about what the video shows."
+                />
+              </label>
+              <div className="flex flex-wrap gap-4">
+                <label className="block w-44">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                    Upload date
+                  </span>
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={draft.seo_upload_date ?? ""}
+                    onChange={(e) => setDraft((d) => ({ ...d, seo_upload_date: e.target.value }))}
+                    onBlur={commit}
+                  />
+                </label>
+                <label className="block w-44">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                    Duration (seconds)
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    className={inputCls}
+                    value={draft.seo_duration_seconds ?? 0}
+                    onChange={(e) => setDraft((d) => ({ ...d, seo_duration_seconds: Number(e.target.value) || 0 }))}
+                    onBlur={commit}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* ─── Top band ─────────────────────────────────────────── */}
@@ -396,7 +458,7 @@ export default function HeroEditor({
         />
 
         <div className="flex justify-end">
-          <button type="submit" disabled={saving} className={saveButtonCls}>
+          <button type="submit" disabled={saving} onClick={playClick} className={saveClass(saving)}>
             {saving ? "Saving…" : "Save"}
           </button>
         </div>
