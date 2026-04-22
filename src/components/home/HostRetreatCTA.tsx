@@ -1,0 +1,30 @@
+import Link from "next/link";
+
+export default function HostRetreatCTA() {
+  return (
+    <section className="relative overflow-hidden bg-anamaya-charcoal px-6 py-20 text-white">
+      {/* TODO: replace with a real panoramic photo from Supabase Storage */}
+      <div
+        className="absolute inset-0 bg-gradient-to-r from-anamaya-charcoal via-anamaya-olive/30 to-anamaya-teal/40"
+        aria-hidden="true"
+      />
+      <div className="relative mx-auto max-w-4xl text-center">
+        <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          Looking for a location in Costa Rica to host your own retreat?
+        </h2>
+        <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-white/90">
+          Whether you&rsquo;re a yoga teacher, a life coach, a wellness
+          entrepreneur, or provide other transformational experiences –
+          Anamaya Resort provides the perfect backdrop to host a retreat or
+          training that will not only elevate your brand but also enrich lives.
+        </p>
+        <Link
+          href="/host-your-own-retreat-at-anamaya/"
+          className="mt-8 inline-block rounded-full bg-anamaya-green px-10 py-4 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark"
+        >
+          Learn More
+        </Link>
+      </div>
+    </section>
+  );
+}

@@ -1,4 +1,14 @@
 import VideoHero from "@/components/VideoHero";
+import IntroSection from "@/components/home/IntroSection";
+import BookingSection from "@/components/home/BookingSection";
+import FeaturedRetreats from "@/components/home/FeaturedRetreats";
+import HostRetreatCTA from "@/components/home/HostRetreatCTA";
+import CustomizeCards from "@/components/home/CustomizeCards";
+import AccommodationsTeaser from "@/components/home/AccommodationsTeaser";
+import Newsletter from "@/components/home/Newsletter";
+import LocationSection from "@/components/home/LocationSection";
+import ExperienceList from "@/components/home/ExperienceList";
+import Testimonials from "@/components/home/Testimonials";
 
 // Match v2: YouTube video on desktop (HD), mp4 fallback on mobile.
 const HERO_YOUTUBE_ID = "9d5jqBsUpWI";
@@ -11,28 +21,19 @@ export default function Home() {
       <VideoHero
         youtubeId={HERO_YOUTUBE_ID}
         mp4Src={HERO_MP4}
-        overlayOpacity={20}
-      >
-        <div>
-          <h1 className="text-4xl font-semibold tracking-tight drop-shadow sm:text-6xl">
-            Anamaya
-          </h1>
-          <p className="mt-4 max-w-xl text-lg text-white/90 drop-shadow sm:text-xl">
-            Wellness retreats & yoga teacher trainings on a clifftop in
-            Montezuma, Costa Rica.
-          </p>
-        </div>
-      </VideoHero>
+        overlayOpacity={15}
+      />
 
-      <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <h2 className="text-3xl font-semibold tracking-tight">
-          Placeholder content
-        </h2>
-        <p className="mt-4 text-zinc-600">
-          Scroll up — the header flips from transparent (white logo) to solid
-          white (dark logo). Body of the homepage coming next.
-        </p>
-      </section>
+      <IntroSection />
+      <BookingSection />
+      <FeaturedRetreats />
+      <HostRetreatCTA />
+      <CustomizeCards />
+      <AccommodationsTeaser />
+      <Newsletter />
+      <LocationSection />
+      <ExperienceList />
+      <Testimonials />
     </>
   );
 }
