@@ -4,15 +4,20 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useHeader } from "@/contexts/HeaderContext";
 
 type Props = {
-  /** YouTube video ID for desktop/tablet. */
+  /** YouTube video ID for desktop/tablet (md+). */
   youtubeId?: string;
-  /** Self-hosted mp4 — mobile fallback or whole-page fallback if no YT. */
+  /** Self-hosted mp4 fallback. Only loaded on small screens if
+   *  explicitly enabled (default: off) because it's usually a much
+   *  bigger download than the poster alone. */
   mp4Src?: string;
-  /** Static poster shown instantly at page load. Replaced by the video once ready. */
+  /** When true AND mp4Src is set, render the video on mobile. Otherwise
+   *  the poster is shown as-is on mobile (no autoplay). */
+  enableMobileVideo?: boolean;
+  /** Static poster shown instantly at page load. Replaced by the video once ready (desktop). */
   poster?: string;
   /** Hero content overlaying the video (heading, CTAs, etc.) */
   children?: ReactNode;
-  /** Tailwind height classes. Default: 80vh (matches v2). */
+  /** Tailwind height classes. Default: 80vh. */
   heightClassName?: string;
   /** Darkening overlay intensity (0-100). Default: 20. */
   overlayOpacity?: number;
@@ -38,15 +43,13 @@ function youtubeEmbedUrl(id: string): string {
 export default function VideoHero({
   youtubeId,
   mp4Src,
+  enableMobileVideo = false,
   poster,
   children,
   heightClassName = "h-[80vh]",
   overlayOpacity = 20,
 }: Props) {
   const { setOverVideo } = useHeader();
-
-  // Defer iframe/mp4 injection so it's off the critical path.
-  // The poster paints immediately; the real video fades in a beat later.
   const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
@@ -55,28 +58,27 @@ export default function VideoHero({
   }, [setOverVideo]);
 
   useEffect(() => {
-    // Wait for the browser to be idle (or 600ms max) before attaching video.
     const schedule =
       (window as any).requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 600));
     const cancel =
       (window as any).cancelIdleCallback ?? ((id: number) => clearTimeout(id));
-    const id = schedule(
-      () => setVideoReady(true),
-      { timeout: 1500 },
-    );
+    const id = schedule(() => setVideoReady(true), { timeout: 1500 });
     return () => cancel(id);
   }, []);
 
+  const shouldRenderMp4 = !!mp4Src && enableMobileVideo;
+
   return (
     <section className={`relative w-full overflow-hidden bg-anamaya-charcoal ${heightClassName}`}>
-      {/* Static poster — always present underneath so we never flash empty.
-          Once the video fades in, the poster is behind it (not unmounted). */}
+      {/* Poster paints instantly as the first above-the-fold element (LCP). */}
       {poster && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={poster}
           alt=""
           aria-hidden="true"
+          width={1920}
+          height={1080}
           className="absolute inset-0 h-full w-full object-cover"
           loading="eager"
           fetchPriority="high"
@@ -86,7 +88,6 @@ export default function VideoHero({
       {videoReady && youtubeId && (
         <div
           className="absolute inset-0 hidden overflow-hidden md:block"
-          // Fade the YT iframe in on top of the poster
           style={{ animation: "fadeIn 800ms ease-in 200ms forwards", opacity: 0 }}
         >
           <iframe
@@ -100,7 +101,7 @@ export default function VideoHero({
         </div>
       )}
 
-      {videoReady && mp4Src && (
+      {videoReady && shouldRenderMp4 && (
         <video
           className={`absolute inset-0 h-full w-full object-cover ${youtubeId ? "md:hidden" : ""}`}
           src={mp4Src}
