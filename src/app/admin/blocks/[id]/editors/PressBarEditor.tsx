@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PressBarContent, PressBarLogo } from "@/types/blocks";
 import { uploadPressLogo } from "../../actions";
+import PressBarBlock from "@/components/blocks/PressBarBlock";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -10,6 +11,15 @@ const inputCls =
 function emptyLogo(): PressBarLogo {
   return { name: "", src: "", width: 100, height: 30, href: null, featured: false };
 }
+
+const BG_PRESETS: { value: string; label: string; swatch: string }[] = [
+  { value: "teal-muted", label: "Teal muted (default)", swatch: "#7aa59e" },
+  { value: "mint",       label: "Mint",                 swatch: "#b8d3cf" },
+  { value: "cream",      label: "Cream",                swatch: "#fbfbfb" },
+  { value: "white",      label: "White",                swatch: "#ffffff" },
+  { value: "charcoal",   label: "Charcoal",             swatch: "#444444" },
+  { value: "custom",     label: "Custom (hex)",         swatch: "transparent" },
+];
 
 export default function PressBarEditor({
   content,
@@ -21,10 +31,25 @@ export default function PressBarEditor({
   const [heading, setHeading] = useState(content?.heading ?? "Recommended by:");
   const [widths, setWidths] = useState<number[]>(content?.column_widths_pct ?? []);
   const [logos, setLogos] = useState<PressBarLogo[]>(content?.logos ?? []);
+  const [bgColor, setBgColor] = useState<string>(content?.bg_color ?? "teal-muted");
+  const [bgColorCustom, setBgColorCustom] = useState<string>(content?.bg_color_custom ?? "#7aa59e");
+  const [headingColor, setHeadingColor] = useState<string>(content?.heading_color ?? "");
+  const [logoHeight, setLogoHeight] = useState<number>(content?.logo_height_px ?? 48);
   const [saving, setSaving] = useState(false);
   const [openMenuIdx, setOpenMenuIdx] = useState<number | null>(null);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Live-preview content tracks state — no save required.
+  const previewContent: PressBarContent = {
+    heading,
+    column_widths_pct: widths.length === logos.length ? widths : undefined,
+    logos,
+    bg_color: bgColor as PressBarContent["bg_color"],
+    bg_color_custom: bgColor === "custom" ? bgColorCustom : undefined,
+    heading_color: headingColor || undefined,
+    logo_height_px: logoHeight,
+  };
 
   function updateLogo(i: number, patch: Partial<PressBarLogo>) {
     setLogos((arr) => arr.map((l, ix) => (ix === i ? { ...l, ...patch } : l)));
@@ -44,27 +69,92 @@ export default function PressBarEditor({
   }
 
   return (
+    <>
+      {/* Live preview — updates as you edit */}
+      <section className="mb-8">
+        <header className="mb-2 flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-anamaya-charcoal/60">
+            Live preview
+          </h3>
+          <span className="text-[10px] italic text-anamaya-charcoal/40">
+            Updates as you type. Click &ldquo;Save&rdquo; to commit.
+          </span>
+        </header>
+        <div className="overflow-hidden rounded-md ring-1 ring-zinc-200">
+          {logos.length > 0 ? (
+            <PressBarBlock content={previewContent} />
+          ) : (
+            <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/40">
+              Add a logo to see the preview
+            </div>
+          )}
+        </div>
+      </section>
+
     <form
       action={async () => {
         setSaving(true);
         try {
-          await onSave({
-            heading,
-            column_widths_pct: widths.length === logos.length ? widths : undefined,
-            logos,
-          });
+          await onSave(previewContent);
         } finally {
           setSaving(false);
         }
       }}
       className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200"
     >
-      <label className="block">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-          Heading
-        </span>
-        <input className={inputCls} value={heading} onChange={(e) => setHeading(e.target.value)} />
-      </label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+            Heading
+          </span>
+          <input className={inputCls} value={heading} onChange={(e) => setHeading(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+            Heading color (blank = auto)
+          </span>
+          <input className={inputCls} placeholder="#ffffff" value={headingColor} onChange={(e) => setHeadingColor(e.target.value)} />
+        </label>
+
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+            Background color
+          </span>
+          <select
+            className={inputCls}
+            value={bgColor}
+            onChange={(e) => setBgColor(e.target.value)}
+          >
+            {BG_PRESETS.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {bgColor === "custom" ? (
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+              Custom bg color (CSS hex/rgb)
+            </span>
+            <input className={inputCls} value={bgColorCustom} onChange={(e) => setBgColorCustom(e.target.value)} />
+          </label>
+        ) : (
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+              Logo height (px, featured is 2×)
+            </span>
+            <input
+              type="number"
+              min={24}
+              max={160}
+              className={inputCls}
+              value={logoHeight}
+              onChange={(e) => setLogoHeight(Number(e.target.value) || 48)}
+            />
+          </label>
+        )}
+      </div>
 
       <label className="mt-4 block">
         <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
@@ -164,6 +254,7 @@ export default function PressBarEditor({
         {saving ? "Saving…" : "Save"}
       </button>
     </form>
+    </>
   );
 }
 

@@ -1,28 +1,51 @@
 import Link from "next/link";
-import type { PressBarContent } from "@/types/blocks";
+import type { PressBarBgPreset, PressBarContent } from "@/types/blocks";
 
-const LOGO_HEIGHT = "h-8 sm:h-10";
-const FEATURE_HEIGHT = "h-16 sm:h-20";
+/** Map a preset slug (or arbitrary CSS color) to actual CSS values. */
+function resolveBg(content: PressBarContent): { bg: string; fgDefault: string } {
+  const preset = (content.bg_color ?? "teal-muted") as PressBarBgPreset;
+  switch (preset) {
+    case "mint":       return { bg: "#b8d3cf", fgDefault: "#444444" };
+    case "cream":      return { bg: "#fbfbfb", fgDefault: "#444444" };
+    case "white":      return { bg: "#ffffff", fgDefault: "#444444" };
+    case "charcoal":   return { bg: "#444444", fgDefault: "#ffffff" };
+    case "custom":     return { bg: content.bg_color_custom ?? "#7aa59e", fgDefault: "#ffffff" };
+    case "teal-muted":
+    default:           return { bg: "#7aa59e", fgDefault: "#ffffff" };
+  }
+}
 
 export default function PressBarBlock({ content }: { content: PressBarContent }) {
-  const { heading = "Recommended by:", logos = [], column_widths_pct } = content ?? {};
+  const {
+    heading = "Recommended by:",
+    logos = [],
+    column_widths_pct,
+    heading_color,
+  } = content ?? {};
   if (logos.length === 0) return null;
 
-  // Grid columns from configured percents, falling back to equal columns.
+  const { bg, fgDefault } = resolveBg(content);
+  const logoHeight = content.logo_height_px ?? 48;
+  const featuredHeight = logoHeight * 2;
+
   const gridTemplateColumns =
     column_widths_pct && column_widths_pct.length === logos.length
       ? column_widths_pct.map((w) => `${w}%`).join(" ")
       : `repeat(${logos.length}, minmax(0, 1fr))`;
 
   return (
-    <section className="bg-anamaya-teal-muted px-6 py-10">
-      <div className="mx-auto max-w-7xl">
-        <h2 className="font-heading mb-6 text-center text-sm font-semibold uppercase tracking-[0.3em] text-white/90">
+    <section className="w-full px-6 py-10" style={{ backgroundColor: bg }}>
+      {/* Full-bleed — no max-width cap; logos fill the available width */}
+      <div className="mx-auto w-full max-w-[1600px]">
+        <h2
+          className="font-heading mb-6 text-center text-sm font-semibold uppercase tracking-[0.3em]"
+          style={{ color: heading_color ?? fgDefault }}
+        >
           {heading}
         </h2>
         <ul className="grid items-center" style={{ gridTemplateColumns }}>
           {logos.map((logo, i) => {
-            const heightClass = logo.featured ? FEATURE_HEIGHT : LOGO_HEIGHT;
+            const maxH = logo.featured ? featuredHeight : logoHeight;
             const img = (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -32,13 +55,14 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
                 height={logo.height}
                 loading="lazy"
                 decoding="async"
-                className={`max-w-full object-contain ${heightClass}`}
+                className="max-w-full object-contain"
+                style={{ maxHeight: maxH, height: "auto" }}
               />
             );
             return (
               <li
                 key={`${logo.name}-${i}`}
-                className="flex items-center justify-center px-2 sm:px-3"
+                className="flex items-center justify-center px-3 sm:px-4"
               >
                 {logo.href ? (
                   <Link

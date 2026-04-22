@@ -27,6 +27,39 @@ export async function renameBlock(id: string, name: string) {
   revalidatePath("/admin/blocks");
 }
 
+/** Default blank content per block type. */
+function emptyContentFor(typeSlug: string): unknown {
+  switch (typeSlug) {
+    case "rich_text":  return { html: "" };
+    case "hero":       return { title: "" };
+    case "cta_banner": return { heading: "", cta: { label: "", href: "" } };
+    case "press_bar":  return { heading: "Recommended by:", logos: [], bg_color: "teal-muted" };
+    default:           return {};
+  }
+}
+
+/** Create a new blank block of the given type and return its id. */
+export async function createBlock(typeSlug: string, name: string): Promise<string> {
+  const sb = supabaseServer();
+  const { data, error } = await sb
+    .from("blocks")
+    .insert({ type_slug: typeSlug, name, content: emptyContentFor(typeSlug) })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/blocks");
+  return data.id;
+}
+
+export async function deleteBlock(id: string) {
+  const sb = supabaseServer();
+  // Also removes any block_usages via cascade.
+  const { error } = await sb.from("blocks").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/blocks");
+  revalidatePath("/", "layout");
+}
+
 /**
  * Upload an image file (from a press-bar logo slot) to Supabase Storage.
  * Returns the public URL + intrinsic dimensions so the client can update

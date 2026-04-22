@@ -35,11 +35,22 @@ export type PressBarLogo = {
   featured?: boolean;
 };
 
+/** Named color presets for press-bar backgrounds. */
+export type PressBarBgPreset = "teal-muted" | "mint" | "cream" | "white" | "charcoal" | "custom";
+
 export type PressBarContent = {
   heading?: string;
   /** Explicit grid column widths (percent). Must sum to 100. Default: 9 logos × 10% with a 20% featured slot. */
   column_widths_pct?: number[];
   logos: PressBarLogo[];
+  /** Background color preset. Default 'teal-muted'. Use 'custom' + bg_color_custom for any hex. */
+  bg_color?: PressBarBgPreset;
+  /** Raw CSS color used only when bg_color === 'custom'. */
+  bg_color_custom?: string;
+  /** Heading text color (any CSS color). Defaults to white on dark bg, charcoal on light. */
+  heading_color?: string;
+  /** Regular-logo max height in px (default 48). Featured logos get 2× this. */
+  logo_height_px?: number;
 };
 
 export type BlockTypeSlug = "rich_text" | "hero" | "cta_banner" | "press_bar";
