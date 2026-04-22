@@ -1,0 +1,97 @@
+{
+  "source_site_label": "v2",
+  "source_site_url": "https://anamayastg.wpenginepowered.com",
+  "last_audited": "2026-04-22",
+  "pages_scanned": 9,
+  "pages_failed": [],
+  "findings": [
+    {
+      "label": "meta_pixel",
+      "id": "518225776084188",
+      "found_on": [
+        "https://anamayastg.wpenginepowered.com/",
+        "https://anamayastg.wpenginepowered.com/view-cookbook-dashboard/",
+        "https://anamayastg.wpenginepowered.com/costa-rica-yoga-should-you-do-a-yoga-retreat-or-200-hour-yoga-teacher-training/",
+        "https://anamayastg.wpenginepowered.com/retreat/costa-rica-womens-retreat-sierra-kliscz/",
+        "https://anamayastg.wpenginepowered.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamayastg.wpenginepowered.com/recipe-archive/",
+        "https://anamayastg.wpenginepowered.com/accommodations/ganesh-room/",
+        "https://anamayastg.wpenginepowered.com/guest_yoga_teacher/breathwork-retreat-with-cristiane-machado/"
+      ]
+    },
+    {
+      "label": "meta_pixel",
+      "id": "331563397336091",
+      "found_on": [
+        "https://anamayastg.wpenginepowered.com/",
+        "https://anamayastg.wpenginepowered.com/view-cookbook-dashboard/",
+        "https://anamayastg.wpenginepowered.com/costa-rica-yoga-should-you-do-a-yoga-retreat-or-200-hour-yoga-teacher-training/",
+        "https://anamayastg.wpenginepowered.com/retreat/costa-rica-womens-retreat-sierra-kliscz/",
+        "https://anamayastg.wpenginepowered.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamayastg.wpenginepowered.com/recipe-archive/",
+        "https://anamayastg.wpenginepowered.com/accommodations/ganesh-room/",
+        "https://anamayastg.wpenginepowered.com/guest_yoga_teacher/breathwork-retreat-with-cristiane-machado/"
+      ]
+    },
+    {
+      "label": "ga_universal",
+      "id": "UA-143256029-1",
+      "found_on": [
+        "https://anamayastg.wpenginepowered.com/",
+        "https://anamayastg.wpenginepowered.com/view-cookbook-dashboard/",
+        "https://anamayastg.wpenginepowered.com/costa-rica-yoga-should-you-do-a-yoga-retreat-or-200-hour-yoga-teacher-training/",
+        "https://anamayastg.wpenginepowered.com/retreat/costa-rica-womens-retreat-sierra-kliscz/",
+        "https://anamayastg.wpenginepowered.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamayastg.wpenginepowered.com/recipe-archive/",
+        "https://anamayastg.wpenginepowered.com/accommodations/ganesh-room/",
+        "https://anamayastg.wpenginepowered.com/guest_yoga_teacher/breathwork-retreat-with-cristiane-machado/",
+        "https://anamayastg.wpenginepowered.com/opt-in-thank-you/"
+      ]
+    },
+    {
+      "label": "ga4",
+      "id": "G-TBTSR4FJCW",
+      "found_on": [
+        "https://anamayastg.wpenginepowered.com/",
+        "https://anamayastg.wpenginepowered.com/view-cookbook-dashboard/",
+        "https://anamayastg.wpenginepowered.com/costa-rica-yoga-should-you-do-a-yoga-retreat-or-200-hour-yoga-teacher-training/",
+        "https://anamayastg.wpenginepowered.com/retreat/costa-rica-womens-retreat-sierra-kliscz/",
+        "https://anamayastg.wpenginepowered.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamayastg.wpenginepowered.com/recipe-archive/",
+        "https://anamayastg.wpenginepowered.com/accommodations/ganesh-room/",
+        "https://anamayastg.wpenginepowered.com/guest_yoga_teacher/breathwork-retreat-with-cristiane-machado/",
+        "https://anamayastg.wpenginepowered.com/opt-in-thank-you/"
+      ]
+    },
+    {
+      "label": "crazyegg",
+      "id": null,
+      "found_on": [
+        "https://anamayastg.wpenginepowered.com/",
+        "https://anamayastg.wpenginepowered.com/view-cookbook-dashboard/",
+        "https://anamayastg.wpenginepowered.com/costa-rica-yoga-should-you-do-a-yoga-retreat-or-200-hour-yoga-teacher-training/",
+        "https://anamayastg.wpenginepowered.com/retreat/costa-rica-womens-retreat-sierra-kliscz/",
+        "https://anamayastg.wpenginepowered.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamayastg.wpenginepowered.com/recipe-archive/",
+        "https://anamayastg.wpenginepowered.com/accommodations/ganesh-room/",
+        "https://anamayastg.wpenginepowered.com/guest_yoga_teacher/breathwork-retreat-with-cristiane-machado/",
+        "https://anamayastg.wpenginepowered.com/opt-in-thank-you/"
+      ]
+    },
+    {
+      "label": "facebook_conversions_api",
+      "id": null,
+      "found_on": [
+        "https://anamayastg.wpenginepowered.com/",
+        "https://anamayastg.wpenginepowered.com/view-cookbook-dashboard/",
+        "https://anamayastg.wpenginepowered.com/costa-rica-yoga-should-you-do-a-yoga-retreat-or-200-hour-yoga-teacher-training/",
+        "https://anamayastg.wpenginepowered.com/retreat/costa-rica-womens-retreat-sierra-kliscz/",
+        "https://anamayastg.wpenginepowered.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamayastg.wpenginepowered.com/recipe-archive/",
+        "https://anamayastg.wpenginepowered.com/accommodations/ganesh-room/",
+        "https://anamayastg.wpenginepowered.com/guest_yoga_teacher/breathwork-retreat-with-cristiane-machado/",
+        "https://anamayastg.wpenginepowered.com/opt-in-thank-you/"
+      ]
+    }
+  ]
+}

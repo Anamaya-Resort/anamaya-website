@@ -1,0 +1,63 @@
+{
+  "source_site_label": "v1",
+  "source_site_url": "https://anamaya.com",
+  "last_audited": "2026-04-22",
+  "pages_scanned": 8,
+  "pages_failed": [],
+  "findings": [
+    {
+      "label": "meta_pixel",
+      "id": "518225776084188",
+      "found_on": [
+        "https://anamaya.com/",
+        "https://anamaya.com/into-the-elements-costa-rica-retreat/",
+        "https://anamaya.com/retreat/kim-and-scott-june2024/",
+        "https://anamaya.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamaya.com/recipes/shakshuka-breakfast/",
+        "https://anamaya.com/accommodations/dharma-room/",
+        "https://anamaya.com/guest_yoga_teacher/yoga-retreats-with-liz-getman/"
+      ]
+    },
+    {
+      "label": "meta_pixel",
+      "id": "331563397336091",
+      "found_on": [
+        "https://anamaya.com/",
+        "https://anamaya.com/into-the-elements-costa-rica-retreat/",
+        "https://anamaya.com/retreat/kim-and-scott-june2024/",
+        "https://anamaya.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamaya.com/recipes/shakshuka-breakfast/",
+        "https://anamaya.com/accommodations/dharma-room/",
+        "https://anamaya.com/guest_yoga_teacher/yoga-retreats-with-liz-getman/"
+      ]
+    },
+    {
+      "label": "ga_universal",
+      "id": "UA-143256029-1",
+      "found_on": [
+        "https://anamaya.com/",
+        "https://anamaya.com/into-the-elements-costa-rica-retreat/",
+        "https://anamaya.com/retreat/kim-and-scott-june2024/",
+        "https://anamaya.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamaya.com/recipes/shakshuka-breakfast/",
+        "https://anamaya.com/accommodations/dharma-room/",
+        "https://anamaya.com/guest_yoga_teacher/yoga-retreats-with-liz-getman/",
+        "https://anamaya.com/opt-in-thank-you/"
+      ]
+    },
+    {
+      "label": "facebook_conversions_api",
+      "id": null,
+      "found_on": [
+        "https://anamaya.com/",
+        "https://anamaya.com/into-the-elements-costa-rica-retreat/",
+        "https://anamaya.com/retreat/kim-and-scott-june2024/",
+        "https://anamaya.com/ytt/200-hr-yoga-teacher-training-wild-heart-yoga-jordan-stinson/",
+        "https://anamaya.com/recipes/shakshuka-breakfast/",
+        "https://anamaya.com/accommodations/dharma-room/",
+        "https://anamaya.com/guest_yoga_teacher/yoga-retreats-with-liz-getman/",
+        "https://anamaya.com/opt-in-thank-you/"
+      ]
+    }
+  ]
+}

@@ -7,9 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "extract:authors": "tsx scripts/extractor/discover-authors.ts",
+    "extract:terms": "tsx scripts/extractor/discover-terms.ts",
     "extract:urls": "tsx scripts/extractor/discover-urls.ts",
     "extract:sitemap": "tsx scripts/extractor/discover-sitemap.ts",
-    "scan:tracking": "tsx scripts/extractor/scan-tracking.ts"
+    "extract:all": "npm run extract:authors && npm run extract:terms && npm run extract:urls && npm run extract:sitemap",
+    "scan:tracking": "tsx scripts/extractor/scan-tracking.ts",
+    "compare": "tsx scripts/extractor/compare-v1-v2.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",
