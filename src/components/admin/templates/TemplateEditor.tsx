@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -194,11 +194,33 @@ function TemplateRow({
   onMoveDown: () => void;
   onInsertAfter: () => void;
 }) {
-  // Scale factor is computed at runtime via container-query units:
-  //   iframe at natural (referenceWidth × native_height) gets visually
-  //   scaled by (wrapper width ÷ referenceWidth) so contents match the
-  //   live site exactly. No content overflow, no scroll bars.
-  const nativeHeight = row.native_height;
+  // Each iframe starts at the server-estimated native_height, but rich
+  // text and any block whose rendered height differs from the estimate
+  // will posts its real document.scrollHeight back via postMessage
+  // (emitted by <BlockPreviewMeasurer> inside /block-preview). We use
+  // that to replace native_height and keep the wrapper tight.
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [measuredHeight, setMeasuredHeight] = useState(row.native_height);
+
+  useEffect(() => {
+    // Reset to the server estimate when the block identity changes.
+    setMeasuredHeight(row.native_height);
+  }, [row.block.slug, row.native_height]);
+
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.source !== iframeRef.current?.contentWindow) return;
+      const data = e.data as { type?: string; height?: number } | null;
+      if (!data || data.type !== "block-preview-height") return;
+      if (typeof data.height !== "number" || data.height <= 0) return;
+      setMeasuredHeight(Math.round(data.height));
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  const nativeHeight = Math.max(1, measuredHeight);
+  const aspectRatio = referenceWidth / nativeHeight;
 
   return (
     // position: relative on the row so the absolute-positioned controls
@@ -209,11 +231,12 @@ function TemplateRow({
       <div
         className="relative w-full overflow-hidden bg-white"
         style={{
-          aspectRatio: row.aspect_ratio,
+          aspectRatio,
           containerType: "inline-size",
         }}
       >
         <iframe
+          ref={iframeRef}
           src={`/block-preview/${row.block.slug}`}
           title={`Preview of ${row.block.name}`}
           className="absolute left-0 top-0 border-0"

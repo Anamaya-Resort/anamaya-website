@@ -7,6 +7,7 @@
 // below) to instead fill the iframe exactly, so the preview has no
 // white gap under the block.
 import Shortcode from "@/components/blocks/Shortcode";
+import BlockPreviewMeasurer from "@/components/admin/blocks/BlockPreviewMeasurer";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function BlockPreview({
   const { slug } = await params;
   return (
     <>
+      <BlockPreviewMeasurer />
       <style
         dangerouslySetInnerHTML={{
           __html: `
