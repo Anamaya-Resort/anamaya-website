@@ -35,7 +35,11 @@ export type PressBarLogo = {
   featured?: boolean;
 };
 
-/** Named color presets for press-bar backgrounds. */
+/**
+ * @deprecated Legacy preset names from the first press-bar implementation.
+ * New data stores brand-token keys (e.g. "brandSubtle") instead. Kept so
+ * older rows still render via resolveBrandColor() in brand-tokens.ts.
+ */
 export type PressBarBgPreset = "teal-muted" | "mint" | "cream" | "white" | "charcoal" | "custom";
 
 export type PressBarContent = {
@@ -43,12 +47,18 @@ export type PressBarContent = {
   /** Explicit grid column widths (percent). Must sum to 100. Default: 9 logos × 10% with a 20% featured slot. */
   column_widths_pct?: number[];
   logos: PressBarLogo[];
-  /** Background color preset. Default 'teal-muted'. Use 'custom' + bg_color_custom for any hex. */
-  bg_color?: PressBarBgPreset;
-  /** Raw CSS color used only when bg_color === 'custom'. */
+  /**
+   * Background color. Stored as either a brand-token key ("brandSubtle",
+   * "brandHighlight", ...) or — for legacy rows — the old preset name.
+   * Resolved via resolveBrandColor() so AO brand edits propagate live.
+   */
+  bg_color?: string;
+  /** @deprecated Old "custom" path — kept so legacy rows keep rendering. */
   bg_color_custom?: string;
-  /** Heading text color (any CSS color). Defaults to white on dark bg, charcoal on light. */
+  /** Brand-token key for heading text color. Blank means "auto" (contrast-aware). */
   heading_color?: string;
+  /** Brand font key for the heading ("body" | "heading"). Defaults to "heading". */
+  heading_font?: "body" | "heading";
   /** Regular-logo max height in px (default 48). Featured logos get 2× this. */
   logo_height_px?: number;
 };

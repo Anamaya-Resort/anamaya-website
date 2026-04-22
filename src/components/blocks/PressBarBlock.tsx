@@ -1,18 +1,25 @@
 import Link from "next/link";
-import type { PressBarBgPreset, PressBarContent } from "@/types/blocks";
+import type { PressBarContent } from "@/types/blocks";
+import { resolveBrandColor } from "@/config/brand-tokens";
 
-/** Map a preset slug (or arbitrary CSS color) to actual CSS values. */
+/**
+ * Resolve background color + a readable default heading color.
+ * Handles new brand-token keys, legacy preset names, and legacy
+ * bg_color="custom" + bg_color_custom hex from pre-brand-tokens rows.
+ */
 function resolveBg(content: PressBarContent): { bg: string; fgDefault: string } {
-  const preset = (content.bg_color ?? "teal-muted") as PressBarBgPreset;
-  switch (preset) {
-    case "mint":       return { bg: "#b8d3cf", fgDefault: "#444444" };
-    case "cream":      return { bg: "#fbfbfb", fgDefault: "#444444" };
-    case "white":      return { bg: "#ffffff", fgDefault: "#444444" };
-    case "charcoal":   return { bg: "#444444", fgDefault: "#ffffff" };
-    case "custom":     return { bg: content.bg_color_custom ?? "#7aa59e", fgDefault: "#ffffff" };
-    case "teal-muted":
-    default:           return { bg: "#7aa59e", fgDefault: "#ffffff" };
-  }
+  const raw =
+    content.bg_color === "custom"
+      ? (content.bg_color_custom ?? "")
+      : (content.bg_color ?? "");
+  const key = raw || "brandDivider";
+  const bg = resolveBrandColor(key) ?? "#7aa59e";
+  const lightBgKeys = new Set([
+    "brand", "brandSubtle", "brandBtnText",
+    "cream", "white", "mint",
+  ]);
+  const fgDefault = lightBgKeys.has(key) ? "#444444" : "#ffffff";
+  return { bg, fgDefault };
 }
 
 export default function PressBarBlock({ content }: { content: PressBarContent }) {
@@ -21,12 +28,15 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
     logos = [],
     column_widths_pct,
     heading_color,
+    heading_font = "heading",
   } = content ?? {};
   if (logos.length === 0) return null;
 
   const { bg, fgDefault } = resolveBg(content);
   const logoHeight = content.logo_height_px ?? 48;
   const featuredHeight = logoHeight * 2;
+  const headingCss = resolveBrandColor(heading_color) ?? fgDefault;
+  const headingFontClass = heading_font === "body" ? "font-sans" : "font-heading";
 
   const gridTemplateColumns =
     column_widths_pct && column_widths_pct.length === logos.length
@@ -38,8 +48,8 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
       {/* Full-bleed — no max-width cap; logos fill the available width */}
       <div className="mx-auto w-full max-w-[1600px]">
         <h2
-          className="font-heading mb-6 text-center text-sm font-semibold uppercase tracking-[0.3em]"
-          style={{ color: heading_color ?? fgDefault }}
+          className={`${headingFontClass} mb-6 text-center text-sm font-semibold uppercase tracking-[0.3em]`}
+          style={{ color: headingCss }}
         >
           {heading}
         </h2>

@@ -6,6 +6,9 @@ import { toBlob } from "html-to-image";
 import type { PressBarContent, PressBarLogo } from "@/types/blocks";
 import { uploadPressLogo, uploadBlockSnapshot } from "../../actions";
 import LivePreview from "@/components/admin/blocks/LivePreview";
+import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
+import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
+import type { OrgBranding } from "@/config/brand-tokens";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -14,23 +17,25 @@ function emptyLogo(): PressBarLogo {
   return { name: "", src: "", width: 100, height: 30, href: null, featured: false };
 }
 
-const BG_PRESETS: { value: string; label: string; swatch: string }[] = [
-  { value: "teal-muted", label: "Teal muted (default)", swatch: "#7aa59e" },
-  { value: "mint",       label: "Mint",                 swatch: "#b8d3cf" },
-  { value: "cream",      label: "Cream",                swatch: "#fbfbfb" },
-  { value: "white",      label: "White",                swatch: "#ffffff" },
-  { value: "charcoal",   label: "Charcoal",             swatch: "#444444" },
-  { value: "custom",     label: "Custom (hex)",         swatch: "transparent" },
-];
-
 function normalize(content: PressBarContent | null | undefined): PressBarContent {
+  // Back-compat: map the old "teal-muted"/etc. presets to brand-token keys
+  // so existing rows render correctly in the new picker.
+  const legacy: Record<string, string> = {
+    "teal-muted": "brandDivider",
+    "cream":      "brandSubtle",
+    "white":      "brand",
+    "custom":     content?.bg_color_custom ?? "brandDivider",
+  };
+  const rawBg = content?.bg_color ?? "brandDivider";
+  const bg_color = rawBg in legacy ? legacy[rawBg] : rawBg;
+
   return {
     heading: content?.heading ?? "Recommended by:",
     column_widths_pct: content?.column_widths_pct,
     logos: content?.logos ?? [],
-    bg_color: (content?.bg_color ?? "teal-muted") as PressBarContent["bg_color"],
-    bg_color_custom: content?.bg_color_custom ?? "#7aa59e",
+    bg_color,
     heading_color: content?.heading_color ?? "",
+    heading_font: content?.heading_font ?? "heading",
     logo_height_px: content?.logo_height_px ?? 48,
   };
 }
@@ -39,10 +44,12 @@ export default function PressBarEditor({
   blockId,
   content,
   onSave,
+  brandTokens,
 }: {
   blockId: string;
   content: PressBarContent;
   onSave: (content: unknown) => Promise<void>;
+  brandTokens: Required<OrgBranding>;
 }) {
   // `draft` is what inputs bind to. `preview` is what the <LivePreview> renders
   // and what gets saved. Text fields write to draft on keystroke, then commit
@@ -158,7 +165,6 @@ export default function PressBarEditor({
       preview.column_widths_pct && preview.column_widths_pct.length === preview.logos.length
         ? preview.column_widths_pct
         : undefined,
-    bg_color_custom: preview.bg_color === "custom" ? preview.bg_color_custom : undefined,
     heading_color: preview.heading_color || undefined,
   };
 
@@ -181,7 +187,7 @@ export default function PressBarEditor({
         action={handleSave}
         className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200"
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4">
           <label className="block">
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
               Heading
@@ -194,76 +200,65 @@ export default function PressBarEditor({
               )}
             />
           </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-              Heading color (blank = auto)
-            </span>
-            <input
-              className={inputCls}
-              placeholder="#ffffff"
-              {...textFieldProps(
-                (d) => d.heading_color ?? "",
-                (d, v) => ({ ...d, heading_color: v }),
-              )}
-            />
-          </label>
 
-          <label className="block">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                Heading font
+              </span>
+              <BrandFontSelect
+                value={draft.heading_font}
+                onChange={(v) => patch({ heading_font: v })}
+              />
+            </div>
+
+            <div>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                Heading color (Auto = contrast-aware)
+              </span>
+              <BrandColorSelect
+                value={draft.heading_color}
+                onChange={(v) => patch({ heading_color: v })}
+                brandTokens={brandTokens}
+                allowAuto
+              />
+            </div>
+          </div>
+
+          <div>
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
               Background color
             </span>
-            <select
-              className={inputCls}
+            <BrandColorSelect
               value={draft.bg_color}
-              onChange={(e) =>
-                patch({ bg_color: e.target.value as PressBarContent["bg_color"] })
-              }
-            >
-              {BG_PRESETS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => patch({ bg_color: v })}
+              brandTokens={brandTokens}
+            />
+          </div>
+
+          <label className="block max-w-xs">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+              Logo height (px, featured is 2×)
+            </span>
+            <input
+              type="number"
+              min={24}
+              max={160}
+              className={inputCls}
+              value={draft.logo_height_px ?? 48}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 48;
+                setDraft((d) => ({ ...d, logo_height_px: v }));
+              }}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commit();
+                }
+              }}
+            />
           </label>
-          {draft.bg_color === "custom" ? (
-            <label className="block">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-                Custom bg color (CSS hex/rgb)
-              </span>
-              <input
-                className={inputCls}
-                {...textFieldProps(
-                  (d) => d.bg_color_custom ?? "",
-                  (d, v) => ({ ...d, bg_color_custom: v }),
-                )}
-              />
-            </label>
-          ) : (
-            <label className="block">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-                Logo height (px, featured is 2×)
-              </span>
-              <input
-                type="number"
-                min={24}
-                max={160}
-                className={inputCls}
-                value={draft.logo_height_px ?? 48}
-                onChange={(e) => {
-                  const v = Number(e.target.value) || 48;
-                  setDraft((d) => ({ ...d, logo_height_px: v }));
-                }}
-                onBlur={commit}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    commit();
-                  }
-                }}
-              />
-            </label>
-          )}
         </div>
 
         <label className="mt-4 block">

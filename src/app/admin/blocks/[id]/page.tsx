@@ -12,6 +12,7 @@ import HeroEditor from "./editors/HeroEditor";
 import CtaBannerEditor from "./editors/CtaBannerEditor";
 import VariantCarousel from "@/components/admin/blocks/VariantCarousel";
 import type { BlockTypeSlug } from "@/types/blocks";
+import { getBrandTokens } from "@/lib/brand-tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function EditBlock({
     .maybeSingle();
   if (!block) notFound();
 
-  const [{ data: usages }, { data: siblings }, { data: type }] = await Promise.all([
+  const [{ data: usages }, { data: siblings }, { data: type }, brandTokens] = await Promise.all([
     sb.from("block_usages").select("page_key, sort_order").eq("block_id", id),
     sb
       .from("blocks")
@@ -38,6 +39,7 @@ export default async function EditBlock({
       .eq("type_slug", block.type_slug)
       .order("updated_at", { ascending: false }),
     sb.from("block_types").select("name").eq("slug", block.type_slug).maybeSingle(),
+    getBrandTokens(),
   ]);
 
   async function saveName(formData: FormData) {
@@ -112,7 +114,12 @@ export default async function EditBlock({
 
       {/* Main editor (with its live preview at the top of the form) */}
       {block.type_slug === "press_bar" && (
-        <PressBarEditor blockId={id} content={block.content} onSave={saveContent} />
+        <PressBarEditor
+          blockId={id}
+          content={block.content}
+          onSave={saveContent}
+          brandTokens={brandTokens}
+        />
       )}
       {block.type_slug === "rich_text" && (
         <RichTextEditor content={block.content} onSave={saveContent} />
