@@ -24,8 +24,10 @@ type BlockOption = {
   snapshot_url: string | null;
 };
 
+const IFRAME_HEIGHT = 520;
+
 export default function TemplateEditor({
-  templateId,
+  templateId: _templateId,
   variant,
   rows,
   allBlocks,
@@ -37,7 +39,14 @@ export default function TemplateEditor({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [inserterAt, setInserterAt] = useState<null | { beforeRowId?: string }>(null);
+  // Per-row wireframe visibility. Default: wireframe on for every block.
+  const [hiddenRows, setHiddenRows] = useState<Set<string>>(() => new Set());
+  // Where the block picker is currently open:
+  //   { beforeRowId: "<id>" } → insert before that row
+  //   { afterAll: true }      → append to end
+  //   null                    → closed
+  const [inserterAt, setInserterAt] =
+    useState<null | { beforeRowId?: string; afterAll?: boolean }>(null);
 
   if (!variant) {
     return (
@@ -47,20 +56,37 @@ export default function TemplateEditor({
     );
   }
 
+  function toggleWireframe(rowId: string) {
+    setHiddenRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowId)) next.delete(rowId);
+      else next.add(rowId);
+      return next;
+    });
+  }
+
   function refresh() {
     router.refresh();
   }
 
-  function handleAppend(blockId: string) {
+  function handleInsertAfter(rowId: string, blockId: string) {
+    // Insert *after* a given row by inserting before the next one, or
+    // appending if it's the last row.
+    const idx = rows.findIndex((r) => r.id === rowId);
+    const next = rows[idx + 1];
     startTransition(async () => {
-      await appendBlockToVariant(variant!.id, blockId);
+      if (next) {
+        await insertBlockBefore(variant!.id, next.id, blockId);
+      } else {
+        await appendBlockToVariant(variant!.id, blockId);
+      }
       setInserterAt(null);
       refresh();
     });
   }
-  function handleInsertBefore(rowId: string, blockId: string) {
+  function handleAppend(blockId: string) {
     startTransition(async () => {
-      await insertBlockBefore(variant!.id, rowId, blockId);
+      await appendBlockToVariant(variant!.id, blockId);
       setInserterAt(null);
       refresh();
     });
@@ -80,7 +106,7 @@ export default function TemplateEditor({
   }
 
   return (
-    <div className="space-y-3">
+    <div>
       <VariantHeader variant={variant} />
 
       {rows.length === 0 && (
@@ -89,44 +115,58 @@ export default function TemplateEditor({
         </div>
       )}
 
-      {rows.map((row, idx) => (
-        <div key={row.id}>
-          <Inserter
-            onPick={(blockId) => handleInsertBefore(row.id, blockId)}
-            isOpen={inserterAt?.beforeRowId === row.id}
-            onOpen={() => setInserterAt({ beforeRowId: row.id })}
-            onClose={() => setInserterAt(null)}
-            allBlocks={allBlocks}
-            label="Insert block here"
-          />
-          <BlockFrame
+      {/* Stack with NO vertical gap between rows — blocks connect as they
+          would on the live site. Each row is a flex layout: preview on
+          the left; eye + info panel + plus on the right, all sitting
+          outside the preview (not covering it). */}
+      <div className="space-y-0">
+        {rows.map((row, idx) => (
+          <TemplateRow
+            key={row.id}
             row={row}
             isFirst={idx === 0}
             isLast={idx === rows.length - 1}
-            onRemove={() => handleRemove(row.id)}
-            onMove={(delta) => handleMove(row.id, delta)}
+            wireframeOn={!hiddenRows.has(row.id)}
             pending={pending}
+            onToggleWireframe={() => toggleWireframe(row.id)}
+            onRemove={() => handleRemove(row.id)}
+            onMoveUp={() => handleMove(row.id, -1)}
+            onMoveDown={() => handleMove(row.id, 1)}
+            onInsertAfter={() => setInserterAt({ beforeRowId: row.id })}
           />
-        </div>
-      ))}
+        ))}
+      </div>
 
-      <Inserter
-        onPick={handleAppend}
-        isOpen={inserterAt != null && !inserterAt.beforeRowId}
-        onOpen={() => setInserterAt({})}
-        onClose={() => setInserterAt(null)}
-        allBlocks={allBlocks}
-        label={rows.length === 0 ? "+ Add first block" : "+ Add block to end"}
-        solid
-      />
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => setInserterAt({ afterAll: true })}
+          className="w-full rounded-md bg-anamaya-olive-dark py-2 text-xs font-semibold uppercase tracking-wider text-white hover:opacity-90"
+        >
+          {rows.length === 0 ? "+ Add first block" : "+ Add block to end"}
+        </button>
+      </div>
+
+      {inserterAt != null && (
+        <BlockPickerModal
+          allBlocks={allBlocks}
+          onPick={(blockId) => {
+            if (inserterAt.afterAll) {
+              handleAppend(blockId);
+            } else if (inserterAt.beforeRowId) {
+              handleInsertAfter(inserterAt.beforeRowId, blockId);
+            }
+          }}
+          onClose={() => setInserterAt(null)}
+        />
+      )}
     </div>
   );
 }
 
-/** Thin subheader showing the active variant and a placeholder for future A/B UI. */
 function VariantHeader({ variant }: { variant: NonNullable<Variant> }) {
   return (
-    <div className="mb-2 flex items-center justify-between rounded-md bg-zinc-50 px-4 py-2 text-xs text-anamaya-charcoal/70 ring-1 ring-zinc-200">
+    <div className="mb-3 flex items-center justify-between rounded-md bg-zinc-50 px-4 py-2 text-xs text-anamaya-charcoal/70 ring-1 ring-zinc-200">
       <div>
         <span className="font-semibold">{variant.name}</span>
         <code className="ml-2 rounded bg-white px-1.5 py-0.5 font-mono text-[10px] ring-1 ring-zinc-200">
@@ -139,135 +179,163 @@ function VariantHeader({ variant }: { variant: NonNullable<Variant> }) {
 }
 
 /**
- * Wraps a block preview with a bright green outline wireframe and a
- * floating info box in the top-right. The preview is an <iframe> so the
- * block renders at natural viewport width without the admin's chrome
- * affecting its layout, and without the live hero's transparent header
- * bleeding into the admin page.
+ * One block inside a template. Layout:
+ *   [ preview (iframe)            ] | [eye][info][+]
+ * - Preview has square corners and no vertical margin so blocks touch.
+ * - Green wireframe is an absolute-positioned 4px border inside the
+ *   preview cell; toggled via the eye tab and hidden when wireframeOn
+ *   is false.
+ * - Eye tab sticks to the right edge of the preview — persistent so
+ *   the wireframe can be toggled back on.
+ * - Info panel sits outside the preview to its right.
+ * - Plus tab (farthest right) inserts a new block immediately after
+ *   this row.
  */
-function BlockFrame({
+function TemplateRow({
   row,
   isFirst,
   isLast,
-  onRemove,
-  onMove,
+  wireframeOn,
   pending,
+  onToggleWireframe,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  onInsertAfter,
 }: {
   row: Row;
   isFirst: boolean;
   isLast: boolean;
-  onRemove: () => void;
-  onMove: (delta: -1 | 1) => void;
+  wireframeOn: boolean;
   pending: boolean;
+  onToggleWireframe: () => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onInsertAfter: () => void;
 }) {
-  const src = `/block-preview/${row.block.slug}`;
   return (
-    <section className="relative isolate my-3">
-      {/* Bright green wireframe — uses anamaya-green brand token. */}
-      <div className="relative overflow-hidden rounded-md ring-4 ring-anamaya-green">
+    <section className="flex items-stretch">
+      {/* Preview cell — square corners, no margin, sized by iframe height. */}
+      <div
+        className="relative flex-1 overflow-hidden bg-white"
+        style={{ height: IFRAME_HEIGHT }}
+      >
         <iframe
-          src={src}
+          src={`/block-preview/${row.block.slug}`}
           title={`Preview of ${row.block.name}`}
-          className="block h-[520px] w-full border-0 bg-white"
-          // height is a reasonable default; hero cover mode is 80vh of the
-          // iframe's own viewport, which ends up ~520px on a 700-800px iframe.
+          className="block h-full w-full border-0"
         />
+        {wireframeOn && (
+          <div
+            className="pointer-events-none absolute inset-0 border-4 border-anamaya-green"
+            aria-hidden="true"
+          />
+        )}
       </div>
 
-      {/* Floating info box */}
-      <aside className="pointer-events-auto absolute right-2 top-2 z-20 w-56 rounded-md bg-white/95 p-3 text-xs shadow-lg ring-1 ring-zinc-200 backdrop-blur-sm">
-        <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
-          {row.block.type_slug}
-        </div>
-        <div className="font-semibold text-anamaya-charcoal">{row.block.name}</div>
-        <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
-          [#{row.block.slug}]
-        </code>
-        <div className="mt-2 flex items-center gap-1">
-          <Link
-            href={`/admin/blocks/${row.block.id}`}
-            target="_blank"
-            className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
-          >
-            Edit ↗
-          </Link>
+      {/* Eye tab — always visible so the wireframe can be toggled back on.
+          Flush against the right edge of the preview. */}
+      <button
+        type="button"
+        onClick={onToggleWireframe}
+        title={wireframeOn ? "Hide wireframe" : "Show wireframe"}
+        aria-pressed={wireframeOn}
+        className={`flex w-8 shrink-0 items-center justify-center text-white transition-colors ${
+          wireframeOn
+            ? "bg-anamaya-green hover:bg-anamaya-green-dark"
+            : "bg-zinc-400 hover:bg-zinc-500"
+        }`}
+      >
+        {wireframeOn ? <EyeIcon /> : <EyeOffIcon />}
+      </button>
+
+      {/* Info panel — outside the preview, visible when wireframe is on. */}
+      {wireframeOn && (
+        <aside className="flex w-60 shrink-0 flex-col justify-between border-l border-zinc-200 bg-white p-3 text-xs">
+          <div>
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
+              {row.block.type_slug}
+            </div>
+            <div className="font-semibold text-anamaya-charcoal">{row.block.name}</div>
+            <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
+              [#{row.block.slug}]
+            </code>
+            <div className="mt-2 flex items-center gap-1">
+              <Link
+                href={`/admin/blocks/${row.block.id}`}
+                target="_blank"
+                className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+              >
+                Edit ↗
+              </Link>
+              <button
+                type="button"
+                onClick={onMoveUp}
+                disabled={isFirst || pending}
+                className="rounded border border-zinc-300 px-2 py-1 text-[10px] hover:bg-zinc-50 disabled:opacity-40"
+                title="Move up"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onClick={onMoveDown}
+                disabled={isLast || pending}
+                className="rounded border border-zinc-300 px-2 py-1 text-[10px] hover:bg-zinc-50 disabled:opacity-40"
+                title="Move down"
+              >
+                ↓
+              </button>
+            </div>
+          </div>
           <button
             type="button"
-            onClick={() => onMove(-1)}
-            disabled={isFirst || pending}
-            className="rounded border border-zinc-300 px-2 py-1 text-[10px] hover:bg-zinc-50 disabled:opacity-40"
-            title="Move up"
+            onClick={onRemove}
+            disabled={pending}
+            className="mt-2 w-full rounded border border-red-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 disabled:opacity-50"
           >
-            ↑
+            Remove
           </button>
-          <button
-            type="button"
-            onClick={() => onMove(+1)}
-            disabled={isLast || pending}
-            className="rounded border border-zinc-300 px-2 py-1 text-[10px] hover:bg-zinc-50 disabled:opacity-40"
-            title="Move down"
-          >
-            ↓
-          </button>
-        </div>
-        <button
-          type="button"
-          onClick={onRemove}
-          disabled={pending}
-          className="mt-2 w-full rounded border border-red-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 disabled:opacity-50"
-        >
-          Remove
-        </button>
-      </aside>
+        </aside>
+      )}
+
+      {/* Plus tab — farthest right. Inserts a new block after this row. */}
+      <button
+        type="button"
+        onClick={onInsertAfter}
+        title="Insert a block after this one"
+        className="flex w-8 shrink-0 items-center justify-center bg-anamaya-charcoal text-white transition-colors hover:bg-black"
+      >
+        <PlusIcon />
+      </button>
     </section>
   );
 }
 
-/** Thin "+ Insert" zone between blocks. Clicking opens the block picker. */
-function Inserter({
-  onPick,
-  onOpen,
-  onClose,
-  isOpen,
-  allBlocks,
-  label,
-  solid = false,
-}: {
-  onPick: (blockId: string) => void;
-  onOpen: () => void;
-  onClose: () => void;
-  isOpen: boolean;
-  allBlocks: BlockOption[];
-  label: string;
-  solid?: boolean;
-}) {
+/** Inline eye icons so we don't pull in an icon library. */
+function EyeIcon() {
   return (
-    <>
-      <button
-        type="button"
-        onClick={onOpen}
-        className={
-          solid
-            ? "w-full rounded-md bg-anamaya-olive-dark py-2 text-xs font-semibold uppercase tracking-wider text-white hover:opacity-90"
-            : "group flex w-full items-center justify-center py-1 text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/40 hover:text-anamaya-charcoal"
-        }
-      >
-        {solid ? label : (
-          <span className="flex items-center gap-2">
-            <span className="h-px w-full min-w-10 bg-zinc-200 group-hover:bg-anamaya-charcoal/30" />
-            <span>+ {label}</span>
-            <span className="h-px w-full min-w-10 bg-zinc-200 group-hover:bg-anamaya-charcoal/30" />
-          </span>
-        )}
-      </button>
-      {isOpen && (
-        <BlockPickerModal
-          allBlocks={allBlocks}
-          onPick={onPick}
-          onClose={onClose}
-        />
-      )}
-    </>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+function EyeOffIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
   );
 }
 
@@ -346,7 +414,7 @@ function BlockPickerModal({
                     </span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-anamaya-charcoal">{b.name}</div>
                   <div className="mt-0.5 flex items-center gap-2 text-[11px] text-anamaya-charcoal/60">
                     <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono">

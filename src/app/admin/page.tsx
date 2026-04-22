@@ -10,6 +10,18 @@ export default function AdminHome() {
       <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <li>
           <Link
+            href="/admin/templates"
+            className="block rounded-lg border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md"
+          >
+            <h2 className="text-lg font-semibold">Templates</h2>
+            <p className="mt-1 text-sm text-anamaya-charcoal/70">
+              Page layouts composed of blocks (Home, Retreat, Blog). Each
+              template supports variants for A/B testing.
+            </p>
+          </Link>
+        </li>
+        <li>
+          <Link
             href="/admin/blocks"
             className="block rounded-lg border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md"
           >
