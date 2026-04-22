@@ -5,17 +5,41 @@ export type RichTextContent = {
   html: string;
 };
 
+/**
+ * A horizontal "band" sitting above or below the hero video. Optional;
+ * the band disappears entirely when `enabled` is false.
+ *
+ * Text is plain text with uniform formatting controls. Colors can be
+ * either a brand-token key (preferred — updates live when AO branding
+ * changes) or a raw hex.
+ */
+export type HeroBandContent = {
+  enabled?: boolean;
+  height_px?: number;
+  bg_color?: string;
+  text?: string;
+  text_font?: "body" | "heading";
+  text_size_px?: number;
+  text_bold?: boolean;
+  text_italic?: boolean;
+  text_color?: string;
+};
+
+/**
+ * Hero With Video block. Structure: optional top band, video, optional
+ * bottom band. Video can be either a YouTube URL/ID (embedded via iframe)
+ * or an uploaded MP4 stored in Supabase Storage.
+ */
 export type HeroContent = {
-  title?: string;
-  subtitle?: string;
-  image_url?: string;
-  video_youtube_id?: string;
+  video_source?: "youtube" | "upload";
+  /** Either a full YouTube URL or just the 11-char video id. */
+  youtube_url?: string;
+  /** Public URL of an uploaded video file. */
+  video_url?: string;
+  /** Optional poster image shown before the video plays. */
   video_poster_url?: string;
-  cta?: { label: string; href: string };
-  /** 0-100 — darkening overlay on the image/video for text legibility. */
-  overlay_opacity?: number;
-  /** Section height in vh. Default 80. */
-  height_vh?: number;
+  top?: HeroBandContent;
+  bottom?: HeroBandContent;
 };
 
 export type CtaBannerContent = {

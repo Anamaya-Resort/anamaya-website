@@ -7,12 +7,24 @@ export const dynamic = "force-dynamic";
 
 export default async function BlocksIndex() {
   const sb = supabaseServer();
-  const [{ data: types }, { data: blocks }, { data: usages }] = await Promise.all([
-    sb.from("block_types").select("slug, name, description").order("name"),
-    sb
+  // Defensive: if migration 0008 hasn't been applied yet, the `slug`
+  // column won't exist and the list page would come up empty. Try the
+  // new query first, fall back to the old one with a synthetic slug.
+  async function fetchBlocks() {
+    const withSlug = await sb
       .from("blocks")
       .select("id, type_slug, name, slug, snapshot_url, updated_at")
-      .order("name"),
+      .order("name");
+    if (!withSlug.error) return withSlug.data ?? [];
+    const fb = await sb
+      .from("blocks")
+      .select("id, type_slug, name, snapshot_url, updated_at")
+      .order("name");
+    return (fb.data ?? []).map((b) => ({ ...b, slug: `${b.type_slug}_?` }));
+  }
+  const [{ data: types }, blocks, { data: usages }] = await Promise.all([
+    sb.from("block_types").select("slug, name, description").order("name"),
+    fetchBlocks(),
     sb.from("block_usages").select("block_id, page_key"),
   ]);
 
@@ -24,7 +36,7 @@ export default async function BlocksIndex() {
   }
 
   const byType = new Map<string, any[]>();
-  for (const b of blocks ?? []) {
+  for (const b of blocks) {
     const arr = byType.get(b.type_slug) ?? [];
     arr.push(b);
     byType.set(b.type_slug, arr);

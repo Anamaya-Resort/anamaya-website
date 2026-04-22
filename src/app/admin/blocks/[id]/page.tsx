@@ -23,25 +23,48 @@ export default async function EditBlock({
   const { id } = await params;
   const sb = supabaseServer();
 
-  const { data: block } = await sb
-    .from("blocks")
-    .select("id, type_slug, name, slug, content")
-    .eq("id", id)
-    .maybeSingle();
+  // Defensive read — if migration 0008 hasn't run, `slug` doesn't
+  // exist yet; fall back to the old shape with a synthetic slug.
+  async function fetchBlock() {
+    const withSlug = await sb
+      .from("blocks")
+      .select("id, type_slug, name, slug, content")
+      .eq("id", id)
+      .maybeSingle();
+    if (!withSlug.error) return withSlug.data;
+    const fb = await sb
+      .from("blocks")
+      .select("id, type_slug, name, content")
+      .eq("id", id)
+      .maybeSingle();
+    if (!fb.data) return null;
+    return { ...fb.data, slug: `${fb.data.type_slug}_?` };
+  }
+  const block = await fetchBlock();
   if (!block) notFound();
-  // Local constants so the inline server actions below don't lose
-  // TypeScript narrowing on `block` when captured inside closures.
+  // Localise narrowed values so closures below don't lose them.
+  const typeSlug = block.type_slug;
   const currentName = block.name;
   const currentSlug = block.slug;
 
-  const [{ data: usages }, { data: siblings }, { data: type }, brandTokens] = await Promise.all([
-    sb.from("block_usages").select("page_key, sort_order").eq("block_id", id),
-    sb
+  async function fetchSiblings() {
+    const withSlug = await sb
       .from("blocks")
       .select("id, name, slug, snapshot_url, updated_at")
-      .eq("type_slug", block.type_slug)
-      .order("updated_at", { ascending: false }),
-    sb.from("block_types").select("name").eq("slug", block.type_slug).maybeSingle(),
+      .eq("type_slug", typeSlug)
+      .order("updated_at", { ascending: false });
+    if (!withSlug.error) return withSlug.data ?? [];
+    const fb = await sb
+      .from("blocks")
+      .select("id, name, snapshot_url, updated_at")
+      .eq("type_slug", typeSlug)
+      .order("updated_at", { ascending: false });
+    return (fb.data ?? []).map((s) => ({ ...s, slug: `${typeSlug}_?` }));
+  }
+  const [{ data: usages }, siblings, { data: type }, brandTokens] = await Promise.all([
+    sb.from("block_usages").select("page_key, sort_order").eq("block_id", id),
+    fetchSiblings(),
+    sb.from("block_types").select("name").eq("slug", typeSlug).maybeSingle(),
     getBrandTokens(),
   ]);
 
@@ -128,7 +151,7 @@ export default async function EditBlock({
           content={block.content}
           onSave={saveAll}
           brandTokens={brandTokens}
-          variants={siblings ?? []}
+          variants={siblings}
           typeName={type?.name ?? block.type_slug}
         />
       )}
