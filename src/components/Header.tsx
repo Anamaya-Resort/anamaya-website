@@ -41,7 +41,7 @@ export default function Header({ user = null }: Props) {
         className={[
           "fixed top-0 left-0 right-0 z-40 w-full transition-all duration-300",
           lightMode
-            ? "bg-transparent"
+            ? "bg-anamaya-charcoal/50 backdrop-blur-sm"
             : "bg-white/95 shadow-sm backdrop-blur-sm",
         ].join(" ")}
       >

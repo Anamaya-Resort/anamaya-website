@@ -1,31 +1,48 @@
 /**
- * Generates a short click sound via Web Audio API — no external asset
- * needed. Call from a button's onClick handler. Silently no-ops in
- * environments without AudioContext (SSR, old browsers).
+ * Plays a short, light, tactile "tick" sound via the Web Audio API.
+ * No asset needed. Silently no-ops in environments without AudioContext
+ * (SSR, very old browsers).
+ *
+ * Implementation: 12ms of decaying white noise through a high-pass
+ * filter — gives a crisp click, not a tone.
  */
 let ctx: AudioContext | null = null;
 
 export function playClick() {
   if (typeof window === "undefined") return;
   try {
-    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const AC =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
     if (!AC) return;
     if (!ctx) ctx = new AC();
-    // Some browsers suspend the context until a user gesture; resume on every
-    // click is safe.
     if (ctx.state === "suspended") ctx.resume();
 
-    const osc = ctx.createOscillator();
+    const sampleRate = ctx.sampleRate;
+    const durationSec = 0.012;
+    const bufferSize = Math.floor(sampleRate * durationSec);
+    const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const decay = Math.pow(1 - i / bufferSize, 2);
+      data[i] = (Math.random() * 2 - 1) * decay;
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 2500;
+
     const gain = ctx.createGain();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(1100, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.06);
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0005, ctx.currentTime + 0.09);
-    osc.connect(gain);
+    gain.gain.value = 0.18;
+
+    source.connect(hp);
+    hp.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
+    source.start();
   } catch {
     // Ignore — audio is nice-to-have.
   }
