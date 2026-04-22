@@ -4,12 +4,17 @@ import { SOCIAL_ICON_MAP } from "./SocialIcons";
 
 const currentYear = new Date().getFullYear();
 
+// Same Sereenly form provider as the inline homepage block, but a different
+// form id for the footer (matches v2 so submissions land in the right list).
+const FOOTER_NEWSLETTER_SRC =
+  "https://link.sereenly.com/widget/form/KStRA3wdDq5FUO6ah5Xe";
+
 export default function Footer() {
   return (
     <footer className="bg-anamaya-charcoal text-zinc-300">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="lg:col-span-1">
             <h3 className="mb-3 text-lg font-semibold tracking-wide text-anamaya-olive">
               Anamaya Resort
             </h3>
@@ -56,6 +61,22 @@ export default function Footer() {
               </ul>
             </div>
           ))}
+
+          {/* Newsletter signup (v2 footer form id: KStRA3wdDq5FUO6ah5Xe) */}
+          <div>
+            <h3 className="mb-3 text-lg font-semibold tracking-wide text-anamaya-olive">
+              Receive our newsletter
+            </h3>
+            <div className="overflow-hidden rounded-md bg-white">
+              <iframe
+                title="Anamaya Newsletter Footer Signup"
+                src={FOOTER_NEWSLETTER_SRC}
+                className="h-[300px] w-full border-0"
+                loading="lazy"
+                allow="autoplay; encrypted-media; gyroscope;"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-6 text-xs text-zinc-500 sm:flex-row sm:items-center">

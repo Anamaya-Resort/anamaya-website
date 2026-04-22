@@ -43,19 +43,31 @@ const TESTIMONIALS = [
   },
 ];
 
-const MANDALA_BG =
+const MANDALA_LEFT =
   "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2020/02/mandala_lower-left_369.webp";
+const MANDALA_RIGHT =
+  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2018/12/mandala_upper-right-406.webp";
 
 export default function Testimonials() {
   return (
-    <section className="relative overflow-hidden bg-anamaya-mint px-6 py-20">
-      {/* Mandala decoration in the lower-left, matching v2 */}
+    <section className="relative overflow-hidden bg-white px-6 py-20">
+      {/* Decorative mandalas (hidden on mobile), matching v2's layout */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 h-80 w-80 opacity-30"
+        className="pointer-events-none absolute bottom-0 left-0 hidden h-96 w-96 md:block"
         style={{
-          backgroundImage: `url(${MANDALA_BG})`,
+          backgroundImage: `url(${MANDALA_LEFT})`,
           backgroundRepeat: "no-repeat",
           backgroundPosition: "bottom left",
+          backgroundSize: "contain",
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute top-0 right-0 hidden h-80 w-80 md:block"
+        style={{
+          backgroundImage: `url(${MANDALA_RIGHT})`,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "top right",
           backgroundSize: "contain",
         }}
         aria-hidden="true"
@@ -71,7 +83,7 @@ export default function Testimonials() {
           {TESTIMONIALS.map((t, i) => (
             <figure
               key={i}
-              className="flex flex-col rounded-lg bg-white p-6 shadow-md ring-1 ring-anamaya-charcoal/10"
+              className="flex flex-col rounded-lg bg-anamaya-cream p-6 shadow-md ring-1 ring-anamaya-charcoal/10"
             >
               <h3 className="text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
                 &ldquo;{t.headline}&rdquo;
