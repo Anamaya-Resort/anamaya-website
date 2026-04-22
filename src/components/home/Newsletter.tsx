@@ -6,8 +6,8 @@
 import SereenlyForm from "@/components/SereenlyForm";
 
 const HOME_NEWSLETTER_FORM_ID = "3VbotiuGfLgRUdIpi2ro";
-const OPT_IN_IMAGE =
-  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2019/07/opt-in.webp";
+// Optimized: 30 KB webp served from /public.
+const OPT_IN_IMAGE = "/yoga_shala.webp";
 
 export default function Newsletter() {
   return (

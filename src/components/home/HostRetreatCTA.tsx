@@ -1,8 +1,7 @@
 import Link from "next/link";
 
-// Real masthead photo from v2 Supabase Storage
-const MASTHEAD_BG =
-  "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images/v2/2021/03/masthead30-scaled-30.webp";
+// Optimized panoramic — served from /public so it's on the Vercel edge.
+const MASTHEAD_BG = "/costarica_wellness_retreats.webp";
 
 export default function HostRetreatCTA() {
   return (
