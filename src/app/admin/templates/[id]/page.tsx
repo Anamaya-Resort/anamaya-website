@@ -35,6 +35,18 @@ function computeNativeHeight(block: {
       return 360;
     case "rich_text":
       return 400;
+    case "rich_bg":
+      return 420;
+    case "video_showcase":
+      return 640;
+    case "checklist":
+      return 360;
+    case "newsletter":
+      return 280;
+    case "image_overlay":
+      return typeof c.height_px === "number" ? c.height_px : 480;
+    case "image_text":
+      return 420;
     default:
       return 360;
   }

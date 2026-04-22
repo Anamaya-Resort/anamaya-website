@@ -76,6 +76,63 @@ function emptyContentFor(typeSlug: string): unknown {
     };
     case "cta_banner": return { heading: "", cta: { label: "", href: "" } };
     case "press_bar":  return { heading: "Recommended by:", logos: [], bg_color: "brandDivider" };
+    case "rich_bg":    return {
+      html: "<p>Write your content here.</p>",
+      bg_color: "brandSubtle",
+      bg_image_fit: "cover",
+      padding_y_px: 48,
+    };
+    case "video_showcase": return {
+      bg_color: "brandSubtle",
+      padding_y_px: 48,
+      title_top: "",
+      title_top_font: "heading",
+      title_top_size_px: 32,
+      title_bottom: "",
+      title_bottom_font: "body",
+      title_bottom_size_px: 18,
+      video_source: "youtube",
+      youtube_url: "",
+      video_max_width_px: 800,
+    };
+    case "checklist":  return {
+      heading: "What's included",
+      heading_font: "heading",
+      heading_size_px: 28,
+      bg_color: "brandSubtle",
+      text_size_px: 16,
+      columns_top: [{ text: "Item one" }, { text: "Item two" }],
+      columns_bottom: [{ text: "Item three" }, { text: "Item four" }],
+      padding_y_px: 48,
+    };
+    case "newsletter": return {
+      bg_color: "brandSubtle",
+      heading: "Join our newsletter",
+      heading_font: "heading",
+      heading_size_px: 28,
+      description: "Monthly stories, retreat dates, and early-bird offers.",
+      description_size_px: 16,
+      input_placeholder: "your@email.com",
+      submit_label: "Subscribe",
+      submit_color: "brandBtn",
+      padding_y_px: 48,
+    };
+    case "image_overlay": return {
+      height_px: 480,
+      overlay_opacity: 25,
+      align: "center",
+      line_1: { text: "", font: "heading", size_px: 48, bold: true, color: "brandBtnText" },
+      line_2: { text: "", font: "body", size_px: 20, color: "brandBtnText" },
+      line_3: { text: "", font: "body", size_px: 16, color: "brandBtnText" },
+    };
+    case "image_text": return {
+      image_side: "left",
+      image_width_pct: 50,
+      html: "<p>Your text goes here.</p>",
+      bg_color: "brand",
+      padding_y_px: 48,
+      vertical_align: "center",
+    };
     default:           return {};
   }
 }

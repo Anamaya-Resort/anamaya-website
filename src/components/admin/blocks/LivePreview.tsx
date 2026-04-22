@@ -6,6 +6,12 @@ import PressBarBlock from "@/components/blocks/PressBarBlock";
 import RichTextBlock from "@/components/blocks/RichTextBlock";
 import CtaBannerBlock from "@/components/blocks/CtaBannerBlock";
 import HeroBlock from "@/components/blocks/HeroBlock";
+import RichBgBlock from "@/components/blocks/RichBgBlock";
+import VideoShowcaseBlock from "@/components/blocks/VideoShowcaseBlock";
+import ChecklistBlock from "@/components/blocks/ChecklistBlock";
+import NewsletterBlock from "@/components/blocks/NewsletterBlock";
+import ImageOverlayBlock from "@/components/blocks/ImageOverlayBlock";
+import ImageTextBlock from "@/components/blocks/ImageTextBlock";
 import VariantCarousel from "./VariantCarousel";
 
 /**
@@ -83,14 +89,16 @@ export default LivePreview;
 
 function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: any }) {
   switch (typeSlug) {
-    case "press_bar":
-      return <PressBarBlock content={content} />;
-    case "rich_text":
-      return <RichTextBlock content={content} />;
-    case "cta_banner":
-      return <CtaBannerBlock content={content} />;
-    case "hero":
-      return <HeroBlock content={content} />;
+    case "press_bar":      return <PressBarBlock content={content} />;
+    case "rich_text":      return <RichTextBlock content={content} />;
+    case "cta_banner":     return <CtaBannerBlock content={content} />;
+    case "hero":           return <HeroBlock content={content} />;
+    case "rich_bg":        return <RichBgBlock content={content} />;
+    case "video_showcase": return <VideoShowcaseBlock content={content} />;
+    case "checklist":      return <ChecklistBlock content={content} />;
+    case "newsletter":     return <NewsletterBlock content={content} />;
+    case "image_overlay":  return <ImageOverlayBlock content={content} />;
+    case "image_text":     return <ImageTextBlock content={content} />;
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">

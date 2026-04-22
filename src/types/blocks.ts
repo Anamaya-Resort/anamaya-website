@@ -115,7 +115,120 @@ export type PressBarContent = {
   section_height_px?: number;
 };
 
-export type BlockTypeSlug = "rich_text" | "hero" | "cta_banner" | "press_bar";
+// ─── NEW HOMEPAGE BLOCKS ──────────────────────────────────────────────
+
+/** Rich Text with Background — any HTML on a branded background. */
+export type RichBgContent = {
+  html?: string;
+  bg_color?: string;                           // brand key or hex
+  bg_image_url?: string;                       // optional background image
+  bg_image_fit?: "cover" | "contain" | "tile"; // scaling mode
+  text_color?: string;                         // brand key or hex
+  padding_y_px?: number;                       // vertical padding (default 48)
+};
+
+/** Video Showcase — solid-bg block with optional titles above and below. */
+export type VideoShowcaseContent = {
+  bg_color?: string;
+  padding_y_px?: number;
+  // Titles
+  title_top?: string;
+  title_top_font?: "body" | "heading";
+  title_top_size_px?: number;
+  title_top_color?: string;
+  title_top_bold?: boolean;
+  title_top_italic?: boolean;
+  title_bottom?: string;
+  title_bottom_font?: "body" | "heading";
+  title_bottom_size_px?: number;
+  title_bottom_color?: string;
+  title_bottom_bold?: boolean;
+  title_bottom_italic?: boolean;
+  // Video (same fields as Hero)
+  video_source?: "youtube" | "upload";
+  youtube_url?: string;
+  video_url?: string;
+  video_poster_url?: string;
+  /** Max width of the video frame in px (default 800). */
+  video_max_width_px?: number;
+};
+
+/** Double-row checklist. */
+export type ChecklistItem = { text: string };
+export type ChecklistContent = {
+  heading?: string;
+  heading_font?: "body" | "heading";
+  heading_color?: string;
+  heading_size_px?: number;
+  bg_color?: string;
+  text_color?: string;
+  text_size_px?: number;
+  columns_top?: ChecklistItem[];
+  columns_bottom?: ChecklistItem[];
+  padding_y_px?: number;
+};
+
+/** Newsletter signup. The form POSTs to form_action_url (optional). */
+export type NewsletterContent = {
+  bg_color?: string;
+  heading?: string;
+  heading_font?: "body" | "heading";
+  heading_color?: string;
+  heading_size_px?: number;
+  description?: string;
+  description_color?: string;
+  description_size_px?: number;
+  input_placeholder?: string;
+  submit_label?: string;
+  submit_color?: string;       // brand key or hex
+  form_action_url?: string;
+  padding_y_px?: number;
+};
+
+/** Full-width image with 3 lines of text overlaid. Each line fully styled. */
+export type ImageOverlayLine = {
+  text?: string;
+  font?: "body" | "heading";
+  size_px?: number;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+};
+export type ImageOverlayContent = {
+  image_url?: string;
+  height_px?: number;
+  overlay_opacity?: number;   // 0-100 darkening overlay
+  line_1?: ImageOverlayLine;
+  line_2?: ImageOverlayLine;
+  line_3?: ImageOverlayLine;
+  /** Content alignment within the section. */
+  align?: "left" | "center" | "right";
+};
+
+/** Image + text split with configurable column ratio. */
+export type ImageTextContent = {
+  image_url?: string;
+  image_side?: "left" | "right";
+  /** Image column width, 25-75. */
+  image_width_pct?: number;
+  html?: string;
+  bg_color?: string;
+  text_color?: string;
+  padding_y_px?: number;
+  vertical_align?: "top" | "center" | "bottom";
+};
+
+export type BlockTypeSlug =
+  | "rich_text"
+  | "hero"
+  | "cta_banner"
+  | "press_bar"
+  | "rich_bg"
+  | "video_showcase"
+  | "checklist"
+  | "newsletter"
+  | "image_overlay"
+  | "image_text";
 
 export type BlockRecord = {
   id: string;

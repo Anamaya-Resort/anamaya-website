@@ -11,6 +11,12 @@ import PressBarEditor from "./editors/PressBarEditor";
 import RichTextEditor from "./editors/RichTextEditor";
 import HeroEditor from "./editors/HeroEditor";
 import CtaBannerEditor from "./editors/CtaBannerEditor";
+import RichBgEditor from "./editors/RichBgEditor";
+import VideoShowcaseEditor from "./editors/VideoShowcaseEditor";
+import ChecklistEditor from "./editors/ChecklistEditor";
+import NewsletterEditor from "./editors/NewsletterEditor";
+import ImageOverlayEditor from "./editors/ImageOverlayEditor";
+import ImageTextEditor from "./editors/ImageTextEditor";
 import { getBrandTokens } from "@/lib/brand-tokens";
 
 export const dynamic = "force-dynamic";
@@ -172,6 +178,78 @@ export default async function EditBlock({
       )}
       {block.type_slug === "cta_banner" && (
         <CtaBannerEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "rich_bg" && (
+        <RichBgEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "video_showcase" && (
+        <VideoShowcaseEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "checklist" && (
+        <ChecklistEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "newsletter" && (
+        <NewsletterEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "image_overlay" && (
+        <ImageOverlayEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "image_text" && (
+        <ImageTextEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
       )}
     </div>
   );

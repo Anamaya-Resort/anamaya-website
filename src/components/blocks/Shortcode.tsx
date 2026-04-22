@@ -4,6 +4,12 @@ import RichTextBlock from "./RichTextBlock";
 import HeroBlock from "./HeroBlock";
 import CtaBannerBlock from "./CtaBannerBlock";
 import PressBarBlock from "./PressBarBlock";
+import RichBgBlock from "./RichBgBlock";
+import VideoShowcaseBlock from "./VideoShowcaseBlock";
+import ChecklistBlock from "./ChecklistBlock";
+import NewsletterBlock from "./NewsletterBlock";
+import ImageOverlayBlock from "./ImageOverlayBlock";
+import ImageTextBlock from "./ImageTextBlock";
 
 /**
  * Server component that renders the block identified by `slug` (matched
@@ -33,10 +39,16 @@ export default async function Shortcode({ slug }: { slug: string }) {
   }
   const content = data.content as unknown;
   switch (data.type_slug as BlockTypeSlug) {
-    case "rich_text":  return <RichTextBlock content={content as any} />;
-    case "hero":       return <HeroBlock content={content as any} />;
-    case "cta_banner": return <CtaBannerBlock content={content as any} />;
-    case "press_bar":  return <PressBarBlock content={content as any} />;
-    default:           return null;
+    case "rich_text":      return <RichTextBlock content={content as any} />;
+    case "hero":           return <HeroBlock content={content as any} />;
+    case "cta_banner":     return <CtaBannerBlock content={content as any} />;
+    case "press_bar":      return <PressBarBlock content={content as any} />;
+    case "rich_bg":        return <RichBgBlock content={content as any} />;
+    case "video_showcase": return <VideoShowcaseBlock content={content as any} />;
+    case "checklist":      return <ChecklistBlock content={content as any} />;
+    case "newsletter":     return <NewsletterBlock content={content as any} />;
+    case "image_overlay":  return <ImageOverlayBlock content={content as any} />;
+    case "image_text":     return <ImageTextBlock content={content as any} />;
+    default:               return null;
   }
 }
