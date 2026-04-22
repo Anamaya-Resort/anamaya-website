@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import VideoHero from "@/components/VideoHero";
-import PressBar from "@/components/home/PressBar";
+import { BlockByType } from "@/components/blocks/BlockRenderer";
 import IntroSection from "@/components/home/IntroSection";
 import BookingSection from "@/components/home/BookingSection";
 import FeaturedRetreats from "@/components/home/FeaturedRetreats";
@@ -29,7 +29,7 @@ export default function Home() {
         overlayOpacity={15}
       />
 
-      <PressBar />
+      <BlockByType pageKey="homepage" typeSlug="press_bar" />
 
       <IntroSection />
       <BookingSection />

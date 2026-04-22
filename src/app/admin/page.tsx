@@ -10,6 +10,18 @@ export default function AdminHome() {
       <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <li>
           <Link
+            href="/admin/blocks"
+            className="block rounded-lg border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md"
+          >
+            <h2 className="text-lg font-semibold">Blocks</h2>
+            <p className="mt-1 text-sm text-anamaya-charcoal/70">
+              Reusable content blocks (press bar, hero, CTA, rich text).
+              Edit once — updates flow through to every page that uses them.
+            </p>
+          </Link>
+        </li>
+        <li>
+          <Link
             href="/admin/testimonials"
             className="block rounded-lg border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md"
           >

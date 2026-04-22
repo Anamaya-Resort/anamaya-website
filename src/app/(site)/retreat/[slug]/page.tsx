@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getRetreatBySlug } from "@/lib/retreats";
 import ProseHtml from "@/components/ProseHtml";
-import PressBar from "@/components/home/PressBar";
+import { BlockByType } from "@/components/blocks/BlockRenderer";
 
 export const dynamic = "force-dynamic";
 
@@ -87,8 +87,8 @@ export default async function RetreatPage({
         </div>
       </section>
 
-      {/* Press bar — same "RECOMMENDED BY" row as the homepage, mint green */}
-      <PressBar />
+      {/* Press bar — same block as the homepage; edit once, updates everywhere */}
+      <BlockByType pageKey="retreat-template" typeSlug="press_bar" />
 
       {/* Meta row */}
       <section className="border-b border-anamaya-charcoal/10 bg-anamaya-cream px-6 py-6">

@@ -23,6 +23,12 @@ export default async function AdminLayout({
               Anamaya Admin
             </Link>
             <Link
+              href="/admin/blocks"
+              className="text-sm text-anamaya-charcoal/70 hover:text-anamaya-charcoal"
+            >
+              Blocks
+            </Link>
+            <Link
               href="/admin/testimonials"
               className="text-sm text-anamaya-charcoal/70 hover:text-anamaya-charcoal"
             >
