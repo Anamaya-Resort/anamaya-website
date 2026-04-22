@@ -5,6 +5,41 @@ import TemplateEditor from "@/components/admin/templates/TemplateEditor";
 
 export const dynamic = "force-dynamic";
 
+// Reference viewport height we pretend the admin iframes render inside.
+// Hero `cover` blocks specify height as a vh percentage; this lets us
+// compute a concrete pixel height so the iframe is exactly the block's
+// rendered height (no empty space below).
+const REFERENCE_VH_PX = 900;
+
+/** Best-guess pixel height for an iframe that should contain the given block. */
+function computeIframeHeight(block: {
+  type_slug: string;
+  content: Record<string, unknown> | null;
+}): number {
+  const c = (block.content ?? {}) as Record<string, unknown>;
+  switch (block.type_slug) {
+    case "hero": {
+      const fit = c.fit === "cover" ? "cover" : "aspect";
+      if (fit === "cover") {
+        const vh = typeof c.height_vh === "number" ? c.height_vh : 80;
+        return Math.round((vh / 100) * REFERENCE_VH_PX);
+      }
+      // 16:9 aspect at a typical admin preview width (~1100px wide).
+      return Math.round(1100 * (9 / 16));
+    }
+    case "press_bar": {
+      const h = typeof c.section_height_px === "number" ? c.section_height_px : 200;
+      return h;
+    }
+    case "cta_banner":
+      return 360;
+    case "rich_text":
+      return 400;
+    default:
+      return 360;
+  }
+}
+
 export default async function EditTemplate({
   params,
 }: {
@@ -28,12 +63,13 @@ export default async function EditTemplate({
 
   const defaultVariant = (variants ?? []).find((v) => v.is_default) ?? (variants ?? [])[0] ?? null;
 
-  // Blocks inside the default variant, in order, with the data needed for
-  // live rendering + the info box (name, slug, block id for the Edit link).
+  // Blocks inside the default variant, in order. We also pull `content`
+  // so the page can compute a per-block iframe height that matches the
+  // block's natural rendered size (no empty space below).
   const { data: rows } = defaultVariant
     ? await sb
         .from("page_template_variant_blocks")
-        .select("id, sort_order, block:blocks(id, slug, name, type_slug)")
+        .select("id, sort_order, block:blocks(id, slug, name, type_slug, content)")
         .eq("page_template_variant_id", defaultVariant.id)
         .order("sort_order")
     : { data: [] };
@@ -67,16 +103,26 @@ export default async function EditTemplate({
       <TemplateEditor
         templateId={template.id}
         variant={defaultVariant}
-        rows={(rows ?? []).map((r) => ({
-          id: r.id,
-          sort_order: r.sort_order,
-          block: r.block as unknown as {
+        rows={(rows ?? []).map((r) => {
+          const block = r.block as unknown as {
             id: string;
             slug: string;
             name: string;
             type_slug: string;
-          },
-        }))}
+            content: Record<string, unknown> | null;
+          };
+          return {
+            id: r.id,
+            sort_order: r.sort_order,
+            iframe_height: computeIframeHeight(block),
+            block: {
+              id: block.id,
+              slug: block.slug,
+              name: block.name,
+              type_slug: block.type_slug,
+            },
+          };
+        })}
         allBlocks={(allBlocks ?? []) as Array<{
           id: string;
           slug: string;

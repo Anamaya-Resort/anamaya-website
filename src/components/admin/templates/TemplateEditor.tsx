@@ -14,6 +14,7 @@ type Variant = { id: string; slug: string; name: string; is_default: boolean } |
 type Row = {
   id: string;
   sort_order: number;
+  iframe_height: number;
   block: { id: string; slug: string; name: string; type_slug: string };
 };
 type BlockOption = {
@@ -24,7 +25,10 @@ type BlockOption = {
   snapshot_url: string | null;
 };
 
-const IFRAME_HEIGHT = 520;
+// Small icon buttons sized identically so the eye and + line up on the
+// right edge of each row. Kept tiny + neutral so they don't compete
+// with the block previews.
+const ICON_BTN_SIZE = 26;
 
 export default function TemplateEditor({
   templateId: _templateId,
@@ -39,12 +43,7 @@ export default function TemplateEditor({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  // Per-row wireframe visibility. Default: wireframe on for every block.
   const [hiddenRows, setHiddenRows] = useState<Set<string>>(() => new Set());
-  // Where the block picker is currently open:
-  //   { beforeRowId: "<id>" } → insert before that row
-  //   { afterAll: true }      → append to end
-  //   null                    → closed
   const [inserterAt, setInserterAt] =
     useState<null | { beforeRowId?: string; afterAll?: boolean }>(null);
 
@@ -64,22 +63,15 @@ export default function TemplateEditor({
       return next;
     });
   }
-
   function refresh() {
     router.refresh();
   }
-
   function handleInsertAfter(rowId: string, blockId: string) {
-    // Insert *after* a given row by inserting before the next one, or
-    // appending if it's the last row.
     const idx = rows.findIndex((r) => r.id === rowId);
     const next = rows[idx + 1];
     startTransition(async () => {
-      if (next) {
-        await insertBlockBefore(variant!.id, next.id, blockId);
-      } else {
-        await appendBlockToVariant(variant!.id, blockId);
-      }
+      if (next) await insertBlockBefore(variant!.id, next.id, blockId);
+      else await appendBlockToVariant(variant!.id, blockId);
       setInserterAt(null);
       refresh();
     });
@@ -115,11 +107,10 @@ export default function TemplateEditor({
         </div>
       )}
 
-      {/* Stack with NO vertical gap between rows — blocks connect as they
-          would on the live site. Each row is a flex layout: preview on
-          the left; eye + info panel + plus on the right, all sitting
-          outside the preview (not covering it). */}
-      <div className="space-y-0">
+      {/* Blocks stack flush (no gap, square corners). Tabs (eye / +) live
+          in a thin right-hand strip outside the preview so they never
+          cover content. */}
+      <div>
         {rows.map((row, idx) => (
           <TemplateRow
             key={row.id}
@@ -151,11 +142,8 @@ export default function TemplateEditor({
         <BlockPickerModal
           allBlocks={allBlocks}
           onPick={(blockId) => {
-            if (inserterAt.afterAll) {
-              handleAppend(blockId);
-            } else if (inserterAt.beforeRowId) {
-              handleInsertAfter(inserterAt.beforeRowId, blockId);
-            }
+            if (inserterAt.afterAll) handleAppend(blockId);
+            else if (inserterAt.beforeRowId) handleInsertAfter(inserterAt.beforeRowId, blockId);
           }}
           onClose={() => setInserterAt(null)}
         />
@@ -178,19 +166,6 @@ function VariantHeader({ variant }: { variant: NonNullable<Variant> }) {
   );
 }
 
-/**
- * One block inside a template. Layout:
- *   [ preview (iframe)            ] | [eye][info][+]
- * - Preview has square corners and no vertical margin so blocks touch.
- * - Green wireframe is an absolute-positioned 4px border inside the
- *   preview cell; toggled via the eye tab and hidden when wireframeOn
- *   is false.
- * - Eye tab sticks to the right edge of the preview — persistent so
- *   the wireframe can be toggled back on.
- * - Info panel sits outside the preview to its right.
- * - Plus tab (farthest right) inserts a new block immediately after
- *   this row.
- */
 function TemplateRow({
   row,
   isFirst,
@@ -215,11 +190,12 @@ function TemplateRow({
   onInsertAfter: () => void;
 }) {
   return (
-    <section className="flex items-stretch">
-      {/* Preview cell — square corners, no margin, sized by iframe height. */}
+    <section className="relative flex items-stretch">
+      {/* Block preview. Square corners, no rounding. iframe is exactly as
+          tall as the block's natural content — computed server-side. */}
       <div
         className="relative flex-1 overflow-hidden bg-white"
-        style={{ height: IFRAME_HEIGHT }}
+        style={{ height: row.iframe_height }}
       >
         <iframe
           src={`/block-preview/${row.block.slug}`}
@@ -228,29 +204,56 @@ function TemplateRow({
         />
         {wireframeOn && (
           <div
-            className="pointer-events-none absolute inset-0 border-4 border-anamaya-green"
+            className="pointer-events-none absolute inset-0 border-2 border-anamaya-green"
             aria-hidden="true"
           />
         )}
       </div>
 
-      {/* Eye tab — always visible so the wireframe can be toggled back on.
-          Flush against the right edge of the preview. */}
-      <button
-        type="button"
-        onClick={onToggleWireframe}
-        title={wireframeOn ? "Hide wireframe" : "Show wireframe"}
-        aria-pressed={wireframeOn}
-        className={`flex w-8 shrink-0 items-center justify-center text-white transition-colors ${
-          wireframeOn
-            ? "bg-anamaya-green hover:bg-anamaya-green-dark"
-            : "bg-zinc-400 hover:bg-zinc-500"
-        }`}
-      >
-        {wireframeOn ? <EyeIcon /> : <EyeOffIcon />}
-      </button>
+      {/* Thin right strip holding both the Eye (top) and Plus (at the row
+          junction). The strip itself has zero background; it's just the
+          layout container for the two small buttons. */}
+      <div className="relative w-10 shrink-0">
+        {/* Eye — small rounded square, attached to the right edge of the
+            green wireframe. Left corners flush, right corners rounded. */}
+        <button
+          type="button"
+          onClick={onToggleWireframe}
+          title={wireframeOn ? "Hide wireframe" : "Show wireframe"}
+          aria-pressed={wireframeOn}
+          className={`absolute left-0 top-2 flex items-center justify-center text-white rounded-l-none rounded-r-md transition-colors ${
+            wireframeOn
+              ? "bg-anamaya-green hover:bg-anamaya-green-dark"
+              : "bg-zinc-400 hover:bg-zinc-500"
+          }`}
+          style={{ width: ICON_BTN_SIZE, height: ICON_BTN_SIZE }}
+        >
+          {wireframeOn ? <EyeIcon /> : <EyeOffIcon />}
+        </button>
 
-      {/* Info panel — outside the preview, visible when wireframe is on. */}
+        {/* Plus — small fully-rounded square centered on the bottom edge
+            of this row (so its centre sits on the line where this block
+            and the next one meet). Hidden on the last row. */}
+        {!isLast && (
+          <button
+            type="button"
+            onClick={onInsertAfter}
+            title="Insert a block here"
+            className="absolute left-0 z-10 flex items-center justify-center rounded-md bg-anamaya-charcoal text-white shadow hover:bg-black"
+            style={{
+              width: ICON_BTN_SIZE,
+              height: ICON_BTN_SIZE,
+              top: "100%",
+              transform: "translateY(-50%)",
+            }}
+          >
+            <PlusIcon />
+          </button>
+        )}
+      </div>
+
+      {/* Info panel — to the right of the icon strip, outside the preview.
+          Shown only when the wireframe is on so a "clean" view hides it. */}
       {wireframeOn && (
         <aside className="flex w-60 shrink-0 flex-col justify-between border-l border-zinc-200 bg-white p-3 text-xs">
           <div>
@@ -299,24 +302,13 @@ function TemplateRow({
           </button>
         </aside>
       )}
-
-      {/* Plus tab — farthest right. Inserts a new block after this row. */}
-      <button
-        type="button"
-        onClick={onInsertAfter}
-        title="Insert a block after this one"
-        className="flex w-8 shrink-0 items-center justify-center bg-anamaya-charcoal text-white transition-colors hover:bg-black"
-      >
-        <PlusIcon />
-      </button>
     </section>
   );
 }
 
-/** Inline eye icons so we don't pull in an icon library. */
 function EyeIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -324,7 +316,7 @@ function EyeIcon() {
 }
 function EyeOffIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
       <line x1="1" y1="1" x2="23" y2="23" />
     </svg>
@@ -332,7 +324,7 @@ function EyeOffIcon() {
 }
 function PlusIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
