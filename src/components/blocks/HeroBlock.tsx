@@ -134,19 +134,24 @@ function CoverStage({ content }: { content: HeroContent }) {
           style={{ animation: "heroFadeIn 800ms ease-in 200ms forwards", opacity: 0 }}
         >
           <iframe
-            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&iv_load_policy=3`}
+            src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&modestbranding=1&rel=0&fs=0&playsinline=1&disablekb=1&iv_load_policy=3&cc_load_policy=0`}
             title="Hero video"
             allow="autoplay; encrypted-media"
             aria-hidden="true"
             loading="lazy"
             className="pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2"
           />
+          {/* Covers the iframe so YouTube never receives pointer events —
+              belt-and-suspenders with the iframe's pointer-events-none,
+              which by itself doesn't reliably stop hover chrome in every
+              browser. */}
+          <div className="absolute inset-0 z-[1]" aria-hidden="true" />
         </div>
       )}
 
       {videoReady && source === "upload" && content.video_url && (
         <video
-          className="absolute inset-0 h-full w-full object-cover"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
           src={content.video_url}
           poster={content.video_poster_url}
           autoPlay
@@ -154,6 +159,7 @@ function CoverStage({ content }: { content: HeroContent }) {
           loop
           playsInline
           preload="none"
+          controls={false}
           aria-hidden="true"
           style={{ animation: "heroFadeIn 800ms ease-in forwards", opacity: 0 }}
         />
