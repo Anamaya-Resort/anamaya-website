@@ -42,7 +42,7 @@ export default function SideMenu({ open, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Site menu"
-        className={`absolute top-0 right-0 h-full w-full max-w-sm overflow-y-auto bg-zinc-900/95 text-zinc-100 shadow-xl transition-transform duration-300 ease-out ${
+        className={`absolute top-0 right-0 h-full w-full max-w-sm overflow-y-auto bg-anamaya-charcoal/90 backdrop-blur-sm text-zinc-100 shadow-xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -71,7 +71,7 @@ export default function SideMenu({ open, onClose }: Props) {
           <Link
             href={BOOK_CTA.href}
             onClick={onClose}
-            className="mt-8 block rounded-full bg-amber-600 px-5 py-3 text-center text-sm font-semibold tracking-wide text-white transition-colors hover:bg-amber-700"
+            className="mt-8 block rounded-full bg-anamaya-green px-5 py-3 text-center text-sm font-semibold tracking-wide text-white transition-colors hover:bg-anamaya-green-dark"
           >
             {BOOK_CTA.label}
           </Link>

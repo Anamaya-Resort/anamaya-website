@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { FOOTER_COLUMNS, SOCIAL_LINKS } from "@/data/nav";
+import { SOCIAL_ICON_MAP } from "./SocialIcons";
 
 const currentYear = new Date().getFullYear();
 
 export default function Footer() {
   return (
-    <footer className="bg-zinc-800 text-zinc-300">
+    <footer className="bg-anamaya-charcoal text-zinc-300">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <h3 className="mb-3 text-lg font-semibold tracking-wide text-amber-300">
+            <h3 className="mb-3 text-lg font-semibold tracking-wide text-anamaya-olive">
               Anamaya Resort
             </h3>
             <p className="text-sm leading-6 text-zinc-400">
@@ -17,23 +18,28 @@ export default function Footer() {
               Montezuma, Costa Rica.
             </p>
             <ul className="mt-6 flex flex-wrap gap-3">
-              {SOCIAL_LINKS.map((s) => (
-                <li key={s.label}>
-                  <Link
-                    href={s.href}
-                    aria-label={s.label}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-zinc-200 transition-colors hover:bg-amber-600 hover:text-white"
-                  >
-                    {s.label.slice(0, 2)}
-                  </Link>
-                </li>
-              ))}
+              {SOCIAL_LINKS.map((s) => {
+                const Icon = SOCIAL_ICON_MAP[s.label];
+                return (
+                  <li key={s.label}>
+                    <Link
+                      href={s.href}
+                      aria-label={s.label}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-zinc-200 transition-colors hover:bg-anamaya-green hover:text-white"
+                    >
+                      {Icon ? <Icon className="h-4 w-4" /> : s.label.slice(0, 2)}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
           {FOOTER_COLUMNS.map((col) => (
             <div key={col.heading}>
-              <h3 className="mb-3 text-lg font-semibold tracking-wide text-amber-300">
+              <h3 className="mb-3 text-lg font-semibold tracking-wide text-anamaya-olive">
                 {col.heading}
               </h3>
               <ul className="space-y-2 text-sm">
