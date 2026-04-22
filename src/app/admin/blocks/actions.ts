@@ -60,6 +60,30 @@ export async function deleteBlock(id: string) {
   revalidatePath("/", "layout");
 }
 
+/** Copy an existing block's content into a new block. Returns the new id. */
+export async function duplicateBlock(id: string): Promise<string> {
+  const sb = supabaseServer();
+  const { data: source, error: readErr } = await sb
+    .from("blocks")
+    .select("type_slug, name, content")
+    .eq("id", id)
+    .maybeSingle();
+  if (readErr || !source) throw new Error("Source block not found");
+
+  const { data, error } = await sb
+    .from("blocks")
+    .insert({
+      type_slug: source.type_slug,
+      name: `${source.name} (copy)`,
+      content: source.content,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/blocks");
+  return data.id;
+}
+
 /**
  * Upload an image file (from a press-bar logo slot) to Supabase Storage.
  * Returns the public URL + intrinsic dimensions so the client can update
