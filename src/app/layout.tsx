@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
+import BrandTokensStyle from "@/components/brand/BrandTokensStyle";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,6 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${oswald.variable} h-full antialiased`}>
       <head>
+        {/* Brand tokens from AnamayaOS (--brand-*, --radius, fonts, bg).
+            Injected inline so first paint already has the right palette. */}
+        <BrandTokensStyle />
         {/* LCP image on the homepage — preload so it starts loading while the
             HTML is still being parsed (~500 ms shaved off LCP). */}
         <link

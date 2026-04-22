@@ -13,13 +13,15 @@
   --color-anamaya-olive-dark: #636a26;
   --color-anamaya-cream: #fbfbfb;
 
-  /* Admin / auth palette — mirrors AnamayaOS (ao.anamaya.com) brand tokens
-     so the SSO login + admin UI feel consistent between the two sites. */
-  --color-anamaya-brand-subtle:   #F5F7ED;   /* Off-white page bg on auth pages */
-  --color-anamaya-brand-btn:      #A35B4E;   /* Terra cotta primary action */
-  --color-anamaya-brand-btn-hover:#8A4D42;
-  --color-anamaya-brand-highlight:#A0BF52;
-  --color-anamaya-brand-divider:  #9CB5B1;
+  /* Admin / auth palette — shared with AnamayaOS. Values come from the
+     --brand-* CSS vars set by <BrandTokensStyle> in the root layout
+     (sourced from AO's org_branding row). Editing these here does nothing;
+     change the brand at ao.anamaya.com/dashboard/settings#branding. */
+  --color-anamaya-brand-subtle:    var(--brand-subtle);
+  --color-anamaya-brand-btn:       var(--brand-btn);
+  --color-anamaya-brand-btn-hover: var(--brand-btn-hover);
+  --color-anamaya-brand-highlight: var(--brand-highlight);
+  --color-anamaya-brand-divider:   var(--brand-divider);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   /* Oswald — used on v2 for all-caps section headings ("RECOMMENDED BY:",
