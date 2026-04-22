@@ -38,6 +38,9 @@ function normalize(content: HeroContent | null | undefined): HeroContent {
     youtube_url: content?.youtube_url ?? "",
     video_url: content?.video_url ?? "",
     video_poster_url: content?.video_poster_url ?? "",
+    fit: content?.fit ?? "aspect",
+    height_vh: content?.height_vh ?? 80,
+    overlay_opacity: content?.overlay_opacity ?? 0,
     top: { ...defaultBand(), ...(content?.top ?? {}) },
     bottom: { ...defaultBand(), ...(content?.bottom ?? {}) },
   };
@@ -225,21 +228,75 @@ export default function HeroEditor({
             </button>
           </header>
 
-          <div className="mb-3 inline-flex rounded-md border border-zinc-300 bg-white p-0.5 text-[11px] font-semibold uppercase tracking-wider">
-            {(["youtube", "upload"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => patch({ video_source: s })}
-                className={`rounded-sm px-3 py-1 transition-colors ${
-                  draft.video_source === s
-                    ? "bg-anamaya-charcoal text-white"
-                    : "text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
-                }`}
-              >
-                {s === "youtube" ? "YouTube" : "Upload"}
-              </button>
-            ))}
+          <div className="mb-3 flex flex-wrap items-center gap-4">
+            <div className="inline-flex rounded-md border border-zinc-300 bg-white p-0.5 text-[11px] font-semibold uppercase tracking-wider">
+              {(["youtube", "upload"] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => patch({ video_source: s })}
+                  className={`rounded-sm px-3 py-1 transition-colors ${
+                    draft.video_source === s
+                      ? "bg-anamaya-charcoal text-white"
+                      : "text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
+                  }`}
+                >
+                  {s === "youtube" ? "YouTube" : "Upload"}
+                </button>
+              ))}
+            </div>
+
+            {/* Display-mode pills */}
+            <div className="inline-flex rounded-md border border-zinc-300 bg-white p-0.5 text-[11px] font-semibold uppercase tracking-wider">
+              {(["aspect", "cover"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => patch({ fit: f })}
+                  className={`rounded-sm px-3 py-1 transition-colors ${
+                    draft.fit === f
+                      ? "bg-anamaya-charcoal text-white"
+                      : "text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
+                  }`}
+                  title={
+                    f === "aspect"
+                      ? "16:9 inline player with controls"
+                      : "Full-viewport background, autoplay, no controls (homepage-style)"
+                  }
+                >
+                  {f === "aspect" ? "Aspect 16:9" : "Cover"}
+                </button>
+              ))}
+            </div>
+
+            {draft.fit === "cover" && (
+              <>
+                <label className="flex items-center gap-2 text-xs text-anamaya-charcoal/70">
+                  <span>Height (vh)</span>
+                  <input
+                    type="number"
+                    min={30}
+                    max={100}
+                    className="w-20 rounded-md border border-zinc-300 px-2 py-1 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+                    value={draft.height_vh ?? 80}
+                    onChange={(e) => setDraft((d) => ({ ...d, height_vh: Number(e.target.value) || 80 }))}
+                    onBlur={commit}
+                  />
+                </label>
+                <label className="flex items-center gap-2 text-xs text-anamaya-charcoal/70">
+                  <span>Overlay (0-100)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="w-20 rounded-md border border-zinc-300 px-2 py-1 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+                    value={draft.overlay_opacity ?? 0}
+                    onChange={(e) => setDraft((d) => ({ ...d, overlay_opacity: Number(e.target.value) || 0 }))}
+                    onBlur={commit}
+                  />
+                </label>
+              </>
+            )}
           </div>
 
           {draft.video_source === "youtube" ? (

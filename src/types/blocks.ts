@@ -38,6 +38,17 @@ export type HeroContent = {
   video_url?: string;
   /** Optional poster image shown before the video plays. */
   video_poster_url?: string;
+  /**
+   * Display mode:
+   * - "aspect": 16:9 player with controls, no autoplay (inline article video).
+   * - "cover":  full-viewport background; autoplays muted, loops, no controls.
+   *   Used for homepage-style hero sections.
+   */
+  fit?: "aspect" | "cover";
+  /** When fit=cover, section height in vh. Default 80. */
+  height_vh?: number;
+  /** Darkening overlay 0-100. Default 0. Applied in cover mode for contrast. */
+  overlay_opacity?: number;
   top?: HeroBandContent;
   bottom?: HeroBandContent;
 };
