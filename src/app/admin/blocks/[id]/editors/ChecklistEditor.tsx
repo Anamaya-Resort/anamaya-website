@@ -6,6 +6,7 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
+import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ChecklistContent, ChecklistItem } from "@/types/blocks";
 
@@ -182,6 +183,8 @@ function Form({ state }: { state: BlockEditorState<ChecklistContent> }) {
         onChangeText={(i, t) => updateItemText("columns_bottom", i, t)}
         onBlur={commit}
       />
+
+      <CtaFieldset cta={draft} onChange={(u) => patch(u)} brandTokens={brandTokens} />
     </>
   );
 }

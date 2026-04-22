@@ -5,6 +5,7 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ImageTextContent } from "@/types/blocks";
 
@@ -158,6 +159,8 @@ export default function ImageTextEditor(props: {
               />
             </div>
           </div>
+
+          <CtaFieldset cta={draft} onChange={(u) => patch(u)} brandTokens={brandTokens} />
         </>
       )}
     />

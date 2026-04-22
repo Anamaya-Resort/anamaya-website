@@ -1,5 +1,6 @@
 import type { VideoShowcaseContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import CtaButton from "./shared/CtaButton";
 
 /** Video on a solid background with optional titles above + below. */
 export default function VideoShowcaseBlock({ content }: { content: VideoShowcaseContent }) {
@@ -61,6 +62,7 @@ export default function VideoShowcaseBlock({ content }: { content: VideoShowcase
             italic={content.title_bottom_italic}
           />
         )}
+        <CtaButton cta={content ?? {}} />
       </div>
     </section>
   );

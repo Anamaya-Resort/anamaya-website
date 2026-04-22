@@ -1,5 +1,6 @@
 import type { ChecklistContent, ChecklistItem } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import CtaButton from "./shared/CtaButton";
 
 /** Two rows of checklist items on a branded background. */
 export default function ChecklistBlock({ content }: { content: ChecklistContent }) {
@@ -36,6 +37,7 @@ export default function ChecklistBlock({ content }: { content: ChecklistContent 
             <Row items={bottom} textSize={textSize} />
           </div>
         )}
+        <CtaButton cta={content ?? {}} />
       </div>
     </section>
   );

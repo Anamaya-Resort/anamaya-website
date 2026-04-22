@@ -117,8 +117,25 @@ export type PressBarContent = {
 
 // ─── NEW HOMEPAGE BLOCKS ──────────────────────────────────────────────
 
+/**
+ * Optional Call-To-Action button rendered at the bottom of a block.
+ * Disabled by default — editors surface a checkbox. Same shape used
+ * everywhere so the renderer and editor can be reused.
+ */
+export type BlockCta = {
+  cta_enabled?: boolean;
+  cta_label?: string;
+  cta_href?: string;
+  /** Brand token key or hex. */
+  cta_bg_color?: string;
+  /** Brand token key or hex. */
+  cta_text_color?: string;
+  cta_size_px?: number;
+  cta_font?: "body" | "heading";
+};
+
 /** Rich Text with Background — any HTML on a branded background. */
-export type RichBgContent = {
+export type RichBgContent = BlockCta & {
   html?: string;
   bg_color?: string;                           // brand key or hex
   bg_image_url?: string;                       // optional background image
@@ -128,7 +145,7 @@ export type RichBgContent = {
 };
 
 /** Video Showcase — solid-bg block with optional titles above and below. */
-export type VideoShowcaseContent = {
+export type VideoShowcaseContent = BlockCta & {
   bg_color?: string;
   padding_y_px?: number;
   // Titles
@@ -155,7 +172,7 @@ export type VideoShowcaseContent = {
 
 /** Double-row checklist. */
 export type ChecklistItem = { text: string };
-export type ChecklistContent = {
+export type ChecklistContent = BlockCta & {
   heading?: string;
   heading_font?: "body" | "heading";
   heading_color?: string;
@@ -194,7 +211,7 @@ export type ImageOverlayLine = {
   bold?: boolean;
   italic?: boolean;
 };
-export type ImageOverlayContent = {
+export type ImageOverlayContent = BlockCta & {
   image_url?: string;
   height_px?: number;
   overlay_opacity?: number;   // 0-100 darkening overlay
@@ -206,7 +223,7 @@ export type ImageOverlayContent = {
 };
 
 /** Image + text split with configurable column ratio. */
-export type ImageTextContent = {
+export type ImageTextContent = BlockCta & {
   image_url?: string;
   image_side?: "left" | "right";
   /** Image column width, 25-75. */

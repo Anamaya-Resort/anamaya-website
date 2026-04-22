@@ -8,6 +8,7 @@ import BlockEditorChrome, {
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { VideoShowcaseContent } from "@/types/blocks";
 import { uploadHeroVideo } from "../../actions";
@@ -217,6 +218,8 @@ function Form({ state }: { state: BlockEditorState<VideoShowcaseContent> }) {
       </section>
 
       <TitleGroup label="Bottom title" state={state} prefix="title_bottom" />
+
+      <CtaFieldset cta={draft} onChange={(u) => patch(u)} brandTokens={brandTokens} />
     </>
   );
 }

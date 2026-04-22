@@ -1,5 +1,6 @@
 import type { ImageTextContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import CtaButton from "./shared/CtaButton";
 
 /** Two-column: image on one side, free HTML on the other. */
 export default function ImageTextBlock({ content }: { content: ImageTextContent }) {
@@ -36,11 +37,13 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
   );
 
   const textCell = (
-    <div
-      className="px-8 py-6"
-      // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: content?.html ?? "" }}
-    />
+    <div className="px-8 py-6">
+      <div
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: content?.html ?? "" }}
+      />
+      <CtaButton cta={content ?? {}} />
+    </div>
   );
 
   return (

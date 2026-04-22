@@ -1,5 +1,6 @@
 import type { RichBgContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import CtaButton from "./shared/CtaButton";
 
 /** Rich text content on a branded background (color + optional image). */
 export default function RichBgBlock({ content }: { content: RichBgContent }) {
@@ -26,11 +27,13 @@ export default function RichBgBlock({ content }: { content: RichBgContent }) {
         paddingBottom: pad,
       }}
     >
-      <div
-        className="mx-auto w-full max-w-[1200px] px-6"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: content?.html ?? "" }}
-      />
+      <div className="mx-auto w-full max-w-[1200px] px-6">
+        <div
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: content?.html ?? "" }}
+        />
+        <CtaButton cta={content ?? {}} />
+      </div>
     </section>
   );
 }

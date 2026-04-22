@@ -1,5 +1,6 @@
 import type { ImageOverlayContent, ImageOverlayLine } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import CtaButton from "./shared/CtaButton";
 
 /** Full-width image with up to 3 lines of independently-styled text on top. */
 export default function ImageOverlayBlock({ content }: { content: ImageOverlayContent }) {
@@ -36,6 +37,7 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
         {([content?.line_1, content?.line_2, content?.line_3] as (ImageOverlayLine | undefined)[]).map(
           (line, i) => line?.text ? <Line key={i} line={line} /> : null,
         )}
+        <CtaButton cta={content ?? {}} />
       </div>
     </section>
   );

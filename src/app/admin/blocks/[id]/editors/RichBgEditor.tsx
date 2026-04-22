@@ -5,6 +5,7 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { RichBgContent } from "@/types/blocks";
 
@@ -119,6 +120,8 @@ export default function RichBgEditor(props: {
               />
             </label>
           </div>
+
+          <CtaFieldset cta={draft} onChange={(u) => patch(u)} brandTokens={brandTokens} />
         </>
       )}
     />

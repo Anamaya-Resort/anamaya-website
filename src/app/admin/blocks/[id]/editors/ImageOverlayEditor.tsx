@@ -7,6 +7,7 @@ import BlockEditorChrome, {
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ImageOverlayContent, ImageOverlayLine } from "@/types/blocks";
 
@@ -59,7 +60,7 @@ export default function ImageOverlayEditor(props: {
 }
 
 function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
-  const { draft, setDraft, commit, patch } = state;
+  const { draft, setDraft, commit, patch, brandTokens } = state;
   return (
     <>
       <div>
@@ -123,6 +124,8 @@ function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
       <LineEditor label="Line 1" state={state} which="line_1" />
       <LineEditor label="Line 2" state={state} which="line_2" />
       <LineEditor label="Line 3" state={state} which="line_3" />
+
+      <CtaFieldset cta={draft} onChange={(u) => patch(u)} brandTokens={brandTokens} />
     </>
   );
 }
