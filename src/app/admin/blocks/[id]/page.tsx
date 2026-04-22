@@ -10,8 +10,6 @@ import PressBarEditor from "./editors/PressBarEditor";
 import RichTextEditor from "./editors/RichTextEditor";
 import HeroEditor from "./editors/HeroEditor";
 import CtaBannerEditor from "./editors/CtaBannerEditor";
-import VariantCarousel from "@/components/admin/blocks/VariantCarousel";
-import type { BlockTypeSlug } from "@/types/blocks";
 import { getBrandTokens } from "@/lib/brand-tokens";
 
 export const dynamic = "force-dynamic";
@@ -112,13 +110,16 @@ export default async function EditBlock({
         </p>
       </header>
 
-      {/* Main editor (with its live preview at the top of the form) */}
+      {/* Main editor. LivePreview + VariantCarousel render inside it, above
+          the form, so preview + variants stay together as a single unit. */}
       {block.type_slug === "press_bar" && (
         <PressBarEditor
           blockId={id}
           content={block.content}
           onSave={saveContent}
           brandTokens={brandTokens}
+          variants={siblings ?? []}
+          typeName={type?.name ?? block.type_slug}
         />
       )}
       {block.type_slug === "rich_text" && (
@@ -130,14 +131,6 @@ export default async function EditBlock({
       {block.type_slug === "cta_banner" && (
         <CtaBannerEditor content={block.content} onSave={saveContent} />
       )}
-
-      {/* Variant carousel — WebP snapshots of other blocks of this type */}
-      <VariantCarousel
-        currentId={block.id}
-        typeSlug={block.type_slug as BlockTypeSlug}
-        typeName={type?.name ?? block.type_slug}
-        variants={siblings ?? []}
-      />
     </div>
   );
 }

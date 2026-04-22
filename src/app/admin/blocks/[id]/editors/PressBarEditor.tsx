@@ -40,16 +40,22 @@ function normalize(content: PressBarContent | null | undefined): PressBarContent
   };
 }
 
+type Variant = { id: string; name: string; snapshot_url: string | null };
+
 export default function PressBarEditor({
   blockId,
   content,
   onSave,
   brandTokens,
+  variants,
+  typeName,
 }: {
   blockId: string;
   content: PressBarContent;
   onSave: (content: unknown) => Promise<void>;
   brandTokens: Required<OrgBranding>;
+  variants: Variant[];
+  typeName: string;
 }) {
   // `draft` is what inputs bind to. `preview` is what the <LivePreview> renders
   // and what gets saved. Text fields write to draft on keystroke, then commit
@@ -171,7 +177,14 @@ export default function PressBarEditor({
   return (
     <>
       {preview.logos.length > 0 ? (
-        <LivePreview ref={previewRef} typeSlug="press_bar" content={previewForRender} />
+        <LivePreview
+          ref={previewRef}
+          typeSlug="press_bar"
+          content={previewForRender}
+          currentId={blockId}
+          typeName={typeName}
+          variants={variants}
+        />
       ) : (
         <section className="mb-8">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-anamaya-charcoal/60">

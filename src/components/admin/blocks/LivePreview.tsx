@@ -5,21 +5,45 @@ import type { BlockTypeSlug } from "@/types/blocks";
 import PressBarBlock from "@/components/blocks/PressBarBlock";
 import RichTextBlock from "@/components/blocks/RichTextBlock";
 import CtaBannerBlock from "@/components/blocks/CtaBannerBlock";
+import VariantCarousel from "./VariantCarousel";
 
 /**
  * Reusable live-preview shell for any block editor.
- * - Breaks out of the admin column to render at full viewport width.
- * - Exposes a ref to the preview node so the caller can html-to-image it.
+ *
+ * - Renders the block at true viewport width by wrapping the preview in
+ *   an outer div with `width: 100vw; marginLeft: calc(50% - 50vw)`. The
+ *   inner (ref'd) node is NOT margined, so html-to-image captures clean
+ *   content — if the ref sat on the margined node the snapshot would
+ *   come out shifted to the left.
+ * - Optionally renders a VariantCarousel directly underneath, keeping
+ *   preview + variants as a single visual unit at the top of every
+ *   block editor.
  */
+type Variant = {
+  id: string;
+  name: string;
+  snapshot_url: string | null;
+};
+
 type Props = {
   typeSlug: BlockTypeSlug;
   content: unknown;
-  /** Optional label shown at the top of the preview section. */
   label?: string;
+  /** When set, a VariantCarousel is rendered directly below the preview. */
+  currentId?: string;
+  typeName?: string;
+  variants?: Variant[];
 };
 
 const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
-  { typeSlug, content, label = "Live preview (as it appears on the site)" },
+  {
+    typeSlug,
+    content,
+    label = "Live preview (as it appears on the site)",
+    currentId,
+    typeName,
+    variants,
+  },
   ref,
 ) {
   return (
@@ -29,12 +53,26 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
           {label}
         </h3>
       </header>
-      <div
-        ref={ref}
-        style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}
-      >
-        <BlockRender typeSlug={typeSlug} content={content} />
+
+      {/* Outer wrapper breaks out of the admin column (full-bleed).
+          The ref goes on the inner node so html-to-image captures the
+          rendered block without the negative-margin offset. */}
+      <div style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
+        <div ref={ref}>
+          <BlockRender typeSlug={typeSlug} content={content} />
+        </div>
       </div>
+
+      {currentId && variants && (
+        <div className="mt-4">
+          <VariantCarousel
+            currentId={currentId}
+            typeSlug={typeSlug}
+            typeName={typeName ?? typeSlug}
+            variants={variants}
+          />
+        </div>
+      )}
     </section>
   );
 });
