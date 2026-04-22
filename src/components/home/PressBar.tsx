@@ -1,34 +1,42 @@
-// "RECOMMENDED BY:" press logos bar. Runs full-width with the muted-teal v2 bg
-// (rgba(122,165,158,0.8) ≈ anamaya-teal-muted). Sits between the fixed site
-// header and the video hero — first element in the page flow.
+// "RECOMMENDED BY:" press logos bar.
+// Sits BELOW the video hero. Muted-teal bg matching v2 (rgba(122,165,158,0.8)).
 //
-// The logos live on Supabase Storage as optimized webps; we defer-load them
-// with loading="lazy" and explicit width/height so they don't block paint.
+// Layout:
+//   - "Recommended by:" label
+//   - National Geographic centered on its own top row (featured)
+//   - 8 remaining logos in ONE uniform row (grid-cols-8 on desktop;
+//     wraps to 4 cols on narrow screens to stay readable)
+// Every other logo shares the same slot height so they balance regardless
+// of their native aspect ratios.
 
 import Link from "next/link";
 
 type Logo = {
   name: string;
-  /** absolute URL to the logo image (webp, already optimized) */
   src: string;
   width: number;
   height: number;
-  /** outbound link; null = not a link (first slot or missing) */
   href: string | null;
 };
 
 const SUPA =
   "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images";
 
-const NAT_GEO_URL =
-  "https://www.nationalgeographic.com/travel/best-of-the-world-2026/article/best-wellness-destinations";
+const NAT_GEO: Logo = {
+  name: "National Geographic",
+  src: `${SUPA}/v2/2026/03/national-geographic-black-512px.webp`,
+  width: 512,
+  height: 151,
+  href: "https://www.nationalgeographic.com/travel/best-of-the-world-2026/article/best-wellness-destinations",
+};
 
+// Exactly 8 logos below — 4 visually left of where NatGeo sat, 4 right.
 const LOGOS: Logo[] = [
   {
     name: "Condé Nast Traveler",
     src: `${SUPA}/v2/2019/11/logo.webp`,
     width: 1056, height: 326,
-    href: null, // v2 has no link on the first logo
+    href: null, // matches v2 — first slot unlinked
   },
   {
     name: "National Post",
@@ -47,12 +55,6 @@ const LOGOS: Logo[] = [
     src: `${SUPA}/v2/2019/11/forbes.webp`,
     width: 713, height: 179,
     href: "https://www.forbes.com/sites/annabel/2019/08/20/5-yoga-retreats-to-book-for-fall-2019/",
-  },
-  {
-    name: "National Geographic",
-    src: `${SUPA}/v2/2026/03/national-geographic-black-512px.webp`,
-    width: 512, height: 151,
-    href: NAT_GEO_URL,
   },
   {
     name: "The Independent",
@@ -80,41 +82,13 @@ const LOGOS: Logo[] = [
   },
 ];
 
-export default function PressBar() {
-  return (
-    <section className="bg-anamaya-teal-muted px-6 py-8 pt-24">
-      <div className="mx-auto max-w-7xl">
-        <h2 className="mb-6 text-center text-xs font-semibold uppercase tracking-[0.3em] text-white/90">
-          Recommended by:
-        </h2>
-        <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
-          {LOGOS.map((logo) => (
-            <li key={logo.name}>
-              {logo.href ? (
-                <Link
-                  href={logo.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Read the article in ${logo.name}`}
-                  className="block transition-opacity hover:opacity-80"
-                >
-                  <LogoImg logo={logo} />
-                </Link>
-              ) : (
-                <LogoImg logo={logo} />
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function LogoImg({ logo }: { logo: Logo }) {
-  // Cap display height so all logos sit on the same baseline regardless of
-  // their native aspect. The explicit width/height attrs still reserve the
-  // correct space to avoid layout shift.
+function LogoImg({
+  logo,
+  heightClass,
+}: {
+  logo: Logo;
+  heightClass: string;
+}) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -124,7 +98,60 @@ function LogoImg({ logo }: { logo: Logo }) {
       height={logo.height}
       loading="lazy"
       decoding="async"
-      className="h-10 w-auto object-contain sm:h-12"
+      className={`max-w-full object-contain ${heightClass}`}
     />
+  );
+}
+
+export default function PressBar() {
+  return (
+    <section className="bg-anamaya-teal-muted px-6 py-10">
+      <div className="mx-auto max-w-6xl">
+        <h2 className="mb-6 text-center text-xs font-semibold uppercase tracking-[0.3em] text-white/90">
+          Recommended by:
+        </h2>
+
+        {/* Featured — National Geographic, centered, on its own row */}
+        <div className="mb-6 flex justify-center">
+          {NAT_GEO.href ? (
+            <Link
+              href={NAT_GEO.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Read the article in ${NAT_GEO.name}`}
+              className="block transition-opacity hover:opacity-80"
+            >
+              <LogoImg logo={NAT_GEO} heightClass="h-10 sm:h-12" />
+            </Link>
+          ) : (
+            <LogoImg logo={NAT_GEO} heightClass="h-10 sm:h-12" />
+          )}
+        </div>
+
+        {/* 8 logos — one row on desktop, wrap to 4 cols on narrow screens */}
+        <ul className="grid grid-cols-4 gap-x-6 gap-y-4 md:grid-cols-8">
+          {LOGOS.map((logo) => (
+            <li
+              key={logo.name}
+              className="flex h-8 items-center justify-center sm:h-9"
+            >
+              {logo.href ? (
+                <Link
+                  href={logo.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Read the article in ${logo.name}`}
+                  className="block h-full transition-opacity hover:opacity-80"
+                >
+                  <LogoImg logo={logo} heightClass="h-full" />
+                </Link>
+              ) : (
+                <LogoImg logo={logo} heightClass="h-full" />
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }

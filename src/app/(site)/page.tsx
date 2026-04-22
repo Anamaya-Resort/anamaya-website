@@ -25,14 +25,14 @@ const HERO_POSTER = "/yoga_retreat_costarica.webp";
 export default function Home() {
   return (
     <>
-      <PressBar />
-
       <VideoHero
         youtubeId={HERO_YOUTUBE_ID}
         mp4Src={HERO_MP4}
         poster={HERO_POSTER}
         overlayOpacity={15}
       />
+
+      <PressBar />
 
       <IntroSection />
       <BookingSection />
