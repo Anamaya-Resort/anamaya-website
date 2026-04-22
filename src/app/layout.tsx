@@ -23,8 +23,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <head>
-        {/* DNS + TLS warm-up for third-party origins we hit later. */}
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* DNS + TLS warm-up for origins we may hit after first paint.
+            Font is self-hosted by Next, so fonts.gstatic.com is NOT preconnected. */}
         <link rel="preconnect" href="https://www.youtube.com" />
         <link rel="preconnect" href="https://i.ytimg.com" />
         <link rel="dns-prefetch" href="https://link.sereenly.com" />
