@@ -28,6 +28,40 @@ export async function renameBlock(id: string, name: string) {
   revalidatePath(`/admin/blocks/${id}`);
 }
 
+/** Persist a new shortcode slug. Fails on uniqueness collisions. */
+export async function updateBlockSlug(id: string, slug: string) {
+  const sb = supabaseServer();
+  const clean = slug.trim().replace(/\s+/g, "_").toLowerCase();
+  if (!clean) throw new Error("Slug cannot be empty");
+  const { error } = await sb.from("blocks").update({ slug: clean }).eq("id", id);
+  if (error) {
+    if (error.code === "23505") throw new Error(`Slug "${clean}" is already in use`);
+    throw new Error(error.message);
+  }
+  revalidatePath("/admin/blocks");
+  revalidatePath(`/admin/blocks/${id}`);
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Generate a unique shortcode slug of the form `{typeSlug}_{n}` where n
+ * is the smallest positive integer that doesn't collide with an existing
+ * slug. Used by createBlock / duplicateBlock for new rows.
+ */
+async function nextAvailableSlug(typeSlug: string): Promise<string> {
+  const sb = supabaseServer();
+  const { data } = await sb
+    .from("blocks")
+    .select("slug")
+    .like("slug", `${typeSlug}_%`);
+  const used = new Set((data ?? []).map((r) => r.slug));
+  for (let n = 1; n < 10000; n++) {
+    const candidate = `${typeSlug}_${n}`;
+    if (!used.has(candidate)) return candidate;
+  }
+  return `${typeSlug}_${Date.now()}`;
+}
+
 /** Default blank content per block type. */
 function emptyContentFor(typeSlug: string): unknown {
   switch (typeSlug) {
@@ -42,9 +76,10 @@ function emptyContentFor(typeSlug: string): unknown {
 /** Create a new blank block of the given type and return its id. */
 export async function createBlock(typeSlug: string, name: string): Promise<string> {
   const sb = supabaseServer();
+  const slug = await nextAvailableSlug(typeSlug);
   const { data, error } = await sb
     .from("blocks")
-    .insert({ type_slug: typeSlug, name, content: emptyContentFor(typeSlug) })
+    .insert({ type_slug: typeSlug, name, slug, content: emptyContentFor(typeSlug) })
     .select("id")
     .single();
   if (error) throw new Error(error.message);
@@ -112,11 +147,13 @@ export async function duplicateBlock(id: string): Promise<string> {
     .maybeSingle();
   if (readErr || !source) throw new Error("Source block not found");
 
+  const slug = await nextAvailableSlug(source.type_slug);
   const { data, error } = await sb
     .from("blocks")
     .insert({
       type_slug: source.type_slug,
       name: `${source.name} (copy)`,
+      slug,
       content: source.content,
     })
     .select("id")

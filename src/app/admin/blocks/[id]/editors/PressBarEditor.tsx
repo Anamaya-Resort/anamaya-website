@@ -40,7 +40,12 @@ function normalize(content: PressBarContent | null | undefined): PressBarContent
   };
 }
 
-type Variant = { id: string; name: string; snapshot_url: string | null };
+export type Variant = {
+  id: string;
+  name: string;
+  slug: string;
+  snapshot_url: string | null;
+};
 
 const saveButtonCls =
   "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark disabled:opacity-50";
@@ -48,6 +53,7 @@ const saveButtonCls =
 export default function PressBarEditor({
   blockId,
   name: initialName,
+  slug: initialSlug,
   content,
   onSave,
   brandTokens,
@@ -56,8 +62,9 @@ export default function PressBarEditor({
 }: {
   blockId: string;
   name: string;
+  slug: string;
   content: PressBarContent;
-  onSave: (name: string, content: unknown) => Promise<void>;
+  onSave: (name: string, slug: string, content: unknown) => Promise<void>;
   brandTokens: Required<OrgBranding>;
   variants: Variant[];
   typeName: string;
@@ -69,6 +76,8 @@ export default function PressBarEditor({
   // both at once via patch().
   const initial = normalize(content);
   const [name, setName] = useState(initialName);
+  const [slug, setSlug] = useState(initialSlug);
+  const [copied, setCopied] = useState(false);
   const [draft, setDraft] = useState<PressBarContent>(initial);
   const [preview, setPreview] = useState<PressBarContent>(initial);
   const [saving, setSaving] = useState(false);
@@ -76,6 +85,17 @@ export default function PressBarEditor({
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const shortcode = `[#${slug}]`;
+
+  async function copyShortcode() {
+    try {
+      await navigator.clipboard.writeText(shortcode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  }
 
   function commit() {
     setPreview(draft);
@@ -164,7 +184,7 @@ export default function PressBarEditor({
       // Capture the snapshot *before* onSave — onSave's server action calls
       // redirect(), which throws NEXT_REDIRECT and aborts anything after.
       await captureAndUploadSnapshot();
-      await onSave(name, draft);
+      await onSave(name, slug, draft);
     } finally {
       setSaving(false);
     }
@@ -182,16 +202,50 @@ export default function PressBarEditor({
 
   return (
     <>
-      <div className="mb-4">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
-          Block name
-        </span>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full max-w-lg rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-lg font-semibold text-anamaya-charcoal focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
-          placeholder="Untitled block"
-        />
+      <div className="mb-5 grid gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60">
+            Display name
+          </span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-lg font-semibold text-anamaya-charcoal focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+            placeholder="Untitled block"
+          />
+        </label>
+        <div className="block">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60">
+            Block name (slug)
+          </span>
+          <input
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            onBlur={() =>
+              setSlug((s) =>
+                s
+                  .trim()
+                  .replace(/\s+/g, "_")
+                  .replace(/[^a-z0-9_-]/gi, "")
+                  .toLowerCase(),
+              )
+            }
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 font-mono text-sm text-anamaya-charcoal focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+            placeholder="e.g. press_bar_1"
+          />
+          <div className="mt-2 flex items-center gap-2">
+            <code className="rounded bg-zinc-100 px-2 py-1 font-mono text-xs text-anamaya-charcoal">
+              {shortcode}
+            </code>
+            <button
+              type="button"
+              onClick={copyShortcode}
+              className="rounded-full border border-zinc-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-anamaya-charcoal hover:bg-zinc-50"
+            >
+              {copied ? "Copied!" : "Copy Shortcode"}
+            </button>
+          </div>
+        </div>
       </div>
 
       {preview.logos.length > 0 ? (

@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import {
   renameBlock,
   updateBlockContent,
+  updateBlockSlug,
   duplicateBlock,
   deleteBlock,
 } from "../actions";
@@ -24,32 +25,37 @@ export default async function EditBlock({
 
   const { data: block } = await sb
     .from("blocks")
-    .select("id, type_slug, name, content")
+    .select("id, type_slug, name, slug, content")
     .eq("id", id)
     .maybeSingle();
   if (!block) notFound();
   // Local constants so the inline server actions below don't lose
   // TypeScript narrowing on `block` when captured inside closures.
   const currentName = block.name;
+  const currentSlug = block.slug;
 
   const [{ data: usages }, { data: siblings }, { data: type }, brandTokens] = await Promise.all([
     sb.from("block_usages").select("page_key, sort_order").eq("block_id", id),
     sb
       .from("blocks")
-      .select("id, name, snapshot_url, updated_at")
+      .select("id, name, slug, snapshot_url, updated_at")
       .eq("type_slug", block.type_slug)
       .order("updated_at", { ascending: false }),
     sb.from("block_types").select("name").eq("slug", block.type_slug).maybeSingle(),
     getBrandTokens(),
   ]);
 
-  /** Save both the name and the content in one action — the press-bar
-      editor's Save button covers both. */
-  async function saveAll(name: string, content: unknown) {
+  /** Save name, slug and content together — the press-bar editor's
+      Save button covers all three. */
+  async function saveAll(name: string, slug: string, content: unknown) {
     "use server";
-    const trimmed = name.trim();
-    if (trimmed && trimmed !== currentName) {
-      await renameBlock(id, trimmed);
+    const trimmedName = name.trim();
+    const cleanSlug = slug.trim().replace(/\s+/g, "_").toLowerCase();
+    if (trimmedName && trimmedName !== currentName) {
+      await renameBlock(id, trimmedName);
+    }
+    if (cleanSlug && cleanSlug !== currentSlug) {
+      await updateBlockSlug(id, cleanSlug);
     }
     await updateBlockContent(id, content);
     redirect(`/admin/blocks/${id}?saved=1`);
@@ -118,6 +124,7 @@ export default async function EditBlock({
         <PressBarEditor
           blockId={id}
           name={block.name}
+          slug={block.slug}
           content={block.content}
           onSave={saveAll}
           brandTokens={brandTokens}

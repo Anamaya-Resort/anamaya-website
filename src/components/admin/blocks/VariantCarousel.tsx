@@ -7,6 +7,7 @@ import type { BlockTypeSlug } from "@/types/blocks";
 type Variant = {
   id: string;
   name: string;
+  slug: string;
   snapshot_url: string | null;
 };
 
@@ -85,44 +86,54 @@ export default function VariantCarousel({
       </header>
 
       <ul className="grid gap-3" style={{ gridTemplateColumns: `repeat(${PAGE_SIZE}, minmax(0, 1fr))` }}>
-        {window.map((v) => (
-          <li key={v.id}>
-            <Link
-              href={`/admin/blocks/${v.id}`}
-              className={`block overflow-hidden rounded-md bg-white transition-all ${
-                v.id === currentId
-                  ? "ring-2 ring-anamaya-green"
-                  : "ring-1 ring-zinc-200 hover:ring-anamaya-charcoal/30"
-              }`}
-            >
-              <div className="border-b border-zinc-100 px-3 py-2 text-xs">
-                <div className="truncate font-semibold text-anamaya-charcoal">
-                  {v.name}
+        {window.map((v) => {
+          const shortcode = `[#${v.slug}]`;
+          return (
+            <li key={v.id}>
+              <Link
+                href={`/admin/blocks/${v.id}`}
+                title={shortcode}
+                className={`group relative block overflow-hidden rounded-md bg-white transition-all ${
+                  v.id === currentId
+                    ? "ring-2 ring-anamaya-green"
+                    : "ring-1 ring-zinc-200 hover:ring-anamaya-charcoal/30"
+                }`}
+              >
+                <div className="border-b border-zinc-100 px-3 py-2 text-xs">
+                  <div className="truncate font-semibold text-anamaya-charcoal">
+                    {v.name}
+                  </div>
+                  {v.id === currentId && (
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-anamaya-green">
+                      Editing
+                    </div>
+                  )}
                 </div>
-                {v.id === currentId && (
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-anamaya-green">
-                    Editing
-                  </div>
-                )}
-              </div>
-              <div className="aspect-[16/3] bg-zinc-50">
-                {v.snapshot_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={v.snapshot_url}
-                    alt={`Preview of ${v.name}`}
-                    className="h-full w-full object-contain"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-[10px] italic text-anamaya-charcoal/40">
-                    No preview yet — open and save
-                  </div>
-                )}
-              </div>
-            </Link>
-          </li>
-        ))}
+                <div className="aspect-[16/3] bg-zinc-50">
+                  {v.snapshot_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={v.snapshot_url}
+                      alt={`Preview of ${v.name}`}
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-[10px] italic text-anamaya-charcoal/40">
+                      No preview yet — open and save
+                    </div>
+                  )}
+                </div>
+                {/* Shortcode badge — shown on hover, centered bottom */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="rounded bg-anamaya-charcoal/90 px-2 py-1 font-mono text-[11px] text-white shadow">
+                    {shortcode}
+                  </span>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

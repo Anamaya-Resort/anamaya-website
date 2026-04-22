@@ -22,6 +22,7 @@ import VariantCarousel from "./VariantCarousel";
 type Variant = {
   id: string;
   name: string;
+  slug: string;
   snapshot_url: string | null;
 };
 

@@ -9,7 +9,10 @@ export default async function BlocksIndex() {
   const sb = supabaseServer();
   const [{ data: types }, { data: blocks }, { data: usages }] = await Promise.all([
     sb.from("block_types").select("slug, name, description").order("name"),
-    sb.from("blocks").select("id, type_slug, name, updated_at").order("name"),
+    sb
+      .from("blocks")
+      .select("id, type_slug, name, slug, snapshot_url, updated_at")
+      .order("name"),
     sb.from("block_usages").select("block_id, page_key"),
   ]);
 
@@ -76,14 +79,36 @@ export default async function BlocksIndex() {
                 <li key={b.id}>
                   <Link
                     href={`/admin/blocks/${b.id}`}
-                    className="block rounded-md border border-zinc-200 bg-white px-4 py-3 text-sm transition-shadow hover:shadow-sm"
+                    className="flex items-stretch gap-3 rounded-md border border-zinc-200 bg-white transition-shadow hover:shadow-sm"
                   >
-                    <div className="font-semibold text-anamaya-charcoal">{b.name}</div>
-                    <div className="mt-1 text-xs text-anamaya-charcoal/60">
-                      Used on:{" "}
-                      {(usageByBlock.get(b.id) ?? []).length > 0
-                        ? (usageByBlock.get(b.id) ?? []).join(", ")
-                        : "(unused — not placed on any page yet)"}
+                    {/* Left: text details */}
+                    <div className="flex-1 px-4 py-3 text-sm">
+                      <div className="font-semibold text-anamaya-charcoal">{b.name}</div>
+                      <code className="mt-1 inline-block rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-anamaya-charcoal/80">
+                        [#{b.slug}]
+                      </code>
+                      <div className="mt-1 text-xs text-anamaya-charcoal/60">
+                        Used on:{" "}
+                        {(usageByBlock.get(b.id) ?? []).length > 0
+                          ? (usageByBlock.get(b.id) ?? []).join(", ")
+                          : "(unused — not placed on any page yet)"}
+                      </div>
+                    </div>
+                    {/* Right: WebP snapshot (if saved) */}
+                    <div className="w-48 shrink-0 overflow-hidden rounded-r-md bg-zinc-50">
+                      {b.snapshot_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={b.snapshot_url}
+                          alt=""
+                          className="h-full w-full object-contain"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-[10px] italic text-anamaya-charcoal/40">
+                          No preview
+                        </div>
+                      )}
                     </div>
                   </Link>
                 </li>
