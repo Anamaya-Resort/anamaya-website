@@ -20,8 +20,8 @@ type Logo = {
 const SUPA =
   "https://vytqdnwnqiqiwjhqctyi.supabase.co/storage/v1/object/public/images";
 
-// TODO: replace with the exact National Geographic article URL when we have it.
-const NAT_GEO_URL = "https://www.nationalgeographic.com/";
+const NAT_GEO_URL =
+  "https://www.nationalgeographic.com/travel/best-of-the-world-2026/article/best-wellness-destinations";
 
 const LOGOS: Logo[] = [
   {
@@ -58,7 +58,7 @@ const LOGOS: Logo[] = [
     name: "The Independent",
     src: `${SUPA}/v2/2019/11/independent.webp`,
     width: 1563, height: 142,
-    href: null,
+    href: "https://www.independent.co.uk/travel/hotels/the-big-six-central-american-boutique-hotels-1869092.html",
   },
   {
     name: "Travel + Leisure",
@@ -70,7 +70,7 @@ const LOGOS: Logo[] = [
     name: "Fashion Magazine",
     src: `${SUPA}/v2/2019/11/fashion.webp`,
     width: 963, height: 208,
-    href: null,
+    href: "https://fashionmagazine.com/wellness/health/exotic-resorts-bikini-body-prep/",
   },
   {
     name: "SmarterTravel",
