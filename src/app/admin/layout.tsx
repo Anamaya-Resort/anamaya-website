@@ -1,21 +1,48 @@
 import Link from "next/link";
+import { getSessionUser } from "@/lib/session";
+import { SignOutButton } from "@/modules/auth/sign-out-button";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Middleware guarantees we're authenticated + have admin role by this point.
+  const user = await getSessionUser();
+
   return (
     <div className="min-h-screen bg-zinc-100">
       <nav className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-6">
-            <Link href="/admin" className="text-lg font-semibold tracking-tight text-anamaya-charcoal">
+            <Link
+              href="/admin"
+              className="text-lg font-semibold tracking-tight text-anamaya-charcoal"
+            >
               Anamaya Admin
             </Link>
-            <Link href="/admin/testimonials" className="text-sm text-anamaya-charcoal/70 hover:text-anamaya-charcoal">
+            <Link
+              href="/admin/testimonials"
+              className="text-sm text-anamaya-charcoal/70 hover:text-anamaya-charcoal"
+            >
               Testimonials
             </Link>
           </div>
-          <Link href="/" className="text-sm text-anamaya-charcoal/60 hover:text-anamaya-charcoal">
-            ← Back to site
-          </Link>
+
+          <div className="flex items-center gap-4 text-sm">
+            <Link
+              href="/"
+              className="text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
+            >
+              ← Back to site
+            </Link>
+            {user && (
+              <span className="hidden text-anamaya-charcoal/70 sm:inline">
+                {user.display_name || user.email}
+              </span>
+            )}
+            <SignOutButton />
+          </div>
         </div>
       </nav>
       <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>

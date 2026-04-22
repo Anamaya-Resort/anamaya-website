@@ -1,16 +1,25 @@
 @import "tailwindcss";
 
 @theme {
+  /* Site palette (extracted from v2) */
   --color-anamaya-green: #97c03b;
   --color-anamaya-green-dark: #7ca32b;
   --color-anamaya-teal: #54afaa;
-  --color-anamaya-teal-muted: #7aa59e;   /* darker sage used on v2 section bgs */
-  --color-anamaya-mint: #b8d3cf;          /* light mint used on Experience/Testimonials */
+  --color-anamaya-teal-muted: #7aa59e;
+  --color-anamaya-mint: #b8d3cf;
   --color-anamaya-accent: #ae564b;
   --color-anamaya-charcoal: #444444;
   --color-anamaya-olive: #8f993e;
-  --color-anamaya-olive-dark: #636a26;   /* darker olive used for headings on colored bgs */
+  --color-anamaya-olive-dark: #636a26;
   --color-anamaya-cream: #fbfbfb;
+
+  /* Admin / auth palette — mirrors AnamayaOS (ao.anamaya.com) brand tokens
+     so the SSO login + admin UI feel consistent between the two sites. */
+  --color-anamaya-brand-subtle:   #F5F7ED;   /* Off-white page bg on auth pages */
+  --color-anamaya-brand-btn:      #A35B4E;   /* Terra cotta primary action */
+  --color-anamaya-brand-btn-hover:#8A4D42;
+  --color-anamaya-brand-highlight:#A0BF52;
+  --color-anamaya-brand-divider:  #9CB5B1;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }

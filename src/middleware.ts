@@ -1,38 +1,26 @@
-// Basic-auth gate on /admin/*. Credentials come from env:
-//   ADMIN_USERNAME, ADMIN_PASSWORD
-// Not a substitute for proper auth when we scale — but good enough for
-// a single-operator admin UI while we ship.
+// Protect /admin via the LightningWorks SSO session cookie.
+// Matches AnamayaOS's pattern: unseal cookie → check validity → redirect if not.
 
 import { NextResponse, type NextRequest } from "next/server";
+import { SESSION_COOKIE } from "@/config/sso";
+import { unsealSession } from "@/lib/session-edge";
+import { isAdminRole } from "@/lib/session-shared";
 
 export const config = {
   matcher: ["/admin/:path*"],
 };
 
-export function middleware(req: NextRequest) {
-  const user = process.env.ADMIN_USERNAME;
-  const pass = process.env.ADMIN_PASSWORD;
-  if (!user || !pass) {
-    return new NextResponse(
-      "Admin is not configured. Set ADMIN_USERNAME and ADMIN_PASSWORD in .env.local / Vercel env.",
-      { status: 503 },
-    );
+export async function middleware(request: NextRequest) {
+  const sealed = request.cookies.get(SESSION_COOKIE)?.value;
+  const session = sealed ? await unsealSession(sealed) : null;
+
+  if (!session || !isAdminRole(session.user.role)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/login";
+    // Preserve the page the admin was trying to reach
+    url.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(url);
   }
 
-  const auth = req.headers.get("authorization");
-  if (!auth?.startsWith("Basic ")) {
-    return requestAuth();
-  }
-  const [suppliedUser, suppliedPass] = atob(auth.slice(6)).split(":");
-  if (suppliedUser !== user || suppliedPass !== pass) {
-    return requestAuth();
-  }
   return NextResponse.next();
-}
-
-function requestAuth() {
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Anamaya Admin"' },
-  });
 }
