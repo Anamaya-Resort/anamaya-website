@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function TemplatesIndex() {
   const sb = supabaseServer();
   const { data: templates } = await sb
-    .from("templates")
+    .from("page_templates")
     .select("id, slug, name, updated_at")
     .order("name");
 

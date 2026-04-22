@@ -14,16 +14,16 @@ export default async function EditTemplate({
   const sb = supabaseServer();
 
   const { data: template } = await sb
-    .from("templates")
+    .from("page_templates")
     .select("id, slug, name")
     .eq("id", id)
     .maybeSingle();
   if (!template) notFound();
 
   const { data: variants } = await sb
-    .from("template_variants")
+    .from("page_template_variants")
     .select("id, slug, name, is_default")
-    .eq("template_id", id)
+    .eq("page_template_id", id)
     .order("created_at");
 
   const defaultVariant = (variants ?? []).find((v) => v.is_default) ?? (variants ?? [])[0] ?? null;
@@ -32,9 +32,9 @@ export default async function EditTemplate({
   // live rendering + the info box (name, slug, block id for the Edit link).
   const { data: rows } = defaultVariant
     ? await sb
-        .from("template_variant_blocks")
+        .from("page_template_variant_blocks")
         .select("id, sort_order, block:blocks(id, slug, name, type_slug)")
-        .eq("template_variant_id", defaultVariant.id)
+        .eq("page_template_variant_id", defaultVariant.id)
         .order("sort_order")
     : { data: [] };
 

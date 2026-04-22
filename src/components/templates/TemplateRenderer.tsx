@@ -21,7 +21,7 @@ export default async function TemplateRenderer({
   if (!sb) return null;
 
   const { data: template } = await sb
-    .from("templates")
+    .from("page_templates")
     .select("id")
     .eq("slug", templateSlug)
     .maybeSingle();
@@ -34,9 +34,9 @@ export default async function TemplateRenderer({
   }
 
   const variantQuery = sb
-    .from("template_variants")
+    .from("page_template_variants")
     .select("id")
-    .eq("template_id", template.id);
+    .eq("page_template_id", template.id);
   const { data: variant } = await (variantSlug
     ? variantQuery.eq("slug", variantSlug).maybeSingle()
     : variantQuery.eq("is_default", true).maybeSingle());
@@ -49,9 +49,9 @@ export default async function TemplateRenderer({
   }
 
   const { data: blocks } = await sb
-    .from("template_variant_blocks")
+    .from("page_template_variant_blocks")
     .select("block_id, sort_order, block:blocks(slug)")
-    .eq("template_variant_id", variant.id)
+    .eq("page_template_variant_id", variant.id)
     .order("sort_order");
 
   return (
