@@ -28,3 +28,77 @@ body {
   background: #ffffff;
   color: #444444;
 }
+
+/* Styles for HTML bodies rendered via <ProseHtml> (retreats, pages, posts).
+   Intentionally conservative — tuned to match the site palette. */
+.prose-anamaya {
+  color: var(--color-anamaya-charcoal);
+  line-height: 1.7;
+  max-width: 72ch;
+  margin-inline: auto;
+}
+.prose-anamaya > *:first-child { margin-top: 0; }
+.prose-anamaya > *:last-child  { margin-bottom: 0; }
+
+.prose-anamaya p {
+  margin: 0 0 1em 0;
+  font-size: 1.0625rem;
+}
+.prose-anamaya h1, .prose-anamaya h2, .prose-anamaya h3, .prose-anamaya h4 {
+  color: var(--color-anamaya-olive-dark);
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 1.6em 0 0.6em;
+}
+.prose-anamaya h1 { font-size: 2rem;     letter-spacing: -0.01em; }
+.prose-anamaya h2 { font-size: 1.625rem; }
+.prose-anamaya h3 { font-size: 1.25rem;  }
+.prose-anamaya h4 { font-size: 1.0625rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.prose-anamaya a {
+  color: var(--color-anamaya-green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.prose-anamaya a:hover { color: var(--color-anamaya-green-dark); }
+
+.prose-anamaya ul, .prose-anamaya ol {
+  margin: 0 0 1em 0;
+  padding-left: 1.25em;
+}
+.prose-anamaya li { margin: 0.25em 0; }
+.prose-anamaya ul li { list-style: disc; }
+.prose-anamaya ol li { list-style: decimal; }
+
+.prose-anamaya blockquote {
+  border-left: 3px solid var(--color-anamaya-green);
+  padding-left: 1em;
+  color: var(--color-anamaya-charcoal);
+  opacity: 0.85;
+  font-style: italic;
+  margin: 1.25em 0;
+}
+
+.prose-anamaya img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1.5em auto;
+  display: block;
+}
+.prose-anamaya figure { margin: 1.5em 0; }
+.prose-anamaya figcaption {
+  text-align: center;
+  font-size: 0.875rem;
+  color: rgba(68, 68, 68, 0.7);
+  margin-top: 0.5em;
+}
+.prose-anamaya hr {
+  border: 0;
+  border-top: 1px solid rgba(68, 68, 68, 0.15);
+  margin: 2em 0;
+}
+.prose-anamaya strong { color: var(--color-anamaya-charcoal); font-weight: 600; }
+.prose-anamaya em     { font-style: italic; }
+.prose-anamaya iframe { max-width: 100%; }
