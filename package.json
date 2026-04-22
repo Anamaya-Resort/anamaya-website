@@ -13,6 +13,8 @@
     "extract:sitemap": "tsx scripts/extractor/discover-sitemap.ts",
     "extract:media": "tsx scripts/extractor/discover-media.ts",
     "extract:content": "tsx scripts/extractor/extract-content.ts",
+    "extract:seo": "tsx scripts/extractor/extract-seo.ts",
+    "migrate:media": "tsx scripts/extractor/migrate-media.ts",
     "extract:all": "npm run extract:authors && npm run extract:terms && npm run extract:urls && npm run extract:sitemap",
     "scan:tracking": "tsx scripts/extractor/scan-tracking.ts",
     "compare": "tsx scripts/extractor/compare-v1-v2.ts"
