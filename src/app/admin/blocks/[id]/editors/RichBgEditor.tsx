@@ -15,7 +15,7 @@ const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
 const sectionCls = "space-y-4 rounded-md border border-zinc-200 p-4";
 const sectionTitleCls =
-  "text-[11px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60";
+  "text-[15px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal";
 
 function normalize(c: RichBgContent | null | undefined): RichBgContent {
   return {

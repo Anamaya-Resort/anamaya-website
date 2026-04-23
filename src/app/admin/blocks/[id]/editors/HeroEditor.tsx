@@ -244,7 +244,7 @@ export default function HeroEditor({
         {/* ─── Video ─────────────────────────────────────────────── */}
         <section>
           <header className="mb-3 flex items-center justify-between gap-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+            <h3 className="text-lg font-semibold uppercase tracking-wider text-anamaya-charcoal">
               Video
             </h3>
             <button type="submit" disabled={saving} onClick={playClick} className={saveClass(saving)}>
@@ -411,7 +411,7 @@ export default function HeroEditor({
               same spirit as alt text for images: crawlers use them to
               understand the video, and Google Video search surfaces them. */}
           <div className="mt-5 rounded-md border border-dashed border-zinc-300 p-3">
-            <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60">
+            <h4 className="mb-2 text-[15px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal">
               Video SEO (schema.org VideoObject)
             </h4>
             <div className="space-y-3">

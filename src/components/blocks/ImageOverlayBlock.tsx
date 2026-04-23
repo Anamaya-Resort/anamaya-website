@@ -25,7 +25,7 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
         // percentage width/height + flex centering instead of transform:
         // scale so the image never overflows the section and never gets
         // cropped — users wanted "auto-scale to fit, never crop".
-        const scalePct = Math.max(10, Math.min(100, content?.image_scale_pct ?? 100));
+        const scalePct = Math.max(10, Math.min(200, content?.image_scale_pct ?? 100));
         const flip = flipTransform(content?.image_flip_x, content?.image_flip_y);
         const altText = content?.image_alt ?? "";
         return (

@@ -208,7 +208,7 @@ function RowEditor({
   return (
     <section className="rounded-md border border-zinc-200 p-4">
       <header className="mb-2 flex items-center justify-between">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+        <h4 className="text-[15px] font-semibold uppercase tracking-wider text-anamaya-charcoal">
           {label} ({items.length})
         </h4>
         <button

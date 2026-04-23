@@ -27,7 +27,7 @@ export default function CtaFieldset({
   return (
     <section className="rounded-md border border-zinc-200 p-4">
       <header className="mb-2 flex items-center justify-between">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+        <h4 className="text-[15px] font-semibold uppercase tracking-wider text-anamaya-charcoal">
           CTA button (optional)
         </h4>
         <label className="flex items-center gap-2 text-xs text-anamaya-charcoal/70">

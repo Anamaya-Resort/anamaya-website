@@ -117,7 +117,7 @@ function Form({ state }: { state: BlockEditorState<VideoShowcaseContent> }) {
 
       {/* Video */}
       <section className="rounded-md border border-zinc-200 p-4">
-        <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+        <h4 className="mb-2 text-[15px] font-semibold uppercase tracking-wider text-anamaya-charcoal">
           Video
         </h4>
         <div className="mb-3 inline-flex rounded-md border border-zinc-300 bg-white p-0.5 text-[11px] font-semibold uppercase tracking-wider">
@@ -254,7 +254,7 @@ function TitleGroup({
 
   return (
     <section className="rounded-md border border-zinc-200 p-4">
-      <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+      <h4 className="mb-2 text-[15px] font-semibold uppercase tracking-wider text-anamaya-charcoal">
         {label}
       </h4>
       <label className="block">

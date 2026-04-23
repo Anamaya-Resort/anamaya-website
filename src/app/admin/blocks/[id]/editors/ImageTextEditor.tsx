@@ -17,7 +17,7 @@ const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
 const sectionCls = "space-y-4 rounded-md border border-zinc-200 p-4";
 const sectionTitleCls =
-  "text-[11px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60";
+  "text-[15px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal";
 
 function normalize(c: ImageTextContent | null | undefined): ImageTextContent {
   return {
@@ -143,13 +143,14 @@ export default function ImageTextEditor(props: {
             <ImageTransformFieldset
               scale={draft.image_scale_pct}
               onScaleChange={(v) => patch({ image_scale_pct: v })}
+              scaleMax={200}
               flipX={draft.image_flip_x}
               onFlipXChange={(v) => patch({ image_flip_x: v })}
               flipY={draft.image_flip_y}
               onFlipYChange={(v) => patch({ image_flip_y: v })}
             />
             <span className="block text-[10px] text-anamaya-charcoal/50">
-              Image always fits — never cropped.
+              10-100% fits inside the column; above 100% zooms in and may crop.
             </span>
           </section>
 

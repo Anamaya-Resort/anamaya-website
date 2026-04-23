@@ -22,8 +22,10 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
   const hasFixedHeight = containerHeightPx > 0;
   const padY = hasFixedHeight ? 0 : content?.padding_y_px ?? 48;
 
-  // Image scale — 10-100% of the image column. Always fits; never crops.
-  const scalePct = Math.max(10, Math.min(100, content?.image_scale_pct ?? 100));
+  // Image scale — 10-200% of the image column. 100% fills the column,
+  // <100 shrinks (never crops), >100 zooms in (parent overflow clips).
+  const scalePct = Math.max(10, Math.min(200, content?.image_scale_pct ?? 100));
+  const fitsInside = scalePct <= 100;
 
   const gridCols = imgOnLeft
     ? `${imgPct}% ${textPct}%`
@@ -39,14 +41,25 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
           src={content.image_url}
           alt={altText}
           aria-hidden={altText ? undefined : "true"}
-          style={{
-            maxWidth: `${scalePct}%`,
-            maxHeight: `${scalePct}%`,
-            width: "auto",
-            height: "auto",
-            objectFit: "contain",
-            transform: flip,
-          }}
+          style={
+            fitsInside
+              ? {
+                  maxWidth: `${scalePct}%`,
+                  maxHeight: `${scalePct}%`,
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain",
+                  transform: flip,
+                }
+              : {
+                  // >100% zooms: force the image to occupy scalePct% of the
+                  // column. Parent has overflow-hidden, so edges are cropped.
+                  width: `${scalePct}%`,
+                  height: `${scalePct}%`,
+                  objectFit: "contain",
+                  transform: flip,
+                }
+          }
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-zinc-100 text-sm italic text-anamaya-charcoal/40">

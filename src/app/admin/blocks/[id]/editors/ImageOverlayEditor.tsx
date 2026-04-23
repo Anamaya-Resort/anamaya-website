@@ -19,7 +19,7 @@ const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
 const sectionCls = "space-y-4 rounded-md border border-zinc-200 p-4";
 const sectionTitleCls =
-  "text-[11px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60";
+  "text-[15px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal";
 
 function normalizeLine(l?: ImageOverlayLine): ImageOverlayLine {
   return {
@@ -134,6 +134,7 @@ function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
         <ImageTransformFieldset
           scale={draft.image_scale_pct}
           onScaleChange={(v) => patch({ image_scale_pct: v })}
+          scaleMax={200}
           fit={draft.image_fit}
           onFitChange={(v) =>
             patch({ image_fit: v as ImageOverlayContent["image_fit"] })
@@ -172,7 +173,7 @@ function LineEditor({
 
   return (
     <section className="rounded-md border border-zinc-200 p-4">
-      <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+      <h4 className="mb-2 text-[15px] font-semibold uppercase tracking-wider text-anamaya-charcoal">
         {label}
       </h4>
       <label className="block">

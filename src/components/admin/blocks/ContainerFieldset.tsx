@@ -10,7 +10,7 @@ const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
 const sectionCls = "space-y-4 rounded-md border border-zinc-200 p-4";
 const sectionTitleCls =
-  "text-[11px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60";
+  "text-[15px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal";
 
 /**
  * Generic "Container Controls" block — outer section sizing, background,
@@ -94,24 +94,26 @@ export default function ContainerFieldset({
             </label>
           )}
           {showHeight && (
-            <label className="block w-36">
-              <span className={labelCls}>Height (px)</span>
-              <input
-                type="number"
-                min={heightMin}
-                max={heightMax}
-                step={10}
-                className={inputCls}
-                value={heightPx ?? 0}
-                onChange={(e) => onHeightChange?.(Number(e.target.value) || 0)}
-                onBlur={onCommit}
-              />
+            <div className="flex items-end gap-2">
+              <label className="block w-36">
+                <span className={labelCls}>Height (px)</span>
+                <input
+                  type="number"
+                  min={heightMin}
+                  max={heightMax}
+                  step={10}
+                  className={inputCls}
+                  value={heightPx ?? 0}
+                  onChange={(e) => onHeightChange?.(Number(e.target.value) || 0)}
+                  onBlur={onCommit}
+                />
+              </label>
               {heightHint && (
-                <span className="mt-1 block text-[10px] text-anamaya-charcoal/50">
+                <span className="pb-2 text-[11px] text-anamaya-charcoal/60">
                   {heightHint}
                 </span>
               )}
-            </label>
+            </div>
           )}
           {showPaddingY && (
             <label className="block w-32">

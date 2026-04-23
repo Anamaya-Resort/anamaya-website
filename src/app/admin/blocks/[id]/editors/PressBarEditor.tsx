@@ -408,7 +408,7 @@ export default function PressBarEditor({
 
         <section className="mt-6">
           <header className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+            <h3 className="text-lg font-semibold uppercase tracking-wider text-anamaya-charcoal">
               Logos ({draft.logos.length})
             </h3>
             <button
