@@ -88,11 +88,11 @@ function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
           <span className={labelCls}>Height (px)</span>
           <input
             type="number"
-            min={120}
+            min={20}
             max={1080}
             className={inputCls}
             value={draft.height_px ?? 480}
-            onChange={(e) => setDraft((d) => ({ ...d, height_px: Number(e.target.value) || 120 }))}
+            onChange={(e) => setDraft((d) => ({ ...d, height_px: Number(e.target.value) || 20 }))}
             onBlur={commit}
           />
         </label>
