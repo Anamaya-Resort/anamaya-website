@@ -74,9 +74,14 @@ export default function ImageTransformFieldset({
             >
               −{scaleStep}%
             </button>
-            <span className="min-w-[3.5rem] text-center font-mono text-sm tabular-nums">
+            <button
+              type="button"
+              onClick={() => onScaleChange?.(100)}
+              title="Reset to 100%"
+              className="min-w-[3.5rem] rounded px-1 py-0.5 text-center font-mono text-sm tabular-nums text-anamaya-charcoal hover:bg-zinc-100"
+            >
               {clamped}%
-            </span>
+            </button>
             <button
               type="button"
               onClick={() => bump(scaleStep)}

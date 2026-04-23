@@ -21,13 +21,15 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
       style={{ height, backgroundColor: bg }}
     >
       {content?.image_url && (() => {
-        // Scale shrinks the image inside its section (10-100%). Using
-        // percentage width/height + flex centering instead of transform:
-        // scale so the image never overflows the section and never gets
-        // cropped — users wanted "auto-scale to fit, never crop".
+        // ≤100%: width/height % of the section (shrinks to fit, never crops).
+        // >100%: fill section naturally then CSS scale up — each +2 step is
+        // a true 2% zoom; section's overflow-hidden clips the edges.
         const scalePct = Math.max(10, Math.min(200, content?.image_scale_pct ?? 100));
+        const fitsInside = scalePct <= 100;
         const flip = flipTransform(content?.image_flip_x, content?.image_flip_y);
         const altText = content?.image_alt ?? "";
+        const scaleTransform = !fitsInside ? `scale(${scalePct / 100})` : undefined;
+        const combinedTransform = [flip, scaleTransform].filter(Boolean).join(" ") || undefined;
         return (
           <div className="absolute inset-0 flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -38,11 +40,11 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
               className={
                 content?.image_fit === "cover" ? "object-cover" : "object-contain"
               }
-              style={{
-                width: `${scalePct}%`,
-                height: `${scalePct}%`,
-                transform: flip,
-              }}
+              style={
+                fitsInside
+                  ? { width: `${scalePct}%`, height: `${scalePct}%`, transform: flip }
+                  : { width: "100%", height: "100%", transform: combinedTransform }
+              }
             />
           </div>
         );
