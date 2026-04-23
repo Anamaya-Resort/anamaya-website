@@ -213,8 +213,15 @@ export type ImageOverlayLine = {
 };
 export type ImageOverlayContent = BlockCta & {
   image_url?: string;
+  /**
+   * How the image fills the section:
+   *  - "cover"   (default): fill the section, crop edges to match aspect
+   *  - "contain": show the whole image, letterbox/pillarbox to fit
+   */
+  image_fit?: "cover" | "contain";
   /** Background behind the image — useful when the image has
-   *  transparency. Empty string / undefined = transparent. */
+   *  transparency or when image_fit=contain leaves empty space.
+   *  Empty string / undefined = transparent. */
   bg_color?: string;
   height_px?: number;
   overlay_opacity?: number;   // 0-100 darkening overlay

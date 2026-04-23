@@ -30,6 +30,7 @@ function normalizeLine(l?: ImageOverlayLine): ImageOverlayLine {
 function normalize(c: ImageOverlayContent | null | undefined): ImageOverlayContent {
   return {
     image_url: c?.image_url ?? "",
+    image_fit: c?.image_fit ?? "cover",
     bg_color: c?.bg_color ?? "",
     height_px: c?.height_px ?? 480,
     overlay_opacity: c?.overlay_opacity ?? 25,
@@ -118,6 +119,17 @@ function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
             <option value="left">Left</option>
             <option value="center">Center</option>
             <option value="right">Right</option>
+          </select>
+        </label>
+        <label className="block w-36">
+          <span className={labelCls}>Image fit</span>
+          <select
+            className={inputCls}
+            value={draft.image_fit ?? "cover"}
+            onChange={(e) => patch({ image_fit: e.target.value as ImageOverlayContent["image_fit"] })}
+          >
+            <option value="cover">Cover (crop to fill)</option>
+            <option value="contain">Contain (show whole image)</option>
           </select>
         </label>
       </div>

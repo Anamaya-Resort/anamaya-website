@@ -25,7 +25,11 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
           src={content.image_url}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover"
+          className={`absolute inset-0 h-full w-full ${
+            (content?.image_fit ?? "cover") === "contain"
+              ? "object-contain"
+              : "object-cover"
+          }`}
         />
       )}
       {overlay > 0 && (
