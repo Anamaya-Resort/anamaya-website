@@ -28,6 +28,7 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
           className={`absolute inset-0 h-full w-full ${
             content?.image_fit === "cover" ? "object-cover" : "object-contain"
           }`}
+          style={content?.image_flip_y ? { transform: "scaleY(-1)" } : undefined}
         />
       )}
       {overlay > 0 && (

@@ -132,6 +132,14 @@ function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
             <option value="contain">Contain (show whole image)</option>
           </select>
         </label>
+        <label className="flex items-end gap-2 pb-1.5 text-xs text-anamaya-charcoal/70">
+          <input
+            type="checkbox"
+            checked={!!draft.image_flip_y}
+            onChange={(e) => patch({ image_flip_y: e.target.checked })}
+          />
+          <span>Flip vertically</span>
+        </label>
       </div>
 
       {/* Background behind the image (useful when the image has

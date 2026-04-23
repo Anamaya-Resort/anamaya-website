@@ -219,6 +219,8 @@ export type ImageOverlayContent = BlockCta & {
    *  - "contain": show the whole image, letterbox/pillarbox to fit
    */
   image_fit?: "cover" | "contain";
+  /** Mirror the image top-to-bottom. */
+  image_flip_y?: boolean;
   /** Background behind the image — useful when the image has
    *  transparency or when image_fit=contain leaves empty space.
    *  Empty string / undefined = transparent. */
