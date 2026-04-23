@@ -213,6 +213,9 @@ export type ImageOverlayLine = {
 };
 export type ImageOverlayContent = BlockCta & {
   image_url?: string;
+  /** Background behind the image — useful when the image has
+   *  transparency. Empty string / undefined = transparent. */
+  bg_color?: string;
   height_px?: number;
   overlay_opacity?: number;   // 0-100 darkening overlay
   line_1?: ImageOverlayLine;

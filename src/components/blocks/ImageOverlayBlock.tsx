@@ -9,11 +9,15 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
   const align = content?.align ?? "center";
   const alignClass =
     align === "left" ? "text-left items-start" : align === "right" ? "text-right items-end" : "text-center items-center";
+  // Empty/undefined means no background (transparent) — lets transparent
+  // images sit over the page's own backdrop. Otherwise a brand token or
+  // a raw hex; the old hard-coded anamaya-charcoal is gone.
+  const bg = content?.bg_color ? resolveBrandColor(content.bg_color) : "transparent";
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-anamaya-charcoal"
-      style={{ height }}
+      className="relative w-full overflow-hidden"
+      style={{ height, backgroundColor: bg }}
     >
       {content?.image_url && (
         // eslint-disable-next-line @next/next/no-img-element

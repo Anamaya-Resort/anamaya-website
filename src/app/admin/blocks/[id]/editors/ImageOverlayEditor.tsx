@@ -30,6 +30,7 @@ function normalizeLine(l?: ImageOverlayLine): ImageOverlayLine {
 function normalize(c: ImageOverlayContent | null | undefined): ImageOverlayContent {
   return {
     image_url: c?.image_url ?? "",
+    bg_color: c?.bg_color ?? "",
     height_px: c?.height_px ?? 480,
     overlay_opacity: c?.overlay_opacity ?? 25,
     align: c?.align ?? "center",
@@ -119,6 +120,18 @@ function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
             <option value="right">Right</option>
           </select>
         </label>
+      </div>
+
+      {/* Background behind the image (useful when the image has
+          transparency). Auto = transparent. */}
+      <div>
+        <span className={labelCls}>Background color (Auto = transparent)</span>
+        <BrandColorSelect
+          value={draft.bg_color}
+          onChange={(v) => patch({ bg_color: v })}
+          brandTokens={brandTokens}
+          allowAuto
+        />
       </div>
 
       <LineEditor label="Line 1" state={state} which="line_1" />
