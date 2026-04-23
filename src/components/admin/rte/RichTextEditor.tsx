@@ -75,28 +75,38 @@ export default function RichTextEditor({
 
   // If the parent's value changes for reasons outside the editor
   // (AI rewrite, initial load after save/redirect), re-sync the editor.
+  // Skipped while in HTML mode so typing in the textarea doesn't trigger
+  // a setContent on the hidden editor every keystroke.
   useEffect(() => {
     if (!editor) return;
+    if (mode === "html") return;
     const current = editor.getHTML();
     if (value !== current) {
       editor.commands.setContent(value, { emitUpdate: false });
       setRawHtml(value);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, editor]);
+  }, [value, editor, mode]);
 
   function commitRawHtml() {
-    // Moving from HTML tab back to Visual: parse into the editor.
+    // Moving from HTML tab back to Visual: parse into the editor, then
+    // normalise. Using editor.getHTML() after setContent keeps parent
+    // state, rawHtml and the editor all in sync so the useEffect sync
+    // below doesn't fire a redundant second setContent.
     if (!editor) return;
     editor.commands.setContent(rawHtml, { emitUpdate: false });
-    onChange(rawHtml);
+    const normalized = editor.getHTML();
+    setRawHtml(normalized);
+    onChange(normalized);
   }
 
   function applyAiResult(html: string) {
     if (!editor) return;
-    editor.commands.setContent(html, { emitUpdate: true });
-    setRawHtml(html);
-    onChange(html);
+    editor.commands.setContent(html, { emitUpdate: false });
+    const normalized = editor.getHTML();
+    setRawHtml(normalized);
+    onChange(normalized);
+    editor.commands.focus(); // caret back in editor after modal closes
   }
 
   return (
@@ -139,7 +149,9 @@ export default function RichTextEditor({
 
       {/* Body */}
       {mode === "visual" ? (
-        <div className="px-3 py-2" onBlur={onBlur}>
+        // No onBlur here — useEditor({ onBlur }) already handles it; a
+        // second handler on this wrapper was firing commit twice.
+        <div className="px-3 py-2">
           {editor ? (
             <EditorContent editor={editor} />
           ) : (
@@ -163,7 +175,10 @@ export default function RichTextEditor({
         <AiRewriteModal
           kind={aiOpen}
           currentHtml={editor.getHTML()}
-          onClose={() => setAiOpen(false)}
+          onClose={() => {
+            setAiOpen(false);
+            editor.commands.focus(); // caret back in editor
+          }}
           onApply={(html) => {
             applyAiResult(html);
             setAiOpen(false);

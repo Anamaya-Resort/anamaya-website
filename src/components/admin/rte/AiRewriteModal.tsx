@@ -121,6 +121,7 @@ export default function AiRewriteModal({
                 Instruction
               </span>
               <textarea
+                autoFocus
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={4}

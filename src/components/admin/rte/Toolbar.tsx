@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import {
   Bold,
@@ -265,13 +265,30 @@ export default function Toolbar({
         type="button"
         title="Add link"
         onClick={() => {
+          const { from, to } = editor.state.selection;
+          const hasSelection = from !== to;
           const previous = editor.getAttributes("link").href as string | undefined;
           const url = window.prompt("Link URL", previous ?? "https://");
-          if (url === null) return;
+          if (url === null) return; // user cancelled
           if (url === "") {
-            editor.chain().focus().unsetLink().run();
-          } else {
+            editor.chain().focus().extendMarkRange("link").unsetLink().run();
+            return;
+          }
+          if (hasSelection) {
             editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+          } else {
+            // No selection — insert the URL as clickable text. Use
+            // ProseMirror node JSON (not an HTML string) so the URL
+            // can't break attribute quoting or inject stray markup.
+            editor
+              .chain()
+              .focus()
+              .insertContent({
+                type: "text",
+                text: url,
+                marks: [{ type: "link", attrs: { href: url } }],
+              })
+              .run();
           }
         }}
         className={btn(editor.isActive("link"))}
@@ -310,25 +327,16 @@ export default function Toolbar({
       </label>
 
       {/* Emoji */}
-      <div className="relative">
-        <button
-          type="button"
-          title="Insert emoji"
-          onClick={() => setShowEmoji((v) => !v)}
-          className={btn(showEmoji)}
-        >
-          <Smile size={14} />
-        </button>
-        {showEmoji && (
-          <EmojiGrid
-            onPick={(emoji) => {
-              editor.chain().focus().insertContent(emoji).run();
-              setShowEmoji(false);
-            }}
-            onClose={() => setShowEmoji(false)}
-          />
-        )}
-      </div>
+      <EmojiMenu
+        open={showEmoji}
+        onToggle={() => setShowEmoji((v) => !v)}
+        onClose={() => setShowEmoji(false)}
+        onPick={(emoji) => {
+          editor.chain().focus().insertContent(emoji).run();
+          setShowEmoji(false);
+        }}
+        buttonClass={btn(showEmoji)}
+      />
 
       {/* Hard line break — Shift+Enter equivalent. Useful for addresses
           and anywhere a new paragraph would add too much space. */}
@@ -387,27 +395,64 @@ const COMMON_EMOJI = [
   "🧘", "🧘‍♀️", "🧘‍♂️", "🕉️", "☸️", "🍃", "🌾", "☀️", "🌈", "💆",
 ];
 
-function EmojiGrid({
+function EmojiMenu({
+  open,
+  onToggle,
+  onClose,
   onPick,
-  onClose: _onClose,
+  buttonClass,
 }: {
-  onPick: (emoji: string) => void;
+  open: boolean;
+  onToggle: () => void;
   onClose: () => void;
+  onPick: (emoji: string) => void;
+  buttonClass: string;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
   return (
-    <div className="absolute left-0 top-9 z-30 w-64 rounded-md border border-zinc-200 bg-white p-2 shadow-lg">
-      <div className="grid grid-cols-10 gap-0.5">
-        {COMMON_EMOJI.map((e) => (
-          <button
-            key={e}
-            type="button"
-            onClick={() => onPick(e)}
-            className="h-6 w-6 rounded text-base leading-none hover:bg-zinc-100"
-          >
-            {e}
-          </button>
-        ))}
-      </div>
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        title="Insert emoji"
+        onClick={onToggle}
+        className={buttonClass}
+      >
+        <Smile size={14} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-9 z-30 w-64 rounded-md border border-zinc-200 bg-white p-2 shadow-lg">
+          <div className="grid grid-cols-10 gap-0.5">
+            {COMMON_EMOJI.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => onPick(e)}
+                className="h-6 w-6 rounded text-base leading-none hover:bg-zinc-100"
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
