@@ -10,7 +10,16 @@ export default function RichBgBlock({ content }: { content: RichBgContent }) {
   const fit = content?.bg_image_fit ?? "cover";
   const bgImage = content?.bg_image_url ? `url(${content.bg_image_url})` : undefined;
 
-  const bgSize = fit === "contain" ? "contain" : fit === "tile" ? "auto" : "cover";
+  // Scale tweak applies on top of the fit mode. For cover/contain we
+  // multiply the base size by the pct; for tile we just treat it as the
+  // tile size directly. 100 = natural fit.
+  const scalePct = Math.max(50, Math.min(200, content?.bg_image_scale_pct ?? 100));
+  const bgSize =
+    fit === "tile"
+      ? `${scalePct}%`
+      : scalePct === 100
+      ? fit
+      : `${scalePct}% auto`;
   const bgRepeat = fit === "tile" ? "repeat" : "no-repeat";
 
   return (

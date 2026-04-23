@@ -22,12 +22,40 @@ export type BlockEditorState<T> = {
   commit: () => void;
   patch: (update: Partial<T>) => void;
   brandTokens: Required<OrgBranding>;
+  /** True while handleSave is in flight. Useful for editors that want
+   *  to render an additional Save button inline with their own form. */
+  saving: boolean;
 };
 
 const saveIdleCls =
   "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark active:bg-anamaya-brand-btn disabled:opacity-50";
 const saveBusyCls =
   "rounded-full bg-anamaya-brand-btn px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white disabled:opacity-70";
+
+/**
+ * Reusable Save submit-button. Editors can drop additional <SaveButton>s
+ * in their form to match the main one at the bottom — they all submit
+ * the same <form action={handleSave}>, so clicking any of them triggers
+ * the same save flow, and the shared `saving` state keeps them in sync.
+ */
+export function SaveButton({
+  saving,
+  className = "",
+}: {
+  saving: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      type="submit"
+      disabled={saving}
+      onClick={playClick}
+      className={`${saving ? saveBusyCls : saveIdleCls} ${className}`}
+    >
+      {saving ? "Saving…" : "Save"}
+    </button>
+  );
+}
 
 /**
  * Shared chrome for block editors — name/slug/shortcode header, live preview
@@ -158,16 +186,9 @@ export default function BlockEditorChrome<T>({
         action={handleSave}
         className="space-y-4 rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200"
       >
-        {renderForm({ draft, setDraft, preview, commit, patch, brandTokens })}
+        {renderForm({ draft, setDraft, preview, commit, patch, brandTokens, saving })}
         <div className="mt-6 flex justify-end">
-          <button
-            type="submit"
-            disabled={saving}
-            onClick={playClick}
-            className={saving ? saveBusyCls : saveIdleCls}
-          >
-            {saving ? "Saving…" : "Save"}
-          </button>
+          <SaveButton saving={saving} />
         </div>
       </form>
     </>

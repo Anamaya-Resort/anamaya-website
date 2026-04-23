@@ -3,17 +3,19 @@
 import BlockEditorChrome, {
   type BlockEditorVariant,
 } from "@/components/admin/blocks/BlockEditorChrome";
-import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
-import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import ContainerFieldset from "@/components/admin/blocks/ContainerFieldset";
+import MediaFieldset from "@/components/admin/blocks/MediaFieldset";
+import ImageTransformFieldset from "@/components/admin/blocks/ImageTransformFieldset";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import RTE from "@/components/admin/rte/RichTextEditor";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { RichBgContent } from "@/types/blocks";
 
-const inputCls =
-  "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
 const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
+const sectionCls = "space-y-4 rounded-md border border-zinc-200 p-4";
+const sectionTitleCls =
+  "text-[11px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60";
 
 function normalize(c: RichBgContent | null | undefined): RichBgContent {
   return {
@@ -22,6 +24,7 @@ function normalize(c: RichBgContent | null | undefined): RichBgContent {
     bg_color: c?.bg_color ?? "brandSubtle",
     bg_image_url: c?.bg_image_url ?? "",
     bg_image_fit: c?.bg_image_fit ?? "cover",
+    bg_image_scale_pct: c?.bg_image_scale_pct ?? 100,
     text_color: c?.text_color ?? "",
     padding_y_px: c?.padding_y_px ?? 48,
   };
@@ -42,8 +45,53 @@ export default function RichBgEditor(props: {
       {...props}
       typeSlug="rich_bg"
       normalize={normalize}
-      renderForm={({ draft, setDraft, commit, patch, brandTokens }) => (
+      renderForm={({ draft, setDraft, commit, patch, brandTokens, saving }) => (
         <>
+          <ContainerFieldset
+            brandTokens={brandTokens}
+            paddingYPx={draft.padding_y_px}
+            onPaddingYChange={(v) =>
+              setDraft((d) => ({ ...d, padding_y_px: v }))
+            }
+            bgColor={draft.bg_color}
+            onBgColorChange={(v) => patch({ bg_color: v })}
+            textColor={draft.text_color}
+            onTextColorChange={(v) => patch({ text_color: v })}
+            onCommit={commit}
+            saving={saving}
+          />
+
+          <section className={sectionCls}>
+            <h3 className={sectionTitleCls}>Background Image</h3>
+            <MediaFieldset
+              label="Background image (optional)"
+              url={draft.bg_image_url}
+              onUrlChange={(url) => patch({ bg_image_url: url })}
+              onCommit={commit}
+              uploadKind="backgrounds"
+              uploadMaxWidth={2400}
+              showAlt={false}
+            />
+            <ImageTransformFieldset
+              scale={draft.bg_image_scale_pct}
+              onScaleChange={(v) => patch({ bg_image_scale_pct: v })}
+              scaleMin={50}
+              scaleMax={200}
+              fit={draft.bg_image_fit}
+              onFitChange={(v) =>
+                patch({ bg_image_fit: v as RichBgContent["bg_image_fit"] })
+              }
+              fitOptions={[
+                { value: "cover", label: "Cover" },
+                { value: "contain", label: "Contain" },
+                { value: "tile", label: "Tile" },
+              ]}
+            />
+            <span className="block text-[10px] text-anamaya-charcoal/50">
+              Background images are decorative — no alt text needed.
+            </span>
+          </section>
+
           <div>
             <span className={labelCls}>Content</span>
             <RTE
@@ -54,74 +102,11 @@ export default function RichBgEditor(props: {
             />
           </div>
 
-          <div>
-            <span className={labelCls}>Background color</span>
-            <BrandColorSelect
-              value={draft.bg_color}
-              onChange={(v) => patch({ bg_color: v })}
-              brandTokens={brandTokens}
-              allowAuto
-            />
-          </div>
-
-          <div>
-            <span className={labelCls}>Text color (Auto = inherit)</span>
-            <BrandColorSelect
-              value={draft.text_color}
-              onChange={(v) => patch({ text_color: v })}
-              brandTokens={brandTokens}
-              allowAuto
-            />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-            <div>
-              <div className="mb-1 flex items-center justify-between">
-                <span className={labelCls}>Background image (optional)</span>
-                <ImageUploadButton
-                  value={draft.bg_image_url}
-                  onUploaded={(url) => patch({ bg_image_url: url })}
-                  kind="backgrounds"
-                  maxWidth={2400}
-                />
-              </div>
-              <input
-                className={inputCls}
-                value={draft.bg_image_url ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, bg_image_url: e.target.value }))}
-                onBlur={commit}
-                placeholder="Paste a URL or use Upload →"
-              />
-            </div>
-            <label className="block">
-              <span className={labelCls}>Fit</span>
-              <select
-                className={inputCls}
-                value={draft.bg_image_fit ?? "cover"}
-                onChange={(e) => patch({ bg_image_fit: e.target.value as RichBgContent["bg_image_fit"] })}
-              >
-                <option value="cover">Cover</option>
-                <option value="contain">Contain</option>
-                <option value="tile">Tile</option>
-              </select>
-            </label>
-            <label className="block w-32">
-              <span className={labelCls}>Padding Y (px)</span>
-              <input
-                type="number"
-                min={0}
-                max={400}
-                className={inputCls}
-                value={draft.padding_y_px ?? 48}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, padding_y_px: Number(e.target.value) || 0 }))
-                }
-                onBlur={commit}
-              />
-            </label>
-          </div>
-
-          <CtaFieldset cta={draft} onChange={(u) => patch(u)} brandTokens={brandTokens} />
+          <CtaFieldset
+            cta={draft}
+            onChange={(u) => patch(u)}
+            brandTokens={brandTokens}
+          />
         </>
       )}
     />

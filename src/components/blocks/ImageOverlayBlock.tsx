@@ -1,5 +1,6 @@
 import type { ImageOverlayContent, ImageOverlayLine } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import { flipTransform } from "@/components/admin/blocks/ImageTransformFieldset";
 import CtaButton from "./shared/CtaButton";
 
 /** Full-width image with up to 3 lines of independently-styled text on top. */
@@ -19,18 +20,33 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
       className="relative w-full overflow-hidden"
       style={{ height, backgroundColor: bg }}
     >
-      {content?.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={content.image_url}
-          alt=""
-          aria-hidden="true"
-          className={`absolute inset-0 h-full w-full ${
-            content?.image_fit === "cover" ? "object-cover" : "object-contain"
-          }`}
-          style={content?.image_flip_y ? { transform: "scaleY(-1)" } : undefined}
-        />
-      )}
+      {content?.image_url && (() => {
+        // Scale shrinks the image inside its section (10-100%). Using
+        // percentage width/height + flex centering instead of transform:
+        // scale so the image never overflows the section and never gets
+        // cropped — users wanted "auto-scale to fit, never crop".
+        const scalePct = Math.max(10, Math.min(100, content?.image_scale_pct ?? 100));
+        const flip = flipTransform(content?.image_flip_x, content?.image_flip_y);
+        const altText = content?.image_alt ?? "";
+        return (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={content.image_url}
+              alt={altText}
+              aria-hidden={altText ? undefined : "true"}
+              className={
+                content?.image_fit === "cover" ? "object-cover" : "object-contain"
+              }
+              style={{
+                width: `${scalePct}%`,
+                height: `${scalePct}%`,
+                transform: flip,
+              }}
+            />
+          </div>
+        );
+      })()}
       {overlay > 0 && (
         <div
           className="absolute inset-0 bg-black"

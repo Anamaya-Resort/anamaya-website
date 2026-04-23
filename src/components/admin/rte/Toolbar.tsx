@@ -27,6 +27,7 @@ import {
   Minus,
   Plus,
   CornerDownLeft,
+  Split,
 } from "lucide-react";
 
 type AiKind = "rewrite" | "translate";
@@ -82,7 +83,21 @@ export default function Toolbar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 py-1">
+    <div
+      className="flex flex-wrap items-center gap-0.5 py-1"
+      // Preserve the editor's selection when clicking a toolbar button.
+      // Without this the button's mousedown event fires a focus change
+      // that collapses the selection BEFORE .focus() runs, so commands
+      // like setTextAlign / toggleBulletList end up applying to the
+      // caret position instead of what the user had highlighted. Skip
+      // the prevention for <select> / <input> so the native font-family
+      // dropdown and color picker still work.
+      onMouseDown={(e) => {
+        const t = e.target as HTMLElement;
+        if (t.closest("select, input, textarea")) return;
+        e.preventDefault();
+      }}
+    >
       {/* Inline formatting */}
       <button
         type="button"
@@ -220,6 +235,25 @@ export default function Toolbar({
         className={btn(false)}
       >
         <IndentIncrease size={14} />
+      </button>
+
+      {/* Split line breaks into paragraphs — helpful when pasted or
+          previously-edited content has <br>s inside a single paragraph.
+          Converting them to paragraph breaks is what makes alignment
+          and list buttons apply per-line instead of to the whole block. */}
+      <button
+        type="button"
+        title="Split line breaks (<br>) into paragraphs"
+        onClick={() => {
+          const html = editor.getHTML();
+          if (!/<br\s*\/?>/i.test(html)) return;
+          const converted = html.replace(/<br\s*\/?>/gi, "</p><p>");
+          editor.commands.setContent(converted);
+          editor.commands.focus();
+        }}
+        className={btn(false)}
+      >
+        <Split size={14} />
       </button>
 
       <Divider />

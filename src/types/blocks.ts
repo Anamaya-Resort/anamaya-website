@@ -38,6 +38,8 @@ export type HeroContent = {
   video_url?: string;
   /** Optional poster image shown before the video plays. */
   video_poster_url?: string;
+  /** Alt text for the poster image. */
+  video_poster_alt?: string;
   /**
    * Display mode:
    * - "aspect": 16:9 player with controls, no autoplay (inline article video).
@@ -68,6 +70,7 @@ export type CtaBannerContent = {
   heading: string;
   subheading?: string;
   bg_image_url?: string;
+  image_alt?: string;
   cta?: { label: string; href: string };
 };
 
@@ -140,6 +143,8 @@ export type RichBgContent = BlockCta & {
   bg_color?: string;                           // brand key or hex
   bg_image_url?: string;                       // optional background image
   bg_image_fit?: "cover" | "contain" | "tile"; // scaling mode
+  /** 10-200. Background image scale (CSS bg-size %). 100 = natural fit. */
+  bg_image_scale_pct?: number;
   text_color?: string;                         // brand key or hex
   padding_y_px?: number;                       // vertical padding (default 48)
 };
@@ -166,6 +171,7 @@ export type VideoShowcaseContent = BlockCta & {
   youtube_url?: string;
   video_url?: string;
   video_poster_url?: string;
+  video_poster_alt?: string;
   /** Max width of the video frame in px (default 800). */
   video_max_width_px?: number;
 };
@@ -213,14 +219,23 @@ export type ImageOverlayLine = {
 };
 export type ImageOverlayContent = BlockCta & {
   image_url?: string;
+  image_alt?: string;
   /**
    * How the image fills the section:
    *  - "cover"   (default): fill the section, crop edges to match aspect
    *  - "contain": show the whole image, letterbox/pillarbox to fit
    */
   image_fit?: "cover" | "contain";
+  /** Mirror the image left-to-right. */
+  image_flip_x?: boolean;
   /** Mirror the image top-to-bottom. */
   image_flip_y?: boolean;
+  /**
+   * Scale the image inside its frame. 100 = natural fit, 80 = 80%,
+   * 120 = 120% (may overflow / be cropped by the section's overflow:
+   * hidden). Default 100.
+   */
+  image_scale_pct?: number;
   /** Background behind the image — useful when the image has
    *  transparency or when image_fit=contain leaves empty space.
    *  Empty string / undefined = transparent. */
@@ -236,15 +251,34 @@ export type ImageOverlayContent = BlockCta & {
 
 /** Image + text split with configurable column ratio. */
 export type ImageTextContent = BlockCta & {
-  image_url?: string;
+  // ── Container (outer section dimensions + column layout) ────────────
+  /** Max width of the section in px. Default 1400. */
+  container_width_px?: number;
+  /** Fixed height of the section in px. 0/undefined = auto (sizes
+   *  to content; padding_y_px fills the rest). */
+  container_height_px?: number;
   image_side?: "left" | "right";
   /** Image column width, 25-75. */
   image_width_pct?: number;
-  html?: string;
-  bg_color?: string;
-  text_color?: string;
-  padding_y_px?: number;
   vertical_align?: "top" | "center" | "bottom";
+  bg_color?: string;
+
+  // ── Image (fits inside its column, never cropped) ───────────────────
+  image_url?: string;
+  image_alt?: string;
+  /** 10-100. Image max-size as a % of the image column. Always fits. */
+  image_scale_pct?: number;
+  /** Mirror the image left-to-right. */
+  image_flip_x?: boolean;
+  /** Mirror the image top-to-bottom. */
+  image_flip_y?: boolean;
+
+  // ── Text ────────────────────────────────────────────────────────────
+  html?: string;
+  text_color?: string;
+
+  // ── Deprecated: replaced by container_height_px when that's set ─────
+  padding_y_px?: number;
 };
 
 export type BlockTypeSlug =

@@ -6,7 +6,9 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
-import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import MediaFieldset from "@/components/admin/blocks/MediaFieldset";
+import ImageTransformFieldset from "@/components/admin/blocks/ImageTransformFieldset";
+import ContainerFieldset from "@/components/admin/blocks/ContainerFieldset";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ImageOverlayContent, ImageOverlayLine } from "@/types/blocks";
@@ -15,6 +17,9 @@ const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
 const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
+const sectionCls = "space-y-4 rounded-md border border-zinc-200 p-4";
+const sectionTitleCls =
+  "text-[11px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60";
 
 function normalizeLine(l?: ImageOverlayLine): ImageOverlayLine {
   return {
@@ -31,7 +36,11 @@ function normalize(c: ImageOverlayContent | null | undefined): ImageOverlayConte
   return {
     ...(c ?? {}),
     image_url: c?.image_url ?? "",
+    image_alt: c?.image_alt ?? "",
     image_fit: c?.image_fit ?? "contain",
+    image_scale_pct: c?.image_scale_pct ?? 100,
+    image_flip_x: !!c?.image_flip_x,
+    image_flip_y: !!c?.image_flip_y,
     bg_color: c?.bg_color ?? "",
     height_px: c?.height_px ?? 480,
     overlay_opacity: c?.overlay_opacity ?? 25,
@@ -63,97 +72,78 @@ export default function ImageOverlayEditor(props: {
 }
 
 function Form({ state }: { state: BlockEditorState<ImageOverlayContent> }) {
-  const { draft, setDraft, commit, patch, brandTokens } = state;
+  const { draft, setDraft, commit, patch, brandTokens, saving } = state;
   return (
     <>
-      <div>
-        <div className="mb-1 flex items-center justify-between">
-          <span className={labelCls}>Image</span>
-          <ImageUploadButton
-            value={draft.image_url}
-            onUploaded={(url) => patch({ image_url: url })}
-            kind="overlays"
-            maxWidth={2000}
-          />
+      <ContainerFieldset
+        brandTokens={brandTokens}
+        heightPx={draft.height_px}
+        onHeightChange={(v) => setDraft((d) => ({ ...d, height_px: v }))}
+        heightMin={20}
+        heightHint=""
+        bgColor={draft.bg_color}
+        onBgColorChange={(v) => patch({ bg_color: v })}
+        onCommit={commit}
+        saving={saving}
+      >
+        <div className="flex flex-wrap items-end gap-4">
+          <label className="block w-32">
+            <span className={labelCls}>Overlay (0-100)</span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              className={inputCls}
+              value={draft.overlay_opacity ?? 25}
+              onChange={(e) =>
+                setDraft((d) => ({
+                  ...d,
+                  overlay_opacity: Number(e.target.value) || 0,
+                }))
+              }
+              onBlur={commit}
+            />
+          </label>
+          <label className="block w-32">
+            <span className={labelCls}>Alignment</span>
+            <select
+              className={inputCls}
+              value={draft.align ?? "center"}
+              onChange={(e) =>
+                patch({ align: e.target.value as ImageOverlayContent["align"] })
+              }
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </label>
         </div>
-        <input
-          className={inputCls}
-          value={draft.image_url ?? ""}
-          onChange={(e) => setDraft((d) => ({ ...d, image_url: e.target.value }))}
-          onBlur={commit}
-          placeholder="Paste a URL or use Upload →"
-        />
-      </div>
+      </ContainerFieldset>
 
-      <div className="flex flex-wrap items-end gap-4">
-        <label className="block w-32">
-          <span className={labelCls}>Height (px)</span>
-          <input
-            type="number"
-            min={20}
-            max={1080}
-            className={inputCls}
-            value={draft.height_px ?? 480}
-            onChange={(e) => setDraft((d) => ({ ...d, height_px: Number(e.target.value) || 20 }))}
-            onBlur={commit}
-          />
-        </label>
-        <label className="block w-32">
-          <span className={labelCls}>Overlay (0-100)</span>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            className={inputCls}
-            value={draft.overlay_opacity ?? 25}
-            onChange={(e) => setDraft((d) => ({ ...d, overlay_opacity: Number(e.target.value) || 0 }))}
-            onBlur={commit}
-          />
-        </label>
-        <label className="block w-32">
-          <span className={labelCls}>Alignment</span>
-          <select
-            className={inputCls}
-            value={draft.align ?? "center"}
-            onChange={(e) => patch({ align: e.target.value as ImageOverlayContent["align"] })}
-          >
-            <option value="left">Left</option>
-            <option value="center">Center</option>
-            <option value="right">Right</option>
-          </select>
-        </label>
-        <label className="block w-36">
-          <span className={labelCls}>Image fit</span>
-          <select
-            className={inputCls}
-            value={draft.image_fit ?? "contain"}
-            onChange={(e) => patch({ image_fit: e.target.value as ImageOverlayContent["image_fit"] })}
-          >
-            <option value="cover">Cover (crop to fill)</option>
-            <option value="contain">Contain (show whole image)</option>
-          </select>
-        </label>
-        <label className="flex items-end gap-2 pb-1.5 text-xs text-anamaya-charcoal/70">
-          <input
-            type="checkbox"
-            checked={!!draft.image_flip_y}
-            onChange={(e) => patch({ image_flip_y: e.target.checked })}
-          />
-          <span>Flip vertically</span>
-        </label>
-      </div>
-
-      {/* Background behind the image (useful when the image has
-          transparency). Auto = transparent. */}
-      <div>
-        <span className={labelCls}>Background color (Auto = transparent)</span>
-        <BrandColorSelect
-          value={draft.bg_color}
-          onChange={(v) => patch({ bg_color: v })}
-          brandTokens={brandTokens}
-          allowAuto
+      <section className={sectionCls}>
+        <h3 className={sectionTitleCls}>Image Controls</h3>
+        <MediaFieldset
+          url={draft.image_url}
+          onUrlChange={(url) => patch({ image_url: url })}
+          onCommit={commit}
+          alt={draft.image_alt}
+          onAltChange={(v) => setDraft((d) => ({ ...d, image_alt: v }))}
+          uploadKind="overlays"
         />
-      </div>
+        <ImageTransformFieldset
+          scale={draft.image_scale_pct}
+          onScaleChange={(v) => patch({ image_scale_pct: v })}
+          fit={draft.image_fit}
+          onFitChange={(v) =>
+            patch({ image_fit: v as ImageOverlayContent["image_fit"] })
+          }
+          flipX={draft.image_flip_x}
+          onFlipXChange={(v) => patch({ image_flip_x: v })}
+          flipY={draft.image_flip_y}
+          onFlipYChange={(v) => patch({ image_flip_y: v })}
+        />
+      </section>
 
       <LineEditor label="Line 1" state={state} which="line_1" />
       <LineEditor label="Line 2" state={state} which="line_2" />
@@ -191,7 +181,10 @@ function LineEditor({
           className={inputCls}
           value={line.text ?? ""}
           onChange={(e) =>
-            setDraft((d) => ({ ...d, [which]: { ...(d[which] ?? {}), text: e.target.value } }))
+            setDraft((d) => ({
+              ...d,
+              [which]: { ...(d[which] ?? {}), text: e.target.value },
+            }))
           }
           onBlur={commit}
           placeholder="Leave blank to hide"
@@ -200,7 +193,10 @@ function LineEditor({
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
           <span className={labelCls}>Font</span>
-          <BrandFontSelect value={line.font ?? "body"} onChange={(v) => updateLine({ font: v })} />
+          <BrandFontSelect
+            value={line.font ?? "body"}
+            onChange={(v) => updateLine({ font: v })}
+          />
         </div>
         <div>
           <span className={labelCls}>Color</span>
@@ -229,8 +225,18 @@ function LineEditor({
             onBlur={commit}
           />
         </label>
-        <StyleToggle label="B" pressed={!!line.bold} onClick={() => updateLine({ bold: !line.bold })} bold />
-        <StyleToggle label="I" pressed={!!line.italic} onClick={() => updateLine({ italic: !line.italic })} italic />
+        <StyleToggle
+          label="B"
+          pressed={!!line.bold}
+          onClick={() => updateLine({ bold: !line.bold })}
+          bold
+        />
+        <StyleToggle
+          label="I"
+          pressed={!!line.italic}
+          onClick={() => updateLine({ italic: !line.italic })}
+          italic
+        />
       </div>
     </section>
   );
