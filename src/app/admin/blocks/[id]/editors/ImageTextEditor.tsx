@@ -15,7 +15,12 @@ const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
 
 function normalize(c: ImageTextContent | null | undefined): ImageTextContent {
+  // Spread the incoming content first so CTA fields (and any other
+  // non-listed keys) survive a re-render; explicit defaults below take
+  // precedence. Without the spread, fields added later (like cta_*)
+  // get dropped on load and never reach the form inputs or renderer.
   return {
+    ...(c ?? {}),
     image_url: c?.image_url ?? "",
     image_side: c?.image_side ?? "left",
     image_width_pct: c?.image_width_pct ?? 50,

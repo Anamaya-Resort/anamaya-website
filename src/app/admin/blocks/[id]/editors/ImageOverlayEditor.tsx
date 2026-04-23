@@ -29,6 +29,7 @@ function normalizeLine(l?: ImageOverlayLine): ImageOverlayLine {
 
 function normalize(c: ImageOverlayContent | null | undefined): ImageOverlayContent {
   return {
+    ...(c ?? {}),
     image_url: c?.image_url ?? "",
     image_fit: c?.image_fit ?? "contain",
     bg_color: c?.bg_color ?? "",

@@ -17,6 +17,7 @@ const labelCls =
 
 function normalize(c: ChecklistContent | null | undefined): ChecklistContent {
   return {
+    ...(c ?? {}),
     heading: c?.heading ?? "",
     heading_font: c?.heading_font ?? "heading",
     heading_color: c?.heading_color ?? "",

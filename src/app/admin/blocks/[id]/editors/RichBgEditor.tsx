@@ -16,6 +16,7 @@ const labelCls =
 
 function normalize(c: RichBgContent | null | undefined): RichBgContent {
   return {
+    ...(c ?? {}),
     html: c?.html ?? "",
     bg_color: c?.bg_color ?? "brandSubtle",
     bg_image_url: c?.bg_image_url ?? "",

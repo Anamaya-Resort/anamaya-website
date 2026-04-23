@@ -20,6 +20,7 @@ const labelCls =
 
 function normalize(c: VideoShowcaseContent | null | undefined): VideoShowcaseContent {
   return {
+    ...(c ?? {}),
     bg_color: c?.bg_color ?? "brandSubtle",
     padding_y_px: c?.padding_y_px ?? 48,
     title_top: c?.title_top ?? "",
