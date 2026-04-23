@@ -118,6 +118,7 @@ function emptyContentFor(typeSlug: string): unknown {
       padding_y_px: 48,
     };
     case "image_overlay": return {
+      image_fit: "contain",
       height_px: 480,
       overlay_opacity: 25,
       align: "center",
