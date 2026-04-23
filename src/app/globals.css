@@ -107,3 +107,13 @@ body {
 .prose-anamaya strong { color: var(--color-anamaya-charcoal); font-weight: 600; }
 .prose-anamaya em     { font-style: italic; }
 .prose-anamaya iframe { max-width: 100%; }
+
+/* TipTap rich-text editor — placeholder hint + focus outline. */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: rgba(68, 68, 68, 0.4);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.tiptap:focus { outline: none; }

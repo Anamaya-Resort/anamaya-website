@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { RichTextContent } from "@/types/blocks";
+import RTE from "@/components/admin/rte/RichTextEditor";
 
 export default function RichTextEditor({
   content,
@@ -25,17 +26,10 @@ export default function RichTextEditor({
       }}
       className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200"
     >
-      <label className="block">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-          HTML
-        </span>
-        <textarea
-          value={html}
-          onChange={(e) => setHtml(e.target.value)}
-          rows={16}
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 font-mono text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
-        />
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+        Content
       </label>
+      <RTE value={html} onChange={setHtml} placeholder="Write your content…" />
       <button
         type="submit"
         disabled={saving}

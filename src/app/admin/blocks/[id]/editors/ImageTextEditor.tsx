@@ -6,6 +6,7 @@ import BlockEditorChrome, {
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
+import RTE from "@/components/admin/rte/RichTextEditor";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ImageTextContent } from "@/types/blocks";
 
@@ -132,17 +133,15 @@ export default function ImageTextEditor(props: {
             </label>
           </div>
 
-          <label className="block">
-            <span className={labelCls}>HTML content</span>
-            <textarea
-              rows={8}
-              className={inputCls}
+          <div>
+            <span className={labelCls}>Content</span>
+            <RTE
               value={draft.html ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, html: e.target.value }))}
+              onChange={(html) => setDraft((d) => ({ ...d, html }))}
               onBlur={commit}
-              placeholder="<h2>Title</h2>\n<p>Body…</p>"
+              placeholder="Write your content…"
             />
-          </label>
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>

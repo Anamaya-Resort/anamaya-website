@@ -6,6 +6,7 @@ import BlockEditorChrome, {
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
+import RTE from "@/components/admin/rte/RichTextEditor";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { RichBgContent } from "@/types/blocks";
 
@@ -43,17 +44,15 @@ export default function RichBgEditor(props: {
       normalize={normalize}
       renderForm={({ draft, setDraft, commit, patch, brandTokens }) => (
         <>
-          <label className="block">
-            <span className={labelCls}>HTML content</span>
-            <textarea
-              rows={8}
-              className={inputCls}
+          <div>
+            <span className={labelCls}>Content</span>
+            <RTE
               value={draft.html ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, html: e.target.value }))}
+              onChange={(html) => setDraft((d) => ({ ...d, html }))}
               onBlur={commit}
-              placeholder="<p>Your content here…</p>"
+              placeholder="Write your content…"
             />
-          </label>
+          </div>
 
           <div>
             <span className={labelCls}>Background color</span>
