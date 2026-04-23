@@ -11,6 +11,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { useEffect, useState } from "react";
 import Toolbar from "./Toolbar";
 import AiRewriteModal from "./AiRewriteModal";
+import { prettifyHtml } from "./prettifyHtml";
 
 /**
  * Reusable WYSIWYG + raw-HTML editor used anywhere a block accepts free
@@ -115,7 +116,11 @@ export default function RichTextEditor({
           <TabButton
             active={mode === "html"}
             onClick={() => {
-              if (editor) setRawHtml(editor.getHTML());
+              // Prettify so HTML mode is human-readable — block tags on
+              // their own lines, nested list items indented. TipTap
+              // normalises whitespace on re-parse so this is lossless
+              // round-tripping back to Visual.
+              if (editor) setRawHtml(prettifyHtml(editor.getHTML()));
               setMode("html");
             }}
           >

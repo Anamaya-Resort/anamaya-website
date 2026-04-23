@@ -42,7 +42,9 @@ const FONT_FAMILIES: { value: string; label: string }[] = [
 const DEFAULT_FONT_SIZE_PX = 16;
 const MIN_FONT_SIZE_PX = 10;
 const MAX_FONT_SIZE_PX = 96;
-const FONT_SIZE_STEP_PX = 2;
+// Per-click adjustment. 1 gives precise control; Shift+click could step
+// larger if we later want to add that.
+const FONT_SIZE_STEP_PX = 1;
 
 /**
  * Toolbar ordered roughly like WordPress's classic editor:
@@ -276,16 +278,20 @@ export default function Toolbar({
       >
         <LinkIcon size={14} />
       </button>
-      {editor.isActive("link") && (
-        <button
-          type="button"
-          title="Remove link"
-          onClick={() => editor.chain().focus().unsetLink().run()}
-          className={btn(false)}
-        >
-          <Link2Off size={14} />
-        </button>
-      )}
+      {/* Remove link — always visible. extendMarkRange covers the
+          "cursor inside a link" case; unsetLink then strips the link
+          mark from the whole selection, so it works even when the
+          selection extends past a link into plain text. */}
+      <button
+        type="button"
+        title="Remove link"
+        onClick={() =>
+          editor.chain().focus().extendMarkRange("link").unsetLink().run()
+        }
+        className={btn(false)}
+      >
+        <Link2Off size={14} />
+      </button>
 
       <Divider />
 

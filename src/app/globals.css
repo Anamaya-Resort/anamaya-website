@@ -70,11 +70,17 @@ body {
 
 .prose-anamaya ul, .prose-anamaya ol {
   margin: 0 0 1em 0;
-  padding-left: 1.25em;
+  padding-left: 1.5em;
 }
-.prose-anamaya li { margin: 0.25em 0; }
-.prose-anamaya ul li { list-style: disc; }
-.prose-anamaya ol li { list-style: decimal; }
+/* list-style set on the LIST (not just the item) so markers render
+   reliably — Tailwind's preflight resets ul/ol to list-style: none, and
+   some browsers ignore list-style when it's only on the <li>. */
+.prose-anamaya ul { list-style: disc outside; }
+.prose-anamaya ol { list-style: decimal outside; }
+.prose-anamaya li { margin: 0.25em 0; display: list-item; }
+/* TipTap wraps each list item's content in a <p>. Strip its default
+   bottom margin so list items aren't visually double-spaced. */
+.prose-anamaya li > p { margin: 0; }
 
 .prose-anamaya blockquote {
   border-left: 3px solid var(--color-anamaya-green);
