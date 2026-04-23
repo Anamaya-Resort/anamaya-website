@@ -24,14 +24,31 @@ import {
   Smile,
   Sparkles,
   Languages,
+  Minus,
+  Plus,
+  CornerDownLeft,
 } from "lucide-react";
 
 type AiKind = "rewrite" | "translate";
 
+const FONT_FAMILIES: { value: string; label: string }[] = [
+  { value: "", label: "Default" },
+  { value: "var(--font-inter), ui-sans-serif, system-ui, sans-serif", label: "Body (Inter)" },
+  { value: "var(--font-oswald), ui-sans-serif, sans-serif", label: "Display (Oswald)" },
+  { value: "Georgia, 'Times New Roman', serif", label: "Serif" },
+  { value: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", label: "Monospace" },
+];
+
+const DEFAULT_FONT_SIZE_PX = 16;
+const MIN_FONT_SIZE_PX = 10;
+const MAX_FONT_SIZE_PX = 96;
+const FONT_SIZE_STEP_PX = 2;
+
 /**
  * Toolbar ordered roughly like WordPress's classic editor:
- *   B I U S · H1 H2 H3 · UL OL · indent out/in · align L C R J · link ·
- *   color · emoji · AI rewrite · AI translate
+ *   B I U S · H1 H2 H3 · Font Family · Font Size -/+ · UL OL indent ·
+ *   align L C R J · link · color · emoji · line-break · AI rewrite ·
+ *   AI translate
  * All buttons are 24×24 to stay compact. Active state uses the brand
  * green so users see which marks are on at the caret.
  */
@@ -44,12 +61,23 @@ export default function Toolbar({
 }) {
   const [showEmoji, setShowEmoji] = useState(false);
 
+  const currentFontSize = readFontSizePx(editor);
+  const currentFontFamily = (editor.getAttributes("textStyle").fontFamily as string | undefined) ?? "";
+
   const btn = (active: boolean) =>
     `flex h-7 w-7 items-center justify-center rounded transition-colors ${
       active
         ? "bg-anamaya-green text-white"
         : "text-anamaya-charcoal/70 hover:bg-zinc-100 hover:text-anamaya-charcoal"
     }`;
+
+  function adjustFontSize(delta: number) {
+    const next = Math.max(
+      MIN_FONT_SIZE_PX,
+      Math.min(MAX_FONT_SIZE_PX, currentFontSize + delta),
+    );
+    editor.chain().focus().setFontSize(`${next}px`).run();
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-0.5 py-1">
@@ -117,6 +145,47 @@ export default function Toolbar({
 
       <Divider />
 
+      {/* Font family */}
+      <select
+        title="Font family"
+        value={currentFontFamily}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "") editor.chain().focus().unsetFontFamily().run();
+          else editor.chain().focus().setFontFamily(v).run();
+        }}
+        className="h-7 max-w-[110px] rounded border border-transparent bg-white px-1.5 text-[11px] text-anamaya-charcoal/70 hover:border-zinc-200 focus:border-anamaya-green focus:outline-none"
+      >
+        {FONT_FAMILIES.map((f) => (
+          <option key={f.label} value={f.value}>
+            {f.label}
+          </option>
+        ))}
+      </select>
+
+      {/* Font size -/+ */}
+      <button
+        type="button"
+        title="Decrease font size"
+        onClick={() => adjustFontSize(-FONT_SIZE_STEP_PX)}
+        className={btn(false)}
+      >
+        <Minus size={14} />
+      </button>
+      <span className="w-8 text-center font-mono text-[11px] text-anamaya-charcoal/60" title="Current font size">
+        {currentFontSize}
+      </span>
+      <button
+        type="button"
+        title="Increase font size"
+        onClick={() => adjustFontSize(FONT_SIZE_STEP_PX)}
+        className={btn(false)}
+      >
+        <Plus size={14} />
+      </button>
+
+      <Divider />
+
       {/* Lists + indent */}
       <button
         type="button"
@@ -136,7 +205,7 @@ export default function Toolbar({
       </button>
       <button
         type="button"
-        title="Outdent"
+        title="Outdent list item"
         onClick={() => editor.chain().focus().liftListItem("listItem").run()}
         className={btn(false)}
       >
@@ -144,7 +213,7 @@ export default function Toolbar({
       </button>
       <button
         type="button"
-        title="Indent"
+        title="Indent list item"
         onClick={() => editor.chain().focus().sinkListItem("listItem").run()}
         className={btn(false)}
       >
@@ -255,6 +324,17 @@ export default function Toolbar({
         )}
       </div>
 
+      {/* Hard line break — Shift+Enter equivalent. Useful for addresses
+          and anywhere a new paragraph would add too much space. */}
+      <button
+        type="button"
+        title="Insert line break (Shift+Enter)"
+        onClick={() => editor.chain().focus().setHardBreak().run()}
+        className={btn(false)}
+      >
+        <CornerDownLeft size={14} />
+      </button>
+
       <Divider />
 
       {/* AI — stubs open a modal that will call the LLM module later */}
@@ -276,6 +356,15 @@ export default function Toolbar({
       </button>
     </div>
   );
+}
+
+/** Parse the current textStyle fontSize into an integer px, defaulting
+ *  to 16 if unset or non-px. */
+function readFontSizePx(editor: Editor): number {
+  const raw = editor.getAttributes("textStyle").fontSize as string | undefined;
+  if (!raw) return DEFAULT_FONT_SIZE_PX;
+  const m = raw.match(/^(\d+(?:\.\d+)?)px$/);
+  return m ? Math.round(Number(m[1])) : DEFAULT_FONT_SIZE_PX;
 }
 
 function Divider() {

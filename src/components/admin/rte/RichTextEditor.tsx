@@ -5,8 +5,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
-import Color from "@tiptap/extension-color";
-import { TextStyle } from "@tiptap/extension-text-style";
+// v3 consolidated Color, FontFamily, FontSize, etc. into extension-text-style.
+import { TextStyle, Color, FontFamily, FontSize } from "@tiptap/extension-text-style";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useEffect, useState } from "react";
 import Toolbar from "./Toolbar";
@@ -51,6 +51,8 @@ export default function RichTextEditor({
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TextStyle,
       Color,
+      FontFamily,
+      FontSize,
       Placeholder.configure({ placeholder }),
     ],
     content: value,
