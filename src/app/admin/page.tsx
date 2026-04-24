@@ -44,6 +44,19 @@ export default function AdminHome() {
             </p>
           </Link>
         </li>
+        <li>
+          <Link
+            href="/admin/ai"
+            className="block rounded-lg border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md"
+          >
+            <h2 className="text-lg font-semibold">AnamayOS A.I.</h2>
+            <p className="mt-1 text-sm text-anamaya-charcoal/70">
+              Brand guides, customer archetypes, and content prompt templates
+              pulled live from AnamayOS. Includes a sandbox to assemble and
+              preview AI prompts.
+            </p>
+          </Link>
+        </li>
         <li className="rounded-lg border border-dashed border-zinc-300 p-6 text-sm text-anamaya-charcoal/50">
           Retreats &mdash; coming soon
         </li>
