@@ -194,12 +194,36 @@ function OrganizationCard({
   ctx: Awaited<ReturnType<typeof getOrganizationContext>>;
 }) {
   if (!ctx) {
+    const hasUrl = !!process.env.AO_SUPABASE_URL;
+    const hasKey = !!process.env.AO_SUPABASE_ANON_KEY;
+    const hasSlug = !!process.env.AO_ORG_SLUG;
+    const missing = [
+      !hasUrl && "AO_SUPABASE_URL",
+      !hasKey && "AO_SUPABASE_ANON_KEY",
+      !hasSlug && "AO_ORG_SLUG",
+    ].filter(Boolean) as string[];
     return (
       <div className="mb-6 rounded-sm border border-[#dba617] bg-[#fcf9e8] px-4 py-3 text-[13px] text-[#1d2327]">
-        <strong>Organization not synced.</strong> Set{" "}
-        <code>AO_SUPABASE_URL</code>, <code>AO_SUPABASE_ANON_KEY</code>, and{" "}
-        <code>AO_ORG_SLUG</code> in your environment so the website can read
-        the org bundle from AnamayOS.
+        <strong>Organization not synced.</strong>{" "}
+        {missing.length > 0 ? (
+          <>
+            Missing env var{missing.length > 1 ? "s" : ""}:{" "}
+            {missing.map((m) => (
+              <code key={m} className="mr-1">
+                {m}
+              </code>
+            ))}
+            .
+          </>
+        ) : (
+          <>
+            Env vars are set, but no active org was found for{" "}
+            <code>AO_ORG_SLUG={process.env.AO_ORG_SLUG}</code>. Verify the
+            slug exists in AnamayOS and the row has{" "}
+            <code>is_active=true</code>, then check that the anon RLS policy
+            on <code>organizations</code> allows SELECT.
+          </>
+        )}
       </div>
     );
   }

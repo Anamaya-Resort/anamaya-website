@@ -67,19 +67,6 @@ export type PropertyRow = {
   sort_order: number | null;
 };
 
-/** Fields a property may override on the parent org. */
-const OVERRIDABLE_KEYS = [
-  "tagline",
-  "industry",
-  "primary_offering",
-  "locale",
-  "timezone",
-  "booking_url",
-  "contact_url",
-  "sensitive_topics",
-  "disclaimers",
-] as const;
-
 export type EffectiveIdentity = {
   name: string;
   legal_name: string | null;
@@ -214,15 +201,19 @@ function resolveIdentity(
   const prop = properties.find((p) => p.id === propertyId);
   if (!prop) return base;
 
-  // Apply each overridable field: property non-null beats org.
-  for (const key of OVERRIDABLE_KEYS) {
-    const v = prop[key];
-    if (v !== null && v !== undefined) {
-      // The cast is safe because OVERRIDABLE_KEYS are by construction
-      // present on EffectiveIdentity with compatible types.
-      (base as Record<string, unknown>)[key] = v;
-    }
-  }
+  // Apply each overridable field: property non-null beats org. Explicit
+  // per-key copy keeps the typing tight — TS can verify each pair.
+  if (prop.tagline !== null) base.tagline = prop.tagline;
+  if (prop.industry !== null) base.industry = prop.industry;
+  if (prop.primary_offering !== null)
+    base.primary_offering = prop.primary_offering;
+  if (prop.locale !== null) base.locale = prop.locale;
+  if (prop.timezone !== null) base.timezone = prop.timezone;
+  if (prop.booking_url !== null) base.booking_url = prop.booking_url;
+  if (prop.contact_url !== null) base.contact_url = prop.contact_url;
+  if (prop.sensitive_topics !== null)
+    base.sensitive_topics = prop.sensitive_topics;
+  if (prop.disclaimers !== null) base.disclaimers = prop.disclaimers;
 
   base.property = {
     id: prop.id,

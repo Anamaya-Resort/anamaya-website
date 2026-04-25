@@ -333,7 +333,7 @@ export default async function EditItemPage({
               </div>
             </div>
 
-            {properties.length > 0 && (
+            {properties.length > 0 ? (
               <div className="rounded-sm border border-[#c3c4c7] bg-white">
                 <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                   Property
@@ -358,6 +358,15 @@ export default async function EditItemPage({
                   </p>
                 </div>
               </div>
+            ) : (
+              // Property list is empty (org has no properties OR AO is
+              // unreachable). Preserve any existing property_id so a network
+              // blip doesn't silently clear the tag on Update.
+              <input
+                type="hidden"
+                name="property_id"
+                value={item.property_id ?? ""}
+              />
             )}
 
             {item.ai_last_edit_at && (
