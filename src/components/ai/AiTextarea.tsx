@@ -55,6 +55,16 @@ export default function AiTextarea({ pageContext, ...props }: Props) {
         const caret = start + replacement.length;
         el.setSelectionRange(caret, caret);
       },
+      replaceRange: (start, end, replacement) => {
+        const s = Math.max(0, Math.min(start, el.value.length));
+        const e = Math.max(s, Math.min(end, el.value.length));
+        const next = el.value.slice(0, s) + replacement + el.value.slice(e);
+        el.value = next;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.focus();
+        const caret = s + replacement.length;
+        el.setSelectionRange(caret, caret);
+      },
       insertAtCursor: (text) => {
         const start = el.selectionStart ?? el.value.length;
         const end = el.selectionEnd ?? start;

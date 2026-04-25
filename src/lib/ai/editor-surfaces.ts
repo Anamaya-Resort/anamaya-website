@@ -27,6 +27,12 @@ export type EditorSurface = {
   getSelection(): SurfaceSelection | null;
   /** Replace the current selection with `replacement`. No-op if nothing selected. */
   replaceSelection(replacement: string): void;
+  /**
+   * Replace a specific range with `replacement`. Used when the panel
+   * remembers a selection from before focus moved away — the live DOM
+   * selection is gone, but the surface still knows the original offsets.
+   */
+  replaceRange(start: number, end: number, replacement: string): void;
   /** Insert at the caret. Replaces selection if any. */
   insertAtCursor(text: string): void;
   /** Optional context the AI tools can use to ground their prompts. */
