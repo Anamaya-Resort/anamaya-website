@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getSessionUser, isAdminUser } from "@/lib/session";
 import { runChat, type ChatMessage } from "@/lib/ai/client";
 import { getOrganizationContext } from "@/lib/ai/organization";
+import {
+  assembleUserMessage,
+  buildIdentityPreamble,
+  type IdentitySummary,
+} from "@/lib/ai/prompt";
 
 type Mode = "rewrite" | "write" | "ask";
 
@@ -23,7 +28,7 @@ function bad(reason: string, status = 400) {
 /**
  * Single endpoint backing the Rewrite / Write / Ask tabs of the AI panel.
  * Mode determines the system prompt; identity (org + property) comes
- * from AnamayOS so prompts are tenant-agnostic.
+ * from AnamayOS so prompts stay tenant-agnostic.
  */
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -84,53 +89,38 @@ function buildMessages({
   mode: Mode;
   instruction: string;
   selection: string;
-  identity: ReturnType<NonNullable<Awaited<ReturnType<typeof getOrganizationContext>>>["resolve"]> | null;
+  identity: IdentitySummary | null;
   pageContext: Record<string, unknown> | null;
 }): ChatMessage[] {
   const system = systemPromptFor(mode, identity);
-  const userParts: string[] = [];
 
-  if (pageContext && Object.keys(pageContext).length > 0) {
-    userParts.push(
-      `Page context:\n${formatKv(pageContext)}`,
-    );
-  }
-  if (selection) {
-    userParts.push(
+  // Rewrite mode supplies a default instruction when the user leaves it
+  // blank; the other modes already validated instruction is present.
+  const finalInstruction =
+    mode === "rewrite" && !instruction
+      ? "Improve clarity and flow without changing meaning."
+      : instruction;
+
+  const user = assembleUserMessage({
+    pageContext,
+    selection,
+    selectionLabel:
       mode === "rewrite"
-        ? `Passage to rewrite:\n"""\n${selection}\n"""`
-        : `Selected text (use as context):\n"""\n${selection}\n"""`,
-    );
-  }
-  if (instruction) {
-    userParts.push(`Instruction:\n${instruction}`);
-  } else if (mode === "rewrite") {
-    userParts.push("Instruction:\nImprove clarity and flow without changing meaning.");
-  }
+        ? "Passage to rewrite"
+        : "Selected text (use as context)",
+    instruction: finalInstruction,
+    instructionLabel: "Instruction",
+  });
 
   return [
     { role: "system", content: system },
-    { role: "user", content: userParts.join("\n\n") },
+    { role: "user", content: user },
   ];
 }
 
-function systemPromptFor(
-  mode: Mode,
-  identity: { name: string; tagline: string | null; industry: string | null; primary_offering: string | null; property: { name: string } | null } | null,
-): string {
-  const lines: string[] = [];
-  if (identity) {
-    const bits = [
-      `brand: ${identity.name}`,
-      identity.tagline ? `tagline: ${identity.tagline}` : null,
-      identity.industry ? `industry: ${identity.industry}` : null,
-      identity.primary_offering ? `offering: ${identity.primary_offering}` : null,
-      identity.property ? `property scope: ${identity.property.name}` : null,
-    ].filter(Boolean);
-    lines.push(`You are an editorial assistant for ${identity.name}. ${bits.join(" · ")}`);
-  } else {
-    lines.push("You are an editorial assistant.");
-  }
+function systemPromptFor(mode: Mode, identity: IdentitySummary | null): string {
+  const role = "an editorial assistant";
+  const lines: string[] = [buildIdentityPreamble(role, identity)];
   lines.push("Match the brand's voice. Be concrete; avoid generic marketing fluff.");
 
   if (mode === "rewrite") {
@@ -152,11 +142,4 @@ function systemPromptFor(
     );
   }
   return lines.join(" ");
-}
-
-function formatKv(obj: Record<string, unknown>): string {
-  return Object.entries(obj)
-    .filter(([, v]) => v !== null && v !== undefined && v !== "")
-    .map(([k, v]) => `- ${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
-    .join("\n");
 }

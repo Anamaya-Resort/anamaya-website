@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getSessionUser, isAdminUser } from "@/lib/session";
 import { runChat, type ChatMessage } from "@/lib/ai/client";
 import { getOrganizationContext } from "@/lib/ai/organization";
+import {
+  assembleUserMessage,
+  buildIdentityPreamble,
+  type IdentitySummary,
+} from "@/lib/ai/prompt";
 
 const TARGET_COUNT = 10;
 
@@ -79,40 +84,27 @@ function buildMessages({
 }: {
   selection: string;
   instruction: string;
-  identity: ReturnType<NonNullable<Awaited<ReturnType<typeof getOrganizationContext>>>["resolve"]> | null;
+  identity: IdentitySummary | null;
   pageContext: Record<string, unknown> | null;
 }): ChatMessage[] {
-  const systemBits: string[] = [];
-  if (identity) {
-    const id = [
-      `brand: ${identity.name}`,
-      identity.tagline ? `tagline: ${identity.tagline}` : null,
-      identity.industry ? `industry: ${identity.industry}` : null,
-      identity.primary_offering ? `offering: ${identity.primary_offering}` : null,
-      identity.property ? `property scope: ${identity.property.name}` : null,
-    ].filter(Boolean);
-    systemBits.push(
-      `You are a headline writer for ${identity.name}. ${id.join(" · ")}`,
-    );
-  } else {
-    systemBits.push("You are a headline writer.");
-  }
-  systemBits.push(
+  const system = [
+    buildIdentityPreamble("a headline writer", identity),
     "Match the brand's voice. Vary structure across the set: questions, declaratives, lists, hooks.",
     `Return EXACTLY ${TARGET_COUNT} headlines as JSON in the form {"headlines":["...","..."]}. No commentary.`,
-  );
+  ].join(" ");
 
-  const userParts: string[] = [];
-  if (pageContext && Object.keys(pageContext).length > 0) {
-    userParts.push(`Page context:\n${formatKv(pageContext)}`);
-  }
-  userParts.push(`Current headline / passage:\n"""\n${selection}\n"""`);
-  if (instruction) userParts.push(`Style guidance:\n${instruction}`);
-  userParts.push(`Return ${TARGET_COUNT} alternatives.`);
+  const user = assembleUserMessage({
+    pageContext,
+    selection,
+    selectionLabel: "Current headline / passage",
+    instruction,
+    instructionLabel: "Style guidance",
+    trailer: `Return ${TARGET_COUNT} alternatives.`,
+  });
 
   return [
-    { role: "system", content: systemBits.join(" ") },
-    { role: "user", content: userParts.join("\n\n") },
+    { role: "system", content: system },
+    { role: "user", content: user },
   ];
 }
 
@@ -139,11 +131,4 @@ function parseHeadlines(text: string): string[] {
     .map((s) => s.trim())
     .filter((s) => s.length > 0)
     .slice(0, TARGET_COUNT);
-}
-
-function formatKv(obj: Record<string, unknown>): string {
-  return Object.entries(obj)
-    .filter(([, v]) => v !== null && v !== undefined && v !== "")
-    .map(([k, v]) => `- ${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
-    .join("\n");
 }
