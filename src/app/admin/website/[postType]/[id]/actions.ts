@@ -23,6 +23,17 @@ export async function updateItem(formData: FormData) {
   const cmsBodyRaw = formData.get("cms_body_html");
   const excerpt = String(formData.get("excerpt") ?? "");
 
+  // SEO overrides — empty string persists as null so AI/UI fall back
+  // to the title / site_settings.default_meta defaults.
+  const meta_title = String(formData.get("meta_title") ?? "").trim() || null;
+  const meta_description =
+    String(formData.get("meta_description") ?? "").trim() || null;
+  const canonical_url =
+    String(formData.get("canonical_url") ?? "").trim() || null;
+  const og_image_url =
+    String(formData.get("og_image_url") ?? "").trim() || null;
+  const noindex = formData.get("noindex") === "on";
+
   const pt = getPostTypeBySlug(postTypeSlug);
   if (!pt) throw new Error("Unknown post type");
   if (!id) throw new Error("Missing id");
@@ -38,6 +49,11 @@ export async function updateItem(formData: FormData) {
       wp_status: status,
       cms_template_id,
       excerpt: excerpt || null,
+      meta_title,
+      meta_description,
+      canonical_url,
+      og_image_url,
+      noindex,
       date_modified: new Date().toISOString(),
     })
     .eq("id", id)

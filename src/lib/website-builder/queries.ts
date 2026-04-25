@@ -321,6 +321,16 @@ export type EditorItem = {
   content_rendered: string | null;
   scraped_body_html: string | null;
   author: { id: string; display_name: string | null } | null;
+  // SEO overrides — null falls back to title / site_settings.default_meta.
+  meta_title: string | null;
+  meta_description: string | null;
+  canonical_url: string | null;
+  og_image_url: string | null;
+  noindex: boolean;
+  // AI provenance — populated by the future AI rewrite phase.
+  ai_last_model: string | null;
+  ai_last_edit_at: string | null;
+  ai_last_kind: string | null;
 };
 
 export async function getItemForEdit(
@@ -333,7 +343,7 @@ export async function getItemForEdit(
   const { data: row, error } = await sb
     .from("url_inventory")
     .select(
-      "id, title, url_path, wp_status, date_published, date_modified, excerpt, cms_template_id, scraped_body_html, author_id",
+      "id, title, url_path, wp_status, date_published, date_modified, excerpt, cms_template_id, scraped_body_html, author_id, meta_title, meta_description, canonical_url, og_image_url, noindex",
     )
     .eq("id", id)
     .eq("source_site", SOURCE_SITE)
@@ -343,7 +353,7 @@ export async function getItemForEdit(
 
   const { data: content } = await sb
     .from("content_items")
-    .select("content_rendered, cms_body_html")
+    .select("content_rendered, cms_body_html, ai_last_model, ai_last_edit_at, ai_last_kind")
     .eq("url_inventory_id", id)
     .maybeSingle();
 
@@ -370,6 +380,14 @@ export async function getItemForEdit(
     content_rendered: content?.content_rendered ?? null,
     scraped_body_html: row.scraped_body_html ?? null,
     author,
+    meta_title: row.meta_title ?? null,
+    meta_description: row.meta_description ?? null,
+    canonical_url: row.canonical_url ?? null,
+    og_image_url: row.og_image_url ?? null,
+    noindex: !!row.noindex,
+    ai_last_model: content?.ai_last_model ?? null,
+    ai_last_edit_at: content?.ai_last_edit_at ?? null,
+    ai_last_kind: content?.ai_last_kind ?? null,
   };
 }
 

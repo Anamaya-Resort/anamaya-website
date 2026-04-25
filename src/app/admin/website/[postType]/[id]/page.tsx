@@ -136,6 +136,91 @@ export default async function EditItemPage({
                 className="block w-full resize-y rounded-b-sm border-0 bg-white px-3 py-2 text-[13px] text-[#1d2327] focus:outline-none"
               />
             </div>
+
+            <div className="rounded-sm border border-[#c3c4c7] bg-white">
+              <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                <span>SEO &amp; Social</span>
+                <span className="text-[12px] font-normal text-[#50575e]">
+                  Per-page overrides; blank = use site defaults
+                </span>
+              </div>
+              <div className="space-y-3 px-3 py-3 text-[13px]">
+                <div>
+                  <label
+                    htmlFor="meta_title"
+                    className="mb-1 block font-semibold text-[#1d2327]"
+                  >
+                    Meta title
+                  </label>
+                  <input
+                    id="meta_title"
+                    name="meta_title"
+                    type="text"
+                    defaultValue={item.meta_title ?? ""}
+                    placeholder={item.title ?? ""}
+                    className="h-7 w-full rounded-sm border border-[#8c8f94] bg-white px-2"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="meta_description"
+                    className="mb-1 block font-semibold text-[#1d2327]"
+                  >
+                    Meta description
+                  </label>
+                  <textarea
+                    id="meta_description"
+                    name="meta_description"
+                    defaultValue={item.meta_description ?? ""}
+                    rows={3}
+                    className="block w-full rounded-sm border border-[#8c8f94] bg-white px-2 py-1"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="og_image_url"
+                    className="mb-1 block font-semibold text-[#1d2327]"
+                  >
+                    OG image URL
+                  </label>
+                  <input
+                    id="og_image_url"
+                    name="og_image_url"
+                    type="text"
+                    defaultValue={item.og_image_url ?? ""}
+                    placeholder="https://…"
+                    className="h-7 w-full rounded-sm border border-[#8c8f94] bg-white px-2"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="canonical_url"
+                    className="mb-1 block font-semibold text-[#1d2327]"
+                  >
+                    Canonical URL
+                  </label>
+                  <input
+                    id="canonical_url"
+                    name="canonical_url"
+                    type="text"
+                    defaultValue={item.canonical_url ?? ""}
+                    placeholder={item.url_path}
+                    className="h-7 w-full rounded-sm border border-[#8c8f94] bg-white px-2"
+                  />
+                </div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="noindex"
+                    defaultChecked={item.noindex}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-[13px]">
+                    No-index this page (hide from search engines)
+                  </span>
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -244,6 +329,38 @@ export default async function EditItemPage({
                 </p>
               </div>
             </div>
+
+            {item.ai_last_edit_at && (
+              <div className="rounded-sm border border-[#c3c4c7] bg-white">
+                <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  AI Activity
+                </div>
+                <div className="space-y-1 px-3 py-3 text-[12px] text-[#50575e]">
+                  <div>
+                    Last edit:{" "}
+                    <span className="text-[#1d2327]">
+                      {formatDateTime(item.ai_last_edit_at)}
+                    </span>
+                  </div>
+                  {item.ai_last_kind && (
+                    <div>
+                      Kind:{" "}
+                      <span className="text-[#1d2327]">
+                        {item.ai_last_kind}
+                      </span>
+                    </div>
+                  )}
+                  {item.ai_last_model && (
+                    <div>
+                      Model:{" "}
+                      <code className="text-[#1d2327]">
+                        {item.ai_last_model}
+                      </code>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
               <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
