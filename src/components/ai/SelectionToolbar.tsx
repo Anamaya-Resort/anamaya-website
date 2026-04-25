@@ -42,9 +42,17 @@ export default function SelectionToolbar() {
       // Position the toolbar above the textarea, near where the selection
       // began. Textareas don't expose per-character bounding rects, so we
       // anchor to the element's top edge and roughly horizontally center.
+      // Flip below the field if there's no room above.
       const rect = surface.element.getBoundingClientRect();
+      const TOOLBAR_H = 36;
+      const above = rect.top - TOOLBAR_H - 4;
+      const below = rect.bottom + 4;
+      const top =
+        above >= 0
+          ? window.scrollY + above
+          : window.scrollY + below;
       setPos({
-        top: window.scrollY + rect.top - 40,
+        top,
         left: window.scrollX + rect.left + Math.min(rect.width / 2, 160),
       });
       setActive({
@@ -84,6 +92,11 @@ export default function SelectionToolbar() {
     >
       <button
         type="button"
+        // preventDefault on mousedown keeps focus + selection in the
+        // textarea. Without it, the click would blur the field, the
+        // selection would collapse, and React would unmount this toolbar
+        // before the click ever fires.
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => open("rewrite")}
         className="rounded px-2 py-1 hover:bg-[#2c3338]"
       >
@@ -91,6 +104,7 @@ export default function SelectionToolbar() {
       </button>
       <button
         type="button"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => open("headlines")}
         className="rounded px-2 py-1 hover:bg-[#2c3338]"
       >

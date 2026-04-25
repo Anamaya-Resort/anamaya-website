@@ -28,6 +28,12 @@ export default function AiTextarea({ pageContext, ...props }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const id = useMemo(() => nextSurfaceId("textarea"), []);
 
+  // Keep pageContext in a ref so getPageContext() always returns the
+  // latest value without forcing the surface to re-register on every
+  // render (registration is keyed on element identity, not props).
+  const pageContextRef = useRef(pageContext);
+  pageContextRef.current = pageContext;
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -74,13 +80,9 @@ export default function AiTextarea({ pageContext, ...props }: Props) {
         const caret = start + text.length;
         el.setSelectionRange(caret, caret);
       },
-      getPageContext: pageContext ? () => pageContext : undefined,
+      getPageContext: () => pageContextRef.current ?? {},
     };
     return registerSurface(surface);
-    // pageContext is intentionally read-on-demand via getPageContext() so
-    // we don't re-register on every render. Surface registration is keyed
-    // on the textarea element identity, not the context contents.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   return <textarea ref={ref} data-ai-surface={id} {...props} />;
