@@ -6,6 +6,7 @@ import {
   listPageTemplates,
 } from "@/lib/website-builder/queries";
 import { getOrganizationContext } from "@/lib/ai/organization";
+import AiTextarea from "@/components/ai/AiTextarea";
 import PageHeader from "../../_components/PageHeader";
 import { updateItem, trashItem, restoreItem } from "./actions";
 
@@ -106,12 +107,19 @@ export default async function EditItemPage({
                     : "Empty — migrated WP HTML will be used"}
                 </span>
               </div>
-              <textarea
+              <AiTextarea
                 name="cms_body_html"
                 defaultValue={item.cms_body_html ?? ""}
                 rows={20}
                 placeholder="Leave blank to keep using the migrated WP HTML below."
                 aria-label="Body HTML"
+                pageContext={{
+                  postType: pt.postType,
+                  postId: item.id,
+                  title: item.title ?? "",
+                  urlPath: item.url_path ?? "",
+                  propertyId: item.property_id ?? null,
+                }}
                 className="block w-full resize-y rounded-b-sm border-0 bg-white px-3 py-2 font-mono text-[12px] leading-relaxed text-[#1d2327] focus:outline-none"
               />
             </div>

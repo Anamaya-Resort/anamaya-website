@@ -1,5 +1,7 @@
 import AdminBar from "./_components/AdminBar";
 import Sidebar from "./_components/Sidebar";
+import AiPanel from "@/components/ai/AiPanel";
+import SelectionToolbar from "@/components/ai/SelectionToolbar";
 
 export default function WebsiteBuilderLayout({
   children,
@@ -13,6 +15,8 @@ export default function WebsiteBuilderLayout({
         <Sidebar />
         <main className="flex-1 overflow-x-auto">{children}</main>
       </div>
+      <SelectionToolbar />
+      <AiPanel />
     </div>
   );
 }
