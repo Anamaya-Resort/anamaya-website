@@ -12,41 +12,57 @@ const TABS: { id: PanelTab; label: string }[] = [
   { id: "headlines", label: "Headlines" },
 ];
 
-type RunState =
+type ChatRun =
   | { status: "idle" }
   | { status: "running" }
   | { status: "ok"; text: string }
+  | { status: "error"; reason: string };
+
+type HeadlinesRun =
+  | { status: "idle" }
+  | { status: "running" }
+  | { status: "ok"; headlines: string[] }
   | { status: "error"; reason: string };
 
 export default function AiPanel() {
   const state = usePanelState();
   const [modelRef, setModelRef] = useState<string | null>(null);
   const [instruction, setInstruction] = useState("");
-  const [run, setRun] = useState<RunState>({ status: "idle" });
+  const [chatRun, setChatRun] = useState<ChatRun>({ status: "idle" });
+  const [headlinesRun, setHeadlinesRun] = useState<HeadlinesRun>({ status: "idle" });
 
-  const isChatTab = state.tab === "rewrite" || state.tab === "write" || state.tab === "ask";
+  const isChatTab =
+    state.tab === "rewrite" || state.tab === "write" || state.tab === "ask";
+  const isHeadlinesTab = state.tab === "headlines";
 
   // Reset transient state whenever a new selection / tab is opened.
   useEffect(() => {
     setInstruction("");
-    setRun({ status: "idle" });
+    setChatRun({ status: "idle" });
+    setHeadlinesRun({ status: "idle" });
   }, [state.seedInput, state.tab, state.surfaceId]);
 
   const placeholder = useMemo(() => instructionPlaceholder(state.tab), [state.tab]);
 
   if (!state.isOpen) return null;
 
-  const canSubmit =
+  const canSubmitChat =
     isChatTab &&
     !!modelRef &&
-    run.status !== "running" &&
+    chatRun.status !== "running" &&
     (state.tab === "rewrite"
       ? !!state.seedInput.trim()
       : !!instruction.trim());
 
-  async function submit() {
+  const canSubmitHeadlines =
+    isHeadlinesTab &&
+    !!modelRef &&
+    !!state.seedInput.trim() &&
+    headlinesRun.status !== "running";
+
+  async function submitChat() {
     if (!modelRef || !isChatTab) return;
-    setRun({ status: "running" });
+    setChatRun({ status: "running" });
     try {
       const res = await fetch("/api/ai/rewrite", {
         method: "POST",
@@ -64,43 +80,71 @@ export default function AiPanel() {
         | { ok: true; text: string }
         | { ok: false; reason: string };
       if (!json.ok) {
-        setRun({ status: "error", reason: json.reason });
+        setChatRun({ status: "error", reason: json.reason });
         return;
       }
-      setRun({ status: "ok", text: json.text });
+      setChatRun({ status: "ok", text: json.text });
     } catch (err) {
       const reason = err instanceof Error ? err.message : "Network error";
-      setRun({ status: "error", reason });
+      setChatRun({ status: "error", reason });
     }
   }
 
-  function replaceSelection() {
-    if (run.status !== "ok" || !state.surfaceId) return;
+  async function submitHeadlines() {
+    if (!modelRef || !isHeadlinesTab) return;
+    setHeadlinesRun({ status: "running" });
+    try {
+      const res = await fetch("/api/ai/headlines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modelRef,
+          selection: state.seedInput,
+          instruction,
+          propertyId: getPropertyIdFromSurface(state.surfaceId),
+          pageContext: getPageContextFromSurface(state.surfaceId),
+        }),
+      });
+      const json = (await res.json()) as
+        | { ok: true; headlines: string[] }
+        | { ok: false; reason: string };
+      if (!json.ok) {
+        setHeadlinesRun({ status: "error", reason: json.reason });
+        return;
+      }
+      setHeadlinesRun({ status: "ok", headlines: json.headlines });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "Network error";
+      setHeadlinesRun({ status: "error", reason });
+    }
+  }
+
+  function applyToSelection(text: string) {
+    if (!state.surfaceId) return;
     const surface = getSurface(state.surfaceId);
     if (!surface) return;
     if (state.selectionRange) {
       surface.replaceRange(
         state.selectionRange.start,
         state.selectionRange.end,
-        run.text,
+        text,
       );
     } else {
-      surface.insertAtCursor(run.text);
+      surface.insertAtCursor(text);
     }
     panelStore.close();
   }
 
-  function insertAtCursor() {
-    if (run.status !== "ok" || !state.surfaceId) return;
+  function insertAtCursor(text: string) {
+    if (!state.surfaceId) return;
     const surface = getSurface(state.surfaceId);
     if (!surface) return;
-    surface.insertAtCursor(run.text);
+    surface.insertAtCursor(text);
     panelStore.close();
   }
 
-  function copy() {
-    if (run.status !== "ok") return;
-    navigator.clipboard.writeText(run.text).catch(() => {});
+  function copy(text: string) {
+    navigator.clipboard.writeText(text).catch(() => {});
   }
 
   return (
@@ -183,16 +227,16 @@ export default function AiPanel() {
             <div className="flex items-center justify-between">
               <button
                 type="button"
-                onClick={submit}
-                disabled={!canSubmit}
+                onClick={submitChat}
+                disabled={!canSubmitChat}
                 className="rounded-sm bg-[#2271b1] px-3 py-1 text-[13px] font-medium text-white hover:bg-[#135e96] disabled:cursor-not-allowed disabled:bg-[#a7c4dc]"
               >
-                {run.status === "running" ? "Running…" : runLabel(state.tab)}
+                {chatRun.status === "running" ? "Running…" : chatRunLabel(state.tab)}
               </button>
-              {run.status === "ok" && (
+              {chatRun.status === "ok" && (
                 <button
                   type="button"
-                  onClick={() => setRun({ status: "idle" })}
+                  onClick={() => setChatRun({ status: "idle" })}
                   className="text-[12px] text-[#2271b1] hover:underline"
                 >
                   Try again
@@ -200,25 +244,25 @@ export default function AiPanel() {
               )}
             </div>
 
-            {run.status === "error" && (
+            {chatRun.status === "error" && (
               <div className="rounded-sm border border-[#b32d2e] bg-[#fcf0f1] px-2 py-2 text-[12px] text-[#b32d2e]">
-                {run.reason}
+                {chatRun.reason}
               </div>
             )}
 
-            {run.status === "ok" && (
+            {chatRun.status === "ok" && (
               <div>
                 <div className="mb-1 text-[12px] font-semibold text-[#50575e]">
                   Result
                 </div>
                 <div className="max-h-64 overflow-y-auto rounded-sm border border-[#c3c4c7] bg-[#f6f7f7] px-2 py-1 whitespace-pre-wrap text-[#1d2327]">
-                  {run.text}
+                  {chatRun.text}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {state.surfaceId && state.selectionRange && state.tab !== "ask" && (
                     <button
                       type="button"
-                      onClick={replaceSelection}
+                      onClick={() => applyToSelection(chatRun.text)}
                       className="rounded-sm bg-[#2271b1] px-2 py-1 text-[12px] font-medium text-white hover:bg-[#135e96]"
                     >
                       Replace selection
@@ -227,7 +271,7 @@ export default function AiPanel() {
                   {state.surfaceId && state.tab !== "ask" && (
                     <button
                       type="button"
-                      onClick={insertAtCursor}
+                      onClick={() => insertAtCursor(chatRun.text)}
                       className="rounded-sm border border-[#2271b1] px-2 py-1 text-[12px] font-medium text-[#2271b1] hover:bg-[#f6f7f7]"
                     >
                       Insert at cursor
@@ -235,7 +279,7 @@ export default function AiPanel() {
                   )}
                   <button
                     type="button"
-                    onClick={copy}
+                    onClick={() => copy(chatRun.text)}
                     className="rounded-sm border border-[#8c8f94] px-2 py-1 text-[12px] text-[#1d2327] hover:bg-[#f6f7f7]"
                   >
                     Copy
@@ -246,11 +290,115 @@ export default function AiPanel() {
           </>
         )}
 
-        {state.tab === "headlines" && (
-          <div className="rounded-sm border border-dashed border-[#c3c4c7] bg-[#f6f7f7] px-3 py-3 text-[12px] text-[#50575e]">
-            Headlines tab lands in step 4. The plumbing is shared with
-            Rewrite/Write/Ask, so this is just UI.
-          </div>
+        {isHeadlinesTab && (
+          <>
+            {state.seedInput ? (
+              <div>
+                <div className="mb-1 text-[12px] font-semibold text-[#50575e]">
+                  Current headline / passage
+                </div>
+                <div className="max-h-32 overflow-y-auto rounded-sm border border-[#c3c4c7] bg-[#f6f7f7] px-2 py-1 whitespace-pre-wrap text-[#1d2327]">
+                  {state.seedInput}
+                </div>
+              </div>
+            ) : (
+              <p className="text-[#b32d2e]">
+                No selection. Highlight a headline or passage first, then click
+                Headlines.
+              </p>
+            )}
+
+            <div>
+              <label className="mb-1 block text-[12px] font-semibold text-[#50575e]">
+                Model
+              </label>
+              <ModelPicker kind="text" value={modelRef} onChange={setModelRef} />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[12px] font-semibold text-[#50575e]">
+                Style guidance (optional)
+              </label>
+              <textarea
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                rows={3}
+                placeholder="e.g. punchier, more SEO-friendly, lean into curiosity"
+                className="block w-full resize-y rounded-sm border border-[#8c8f94] bg-white px-2 py-1 text-[13px] focus:border-[#2271b1] focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={submitHeadlines}
+                disabled={!canSubmitHeadlines}
+                className="rounded-sm bg-[#2271b1] px-3 py-1 text-[13px] font-medium text-white hover:bg-[#135e96] disabled:cursor-not-allowed disabled:bg-[#a7c4dc]"
+              >
+                {headlinesRun.status === "running"
+                  ? "Generating…"
+                  : "Generate 10 headlines"}
+              </button>
+              {headlinesRun.status === "ok" && (
+                <button
+                  type="button"
+                  onClick={() => setHeadlinesRun({ status: "idle" })}
+                  className="text-[12px] text-[#2271b1] hover:underline"
+                >
+                  Try again
+                </button>
+              )}
+            </div>
+
+            {headlinesRun.status === "error" && (
+              <div className="rounded-sm border border-[#b32d2e] bg-[#fcf0f1] px-2 py-2 text-[12px] text-[#b32d2e]">
+                {headlinesRun.reason}
+              </div>
+            )}
+
+            {headlinesRun.status === "ok" && (
+              <div className="space-y-2">
+                <div className="text-[12px] font-semibold text-[#50575e]">
+                  Alternatives ({headlinesRun.headlines.length})
+                </div>
+                <ol className="space-y-2">
+                  {headlinesRun.headlines.map((h, i) => (
+                    <li
+                      key={i}
+                      className="rounded-sm border border-[#c3c4c7] bg-white px-2 py-2"
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="mt-[1px] shrink-0 text-[11px] text-[#50575e]">
+                          {i + 1}.
+                        </span>
+                        <div className="min-w-0 flex-1 break-words text-[#1d2327]">
+                          {h}
+                        </div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2 pl-5">
+                        {state.surfaceId && state.selectionRange && (
+                          <button
+                            type="button"
+                            onClick={() => applyToSelection(h)}
+                            className="rounded-sm bg-[#2271b1] px-2 py-1 text-[11px] font-medium text-white hover:bg-[#135e96]"
+                          >
+                            Use this
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => copy(h)}
+                          className="rounded-sm border border-[#8c8f94] px-2 py-1 text-[11px] text-[#1d2327] hover:bg-[#f6f7f7]"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </>
         )}
       </div>
     </aside>
@@ -270,18 +418,13 @@ function instructionPlaceholder(tab: PanelTab): string {
   }
 }
 
-function runLabel(tab: PanelTab): string {
+function chatRunLabel(tab: PanelTab): string {
   if (tab === "rewrite") return "Rewrite";
   if (tab === "write") return "Write";
   if (tab === "ask") return "Ask";
   return "Run";
 }
 
-/**
- * The textarea component stashes its pageContext on a getPageContext()
- * surface method; we read it on submit so the prompt can include the
- * post id/title/property scope without React state plumbing.
- */
 function getPageContextFromSurface(
   surfaceId: string | null,
 ): Record<string, unknown> | null {
