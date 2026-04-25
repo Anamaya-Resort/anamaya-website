@@ -16,3 +16,17 @@ export function aoSupabaseOrNull(): SupabaseClient | null {
   cached = createClient(url, key, { auth: { persistSession: false } });
   return cached;
 }
+
+/**
+ * Throws if AO env vars are missing. Use when AO data is required for the
+ * feature to work; otherwise prefer `aoSupabaseOrNull()` and degrade.
+ */
+export function aoSupabase(): SupabaseClient {
+  const client = aoSupabaseOrNull();
+  if (!client) {
+    throw new Error(
+      "AO_SUPABASE_URL and AO_SUPABASE_ANON_KEY must be set to read AnamayOS data",
+    );
+  }
+  return client;
+}

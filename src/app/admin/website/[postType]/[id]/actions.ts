@@ -25,6 +25,7 @@ export async function updateItem(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const status = String(formData.get("status") ?? "");
   const cmsTemplateRaw = String(formData.get("cms_template_id") ?? "");
+  const propertyRaw = String(formData.get("property_id") ?? "");
   const cmsBodyRaw = formData.get("cms_body_html");
   const excerpt = String(formData.get("excerpt") ?? "");
 
@@ -45,6 +46,8 @@ export async function updateItem(formData: FormData) {
   if (!ALLOWED_STATUSES.has(status)) throw new Error("Invalid status");
 
   const cms_template_id = cmsTemplateRaw === "" ? null : cmsTemplateRaw;
+  // property_id is a logical FK to AnamayOS org_properties — empty = org-wide.
+  const property_id = propertyRaw === "" ? null : propertyRaw;
 
   const sb = supabaseServer();
   const { error: invErr } = await sb
@@ -53,6 +56,7 @@ export async function updateItem(formData: FormData) {
       title: title || null,
       wp_status: status,
       cms_template_id,
+      property_id,
       excerpt: excerpt || null,
       meta_title,
       meta_description,

@@ -317,6 +317,7 @@ export type EditorItem = {
   date_modified: string | null;
   excerpt: string | null;
   cms_template_id: string | null;
+  property_id: string | null;
   cms_body_html: string | null;
   content_rendered: string | null;
   scraped_body_html: string | null;
@@ -343,7 +344,7 @@ export async function getItemForEdit(
   const { data: row, error } = await sb
     .from("url_inventory")
     .select(
-      "id, title, url_path, wp_status, date_published, date_modified, excerpt, cms_template_id, scraped_body_html, author_id, meta_title, meta_description, canonical_url, og_image_url, noindex",
+      "id, title, url_path, wp_status, date_published, date_modified, excerpt, cms_template_id, property_id, scraped_body_html, author_id, meta_title, meta_description, canonical_url, og_image_url, noindex",
     )
     .eq("id", id)
     .eq("source_site", SOURCE_SITE)
@@ -376,6 +377,7 @@ export async function getItemForEdit(
     date_modified: row.date_modified,
     excerpt: row.excerpt ? decodeEntities(row.excerpt) : null,
     cms_template_id: row.cms_template_id,
+    property_id: row.property_id ?? null,
     cms_body_html: content?.cms_body_html ?? null,
     content_rendered: content?.content_rendered ?? null,
     scraped_body_html: row.scraped_body_html ?? null,

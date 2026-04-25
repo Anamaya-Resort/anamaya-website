@@ -5,6 +5,7 @@ import {
   getItemForEdit,
   listPageTemplates,
 } from "@/lib/website-builder/queries";
+import { getOrganizationContext } from "@/lib/ai/organization";
 import PageHeader from "../../_components/PageHeader";
 import { updateItem, trashItem, restoreItem } from "./actions";
 
@@ -38,11 +39,13 @@ export default async function EditItemPage({
   const pt = getPostTypeBySlug(postTypeSlug);
   if (!pt) notFound();
 
-  const [item, templates] = await Promise.all([
+  const [item, templates, orgCtx] = await Promise.all([
     getItemForEdit(pt.postType, id),
     listPageTemplates(),
+    getOrganizationContext(),
   ]);
   if (!item) notFound();
+  const properties = orgCtx?.properties ?? [];
 
   const isTrashed = item.wp_status === "trash";
   const migratedBody = item.content_rendered ?? item.scraped_body_html ?? "";
@@ -329,6 +332,33 @@ export default async function EditItemPage({
                 </p>
               </div>
             </div>
+
+            {properties.length > 0 && (
+              <div className="rounded-sm border border-[#c3c4c7] bg-white">
+                <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  Property
+                </div>
+                <div className="px-3 py-3 text-[13px]">
+                  <select
+                    name="property_id"
+                    defaultValue={item.property_id ?? ""}
+                    aria-label="Property"
+                    className="h-7 w-full rounded-sm border border-[#8c8f94] bg-white px-2"
+                  >
+                    <option value="">— Org-wide (no property) —</option>
+                    {properties.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-[12px] text-[#50575e]">
+                    Scopes this page to a sub-property — used by AI tools and
+                    the visitor agent to give property-specific answers.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {item.ai_last_edit_at && (
               <div className="rounded-sm border border-[#c3c4c7] bg-white">

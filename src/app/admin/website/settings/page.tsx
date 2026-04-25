@@ -1,4 +1,5 @@
 import { getAllSettings } from "@/lib/website-builder/settings";
+import { getOrganizationContext } from "@/lib/ai/organization";
 import PageHeader from "../_components/PageHeader";
 import { updateSettingsSection } from "./actions";
 
@@ -63,11 +64,16 @@ const textareaCls =
   "block w-full max-w-xl rounded-sm border border-[#8c8f94] bg-white px-2 py-1 text-[13px]";
 
 export default async function SettingsPage() {
-  const settings = await getAllSettings();
+  const [settings, orgCtx] = await Promise.all([
+    getAllSettings(),
+    getOrganizationContext(),
+  ]);
 
   return (
     <div className="px-5 py-4">
       <PageHeader title="Settings" />
+
+      <OrganizationCard ctx={orgCtx} />
 
       <SettingsCard title="General" section="general">
         <Field label="Site Title">
@@ -178,6 +184,113 @@ export default async function SettingsPage() {
           />
         </Field>
       </SettingsCard>
+    </div>
+  );
+}
+
+function OrganizationCard({
+  ctx,
+}: {
+  ctx: Awaited<ReturnType<typeof getOrganizationContext>>;
+}) {
+  if (!ctx) {
+    return (
+      <div className="mb-6 rounded-sm border border-[#dba617] bg-[#fcf9e8] px-4 py-3 text-[13px] text-[#1d2327]">
+        <strong>Organization not synced.</strong> Set{" "}
+        <code>AO_SUPABASE_URL</code>, <code>AO_SUPABASE_ANON_KEY</code>, and{" "}
+        <code>AO_ORG_SLUG</code> in your environment so the website can read
+        the org bundle from AnamayOS.
+      </div>
+    );
+  }
+  const { org, properties } = ctx;
+  return (
+    <div className="mb-6 rounded-sm border border-[#c3c4c7] bg-white">
+      <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-4 py-2.5">
+        <h2 className="text-[14px] font-semibold text-[#1d2327]">
+          Organization (synced from AnamayOS)
+        </h2>
+        <p className="mt-1 text-[12px] text-[#50575e]">
+          Read-only here — edit in AnamayOS at{" "}
+          <code>ao.anamaya.com</code>. AI tools and the visitor agent read
+          these values to keep generated content on-brand.
+        </p>
+      </div>
+      <table className="w-full border-collapse">
+        <tbody>
+          <Field label="Name">
+            <code className="text-[13px]">{org.name}</code>{" "}
+            <span className="text-[12px] text-[#50575e]">({org.slug})</span>
+          </Field>
+          {org.legal_name && <Field label="Legal Name">{org.legal_name}</Field>}
+          {org.tagline && <Field label="Tagline">{org.tagline}</Field>}
+          {org.industry && <Field label="Industry">{org.industry}</Field>}
+          {org.primary_offering && (
+            <Field label="Primary Offering">{org.primary_offering}</Field>
+          )}
+          {(org.locale || org.timezone) && (
+            <Field label="Locale / Timezone">
+              {[org.locale, org.timezone].filter(Boolean).join(" · ") || "—"}
+            </Field>
+          )}
+          {org.booking_url && (
+            <Field label="Booking URL">
+              <a
+                href={org.booking_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#2271b1] hover:underline"
+              >
+                {org.booking_url}
+              </a>
+            </Field>
+          )}
+          {org.contact_url && (
+            <Field label="Contact URL">
+              <a
+                href={org.contact_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#2271b1] hover:underline"
+              >
+                {org.contact_url}
+              </a>
+            </Field>
+          )}
+          {org.sensitive_topics && org.sensitive_topics.length > 0 && (
+            <Field
+              label="Sensitive Topics"
+              hint="The visitor agent will refuse to invent values for these."
+            >
+              {org.sensitive_topics.join(", ")}
+            </Field>
+          )}
+          <Field
+            label="Visitor Agent"
+            hint="Public Q&A bubble on marketing pages."
+          >
+            {org.visitor_agent_enabled ? "Enabled" : "Disabled"}
+          </Field>
+          {properties.length > 0 && (
+            <Field
+              label="Properties"
+              hint="Sub-properties under this org. Pages can be scoped to one in the editor."
+            >
+              <ul className="list-disc pl-4 text-[13px]">
+                {properties.map((p) => (
+                  <li key={p.id}>
+                    {p.name}{" "}
+                    <span className="text-[12px] text-[#50575e]">
+                      ({p.slug}
+                      {p.property_type ? ` · ${p.property_type}` : ""})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Field>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
