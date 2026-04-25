@@ -1,0 +1,101 @@
+"use server";
+
+import "server-only";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { supabaseServer } from "@/lib/supabase-server";
+import { getPostTypeBySlug } from "@/lib/website-builder/post-types";
+
+const ALLOWED_STATUSES = new Set([
+  "publish",
+  "private",
+  "draft",
+  "pending",
+  "future",
+]);
+
+export async function updateItem(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const postTypeSlug = String(formData.get("postTypeSlug") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const status = String(formData.get("status") ?? "");
+  const cmsTemplateRaw = String(formData.get("cms_template_id") ?? "");
+  const cmsBodyRaw = formData.get("cms_body_html");
+  const excerpt = String(formData.get("excerpt") ?? "");
+
+  const pt = getPostTypeBySlug(postTypeSlug);
+  if (!pt) throw new Error("Unknown post type");
+  if (!id) throw new Error("Missing id");
+  if (!ALLOWED_STATUSES.has(status)) throw new Error("Invalid status");
+
+  const cms_template_id = cmsTemplateRaw === "" ? null : cmsTemplateRaw;
+
+  const sb = supabaseServer();
+  const { error: invErr } = await sb
+    .from("url_inventory")
+    .update({
+      title: title || null,
+      wp_status: status,
+      cms_template_id,
+      excerpt: excerpt || null,
+      date_modified: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("post_type", pt.postType);
+  if (invErr) throw new Error(invErr.message);
+
+  if (cmsBodyRaw !== null) {
+    const trimmed = String(cmsBodyRaw).trim();
+    const cms_body_html = trimmed === "" ? null : String(cmsBodyRaw);
+    const { error: bodyErr } = await sb
+      .from("content_items")
+      .upsert(
+        {
+          url_inventory_id: id,
+          cms_body_html,
+          cms_body_updated_at: new Date().toISOString(),
+        },
+        { onConflict: "url_inventory_id" },
+      );
+    if (bodyErr) throw new Error(bodyErr.message);
+  }
+
+  revalidatePath(`/admin/website/${pt.slug}`);
+  revalidatePath(`/admin/website/${pt.slug}/${id}`);
+}
+
+export async function trashItem(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const postTypeSlug = String(formData.get("postTypeSlug") ?? "");
+  const pt = getPostTypeBySlug(postTypeSlug);
+  if (!pt) throw new Error("Unknown post type");
+
+  const sb = supabaseServer();
+  const { error } = await sb
+    .from("url_inventory")
+    .update({ wp_status: "trash" })
+    .eq("id", id)
+    .eq("post_type", pt.postType);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/website/${pt.slug}`);
+  redirect(`/admin/website/${pt.slug}?status=trash`);
+}
+
+export async function restoreItem(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const postTypeSlug = String(formData.get("postTypeSlug") ?? "");
+  const pt = getPostTypeBySlug(postTypeSlug);
+  if (!pt) throw new Error("Unknown post type");
+
+  const sb = supabaseServer();
+  const { error } = await sb
+    .from("url_inventory")
+    .update({ wp_status: "draft" })
+    .eq("id", id)
+    .eq("post_type", pt.postType);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/website/${pt.slug}`);
+  revalidatePath(`/admin/website/${pt.slug}/${id}`);
+}

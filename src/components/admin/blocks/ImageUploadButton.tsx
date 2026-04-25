@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { uploadBlockImage } from "@/app/admin/blocks/actions";
+import { uploadBlockImage } from "@/app/admin/(default)/blocks/actions";
 
 /**
  * Small reusable "Upload image" button — pairs with a URL text input in

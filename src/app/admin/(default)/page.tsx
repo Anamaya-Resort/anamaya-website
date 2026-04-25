@@ -10,6 +10,18 @@ export default function AdminHome() {
       <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <li>
           <Link
+            href="/admin/website"
+            className="block rounded-lg border border-anamaya-green/30 bg-white p-6 ring-1 ring-anamaya-green/10 transition-shadow hover:shadow-md"
+          >
+            <h2 className="text-lg font-semibold">Website Builder</h2>
+            <p className="mt-1 text-sm text-anamaya-charcoal/70">
+              A WordPress-like web page builder. Manage every page, post,
+              category, tag, author, and redirect on the site.
+            </p>
+          </Link>
+        </li>
+        <li>
+          <Link
             href="/admin/templates"
             className="block rounded-lg border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md"
           >

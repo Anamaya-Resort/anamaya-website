@@ -1,7 +1,7 @@
 "use client";
 
 import { toCanvas } from "html-to-image";
-import { uploadBlockSnapshot } from "@/app/admin/blocks/actions";
+import { uploadBlockSnapshot } from "@/app/admin/(default)/blocks/actions";
 
 /**
  * Captures the block's live-preview DOM node to a JPEG and uploads it

@@ -49,7 +49,7 @@ function PromptCard({ prompt }: { prompt: AOContentPrompt }) {
           onClick={() => setExpanded((e) => !e)}
           className="shrink-0 rounded-full border border-zinc-300 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal hover:bg-zinc-50"
         >
-          {expanded ? "Collapse" : "Expand"}
+          {expanded ? "Close ▲" : "Open ▼"}
         </button>
       </div>
       {expanded && (
@@ -92,7 +92,15 @@ export default function ContentPromptsPanel({ prompts }: { prompts: AOContentPro
       {prompts.length === 0 ? (
         <p className="text-sm italic text-anamaya-charcoal/50">
           No content prompts found in AnamayOS. Add them at{" "}
-          <code className="rounded bg-zinc-100 px-1 text-xs">ao.anamaya.com/dashboard/settings#ai-data</code>.
+          <a
+            href="https://ao.anamaya.com/dashboard/settings#ai-data"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-anamaya-green hover:text-anamaya-green-dark"
+          >
+            ao.anamaya.com → Settings → AI Data
+          </a>
+          .
         </p>
       ) : (
         <div className="space-y-5">

@@ -8,7 +8,7 @@ import {
   insertBlockBefore,
   removeBlockFromVariant,
   moveBlockInVariant,
-} from "@/app/admin/templates/actions";
+} from "@/app/admin/(default)/templates/actions";
 
 type Variant = { id: string; slug: string; name: string; is_default: boolean } | null;
 type Row = {

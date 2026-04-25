@@ -31,9 +31,9 @@ export default async function AiAdminPage() {
         </div>
         <Link
           href="/admin"
-          className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal hover:bg-zinc-50"
+          className="text-sm text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
         >
-          ← Admin
+          ← Back to Admin
         </Link>
       </div>
 
@@ -52,6 +52,7 @@ export default async function AiAdminPage() {
           guides={ctx.guides}
           archetypes={ctx.archetypes}
           prompts={ctx.prompts}
+          providers={ctx.providers}
         />
       </div>
     </div>

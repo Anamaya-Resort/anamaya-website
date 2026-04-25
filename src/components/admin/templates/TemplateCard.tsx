@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteTemplate, duplicateTemplate } from "@/app/admin/templates/actions";
+import { deleteTemplate, duplicateTemplate } from "@/app/admin/(default)/templates/actions";
 
 export type TemplateCardBlock = {
   id: string;
