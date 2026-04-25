@@ -1,4 +1,5 @@
 import AppShell from "@/components/AppShell";
+import VisitorAgent from "@/components/ai/VisitorAgent";
 import { getSessionUser } from "@/lib/session";
 
 // Wraps all public marketing pages with Header + Footer + SideMenu.
@@ -15,6 +16,7 @@ export default async function SiteLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <AppShell user={user}>{children}</AppShell>
+      <VisitorAgent />
     </div>
   );
 }
