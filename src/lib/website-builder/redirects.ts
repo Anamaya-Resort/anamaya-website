@@ -50,8 +50,13 @@ export async function listRedirects(
       { count: "exact" },
     );
   if (opts.search) {
+    // PostgREST .or() parses the string as filter syntax — any unescaped
+    // comma, paren, or dot inside a value would break out and let the
+    // caller construct arbitrary filters. Wrap each value in double
+    // quotes and double any literal " inside.
+    const safe = opts.search.replace(/"/g, '""');
     query = query.or(
-      `source_path.ilike.%${opts.search}%,target.ilike.%${opts.search}%`,
+      `source_path.ilike."%${safe}%",target.ilike."%${safe}%"`,
     );
   }
   query = query

@@ -14,6 +14,11 @@ const ALLOWED_STATUSES = new Set([
   "future",
 ]);
 
+// Must match SOURCE_SITE in queries.ts. Mutations are scoped to the same
+// site as reads so an admin can never accidentally edit a v1 row whose
+// id leaked.
+const SOURCE_SITE = "v2";
+
 export async function updateItem(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const postTypeSlug = String(formData.get("postTypeSlug") ?? "");
@@ -57,7 +62,8 @@ export async function updateItem(formData: FormData) {
       date_modified: new Date().toISOString(),
     })
     .eq("id", id)
-    .eq("post_type", pt.postType);
+    .eq("post_type", pt.postType)
+    .eq("source_site", SOURCE_SITE);
   if (invErr) throw new Error(invErr.message);
 
   if (cmsBodyRaw !== null) {
@@ -91,7 +97,8 @@ export async function trashItem(formData: FormData) {
     .from("url_inventory")
     .update({ wp_status: "trash" })
     .eq("id", id)
-    .eq("post_type", pt.postType);
+    .eq("post_type", pt.postType)
+    .eq("source_site", SOURCE_SITE);
   if (error) throw new Error(error.message);
 
   revalidatePath(`/admin/website/${pt.slug}`);
@@ -109,7 +116,8 @@ export async function restoreItem(formData: FormData) {
     .from("url_inventory")
     .update({ wp_status: "draft" })
     .eq("id", id)
-    .eq("post_type", pt.postType);
+    .eq("post_type", pt.postType)
+    .eq("source_site", SOURCE_SITE);
   if (error) throw new Error(error.message);
 
   revalidatePath(`/admin/website/${pt.slug}`);
