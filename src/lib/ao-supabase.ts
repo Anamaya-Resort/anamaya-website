@@ -2,6 +2,7 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let cached: SupabaseClient | null = null;
+let cachedAdmin: SupabaseClient | null = null;
 
 /**
  * Read-only AnamayOS Supabase client (anon key, SELECT-only via RLS).
@@ -29,4 +30,22 @@ export function aoSupabase(): SupabaseClient {
     );
   }
   return client;
+}
+
+/**
+ * Service-role AnamayOS client. Bypasses RLS — use only for trusted
+ * server-side write paths (imports, admin actions). Never expose to the
+ * browser; never accept user-controlled identifiers without validation.
+ */
+export function aoSupabaseAdmin(): SupabaseClient {
+  if (cachedAdmin) return cachedAdmin;
+  const url = process.env.AO_SUPABASE_URL;
+  const key = process.env.AO_SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error(
+      "AO_SUPABASE_URL and AO_SUPABASE_SERVICE_ROLE_KEY must be set for admin writes",
+    );
+  }
+  cachedAdmin = createClient(url, key, { auth: { persistSession: false } });
+  return cachedAdmin;
 }

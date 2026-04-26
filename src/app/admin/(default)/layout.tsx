@@ -45,6 +45,12 @@ export default async function DefaultAdminLayout({
             >
               Testimonials
             </Link>
+            <Link
+              href="/admin/retreat-imports"
+              className="text-sm text-anamaya-charcoal/70 hover:text-anamaya-charcoal"
+            >
+              Retreat Imports
+            </Link>
           </div>
 
           <div className="flex items-center gap-4 text-sm">
