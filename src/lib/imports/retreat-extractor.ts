@@ -234,7 +234,9 @@ function extractListItems(html: string): string[] {
  */
 function extractPricingTiers(html: string): ExtractedTier[] {
   const out: ExtractedTier[] = [];
-  const PRICE_RE = /(\$[\d,]+(?:\s*\/\s*\w+)?|Sold out|Pay what you can|Free|TBA)/gi;
+  // Non-`g` for `.test()` (avoids lastIndex state-sharing bugs).
+  const PRICE_RE = /(\$[\d,]+(?:\s*\/\s*\w+)?|Sold out|Pay what you can|Free|TBA)/i;
+  const PRICE_RE_G = /(\$[\d,]+(?:\s*\/\s*\w+)?|Sold out|Pay what you can|Free|TBA)/gi;
 
   for (const tr of findTagBlocks(html, "tr")) {
     const cells = findTagBlocks(tr.inner, "td");
@@ -249,7 +251,7 @@ function extractPricingTiers(html: string): ExtractedTier[] {
   if (out.length === 0) {
     for (const li of findTagBlocks(html, "li")) {
       const text = stripTags(li.inner);
-      const m = text.match(PRICE_RE);
+      const m = text.match(PRICE_RE_G);
       if (!m) continue;
       const price = m[0];
       const name = text.replace(price, "").replace(/[—–:-]+\s*$/, "").trim() || "Tier";
@@ -267,13 +269,22 @@ function extractPricingTiers(html: string): ExtractedTier[] {
       const t = stripTags(m[1]);
       if (t && !PRICE_RE.test(t)) labels.push(t);
     }
-    PRICE_RE.lastIndex = 0;
     const prices = stripTags(html).match(/\$[\d,]+(?:\s*\/\s*\w+)?/g) ?? [];
     if (prices.length > 0 && labels.length >= prices.length) {
       const offset = labels.length === prices.length + 1 ? 1 : 0;
       for (let i = 0; i < prices.length; i++) {
         out.push({ name: labels[i + offset], price: prices[i] });
       }
+    }
+  }
+
+  // Last resort: just collect raw $prices from the section, naming them
+  // "Tier 1", "Tier 2", … so the admin sees something to fix instead of
+  // a silent "no pricing tiers detected".
+  if (out.length === 0) {
+    const prices = stripTags(html).match(/\$[\d,]+(?:\s*\/\s*\w+)?/g) ?? [];
+    for (let i = 0; i < prices.length; i++) {
+      out.push({ name: `Tier ${i + 1}`, price: prices[i] });
     }
   }
 

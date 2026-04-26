@@ -16,7 +16,7 @@ export default async function RetreatImportDetail({
   const { id: url_inventory_id } = await params;
   const sb = supabaseServer();
 
-  const [{ data: inv }, { data: staging }] = await Promise.all([
+  const [{ data: inv }, { data: staging }, { data: ci }] = await Promise.all([
     sb
       .from("url_inventory")
       .select("id, url, title")
@@ -27,7 +27,13 @@ export default async function RetreatImportDetail({
       .select("id, status, warnings, extracted_json, pushed_at, ao_retreat_id, updated_at, failure_reason")
       .eq("url_inventory_id", url_inventory_id)
       .maybeSingle(),
+    sb
+      .from("content_items")
+      .select("scraped_body_html")
+      .eq("url_inventory_id", url_inventory_id)
+      .maybeSingle(),
   ]);
+  const scrapedHtml = (ci as { scraped_body_html?: string } | null)?.scraped_body_html ?? "";
 
   if (!inv) notFound();
   const extracted = (staging?.extracted_json ?? null) as ExtractedRetreat | null;
@@ -100,7 +106,26 @@ export default async function RetreatImportDetail({
           {extracted && <ExtractedView data={extracted} />}
         </>
       )}
+
+      {scrapedHtml && <ScrapedHtmlDebug html={scrapedHtml} />}
     </div>
+  );
+}
+
+function ScrapedHtmlDebug({ html }: { html: string }) {
+  return (
+    <details className="rounded-md border border-zinc-200 bg-white p-4 text-sm">
+      <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+        Scraped HTML ({html.length.toLocaleString()} chars) — debug
+      </summary>
+      <p className="mt-2 text-xs text-anamaya-charcoal/60">
+        The exact bytes the extractor parses. Use the browser&apos;s find-in-page (Cmd-F) to
+        locate a section (e.g. &quot;Prices&quot;) when tuning the parser.
+      </p>
+      <pre className="mt-2 max-h-[600px] overflow-auto rounded bg-zinc-50 p-2 text-xs leading-tight text-anamaya-charcoal/80">
+        {html}
+      </pre>
+    </details>
   );
 }
 

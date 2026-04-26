@@ -177,6 +177,26 @@ export async function pushStagedRetreat(
   return result;
 }
 
+/**
+ * Wipe ALL staged retreat_imports rows so a fresh extract pass starts
+ * from a clean slate. Leaves AO retreat data alone (admin cleans those
+ * separately if needed) and leaves image_imports alone so sha256 dedupe
+ * still saves storage on re-runs.
+ *
+ * Intended for the testing/tuning phase only. Never call from prod paths.
+ */
+export async function clearAllStagedRetreats(): Promise<{ deleted: number }> {
+  const sb = supabaseServer();
+  const { data, error } = await sb
+    .from("retreat_imports")
+    .delete()
+    .not("id", "is", null)
+    .select("id");
+  if (error) throw new Error(`clear staging: ${error.message}`);
+  revalidatePath("/admin/retreat-imports");
+  return { deleted: data?.length ?? 0 };
+}
+
 export type BatchExtractResult = {
   attempted: number;
   succeeded: number;

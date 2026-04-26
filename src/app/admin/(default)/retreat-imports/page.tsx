@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
-import { batchExtractRetreats, extractRetreatToStaging } from "@/lib/imports/actions";
+import { batchExtractRetreats, clearAllStagedRetreats, extractRetreatToStaging } from "@/lib/imports/actions";
 import { SubmitButton } from "./SubmitButton";
+import { ConfirmSubmitButton } from "./ConfirmSubmitButton";
 
 export const dynamic = "force-dynamic";
 // Image fetches dominate runtime — 10 retreats × ~10 images each can
@@ -61,6 +62,12 @@ export default async function RetreatImportsIndex({
     const limit = Math.min(50, Math.max(1, Number(formData.get("limit") ?? 10)));
     const includeStaged = formData.get("include_already_staged") === "1";
     await batchExtractRetreats({ limit, include_already_staged: includeStaged });
+    redirect(`/admin/retreat-imports`);
+  }
+
+  async function clearAll() {
+    "use server";
+    await clearAllStagedRetreats();
     redirect(`/admin/retreat-imports`);
   }
 
@@ -127,6 +134,26 @@ export default async function RetreatImportsIndex({
         >
           Extract Batch
         </SubmitButton>
+      </form>
+
+      <form
+        action={clearAll}
+        className="flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3"
+      >
+        <div className="text-xs text-red-900">
+          <strong>Clear All Staging</strong>
+          <span className="ml-2 text-red-800/80">
+            Deletes every row in <code>retreat_imports</code> so you can re-extract from a clean
+            slate. Does not touch AnamayOS retreat data; image_imports stays so dedupe still works.
+          </span>
+        </div>
+        <ConfirmSubmitButton
+          pendingLabel="Clearing…"
+          confirmMessage="Delete ALL retreat_imports rows? This cannot be undone — but you can always re-extract."
+          className="whitespace-nowrap rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-red-700"
+        >
+          Clear All
+        </ConfirmSubmitButton>
       </form>
 
       <ul className="grid grid-cols-1 gap-2">
