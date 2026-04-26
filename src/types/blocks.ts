@@ -441,6 +441,44 @@ export type RawHtmlContent = {
   padding_y_px?: number;
 };
 
+/**
+ * Two-column layout primitive. Each side carries another block type's
+ * content (rich_text, pricing_table, feature_list, quote, date_range).
+ * The renderer dispatches recursively into BlockRenderer for each side,
+ * so each side renders identically to its standalone block type.
+ *
+ * Optional shared CTA renders below both columns, full-width.
+ */
+export type TwoColumnChildSlug =
+  | "rich_text"
+  | "pricing_table"
+  | "feature_list"
+  | "quote"
+  | "date_range"
+  | "raw_html";
+
+export type TwoColumnSide = {
+  type_slug: TwoColumnChildSlug;
+  content: unknown;
+};
+
+export type TwoColumnContent = BlockCta & {
+  left?: TwoColumnSide;
+  right?: TwoColumnSide;
+  /** Left column width %. 20-80. Default 50. */
+  left_width_pct?: number;
+  /** Stack columns vertically below this viewport width. Default true (stacks at <768px). */
+  mobile_stack?: boolean;
+  vertical_align?: "top" | "center" | "bottom";
+  bg_color?: string;
+  text_color?: string;
+  padding_y_px?: number;
+  /** Gap between columns in px. Default 48. */
+  gap_px?: number;
+  /** Container max width in px. Default 1200. */
+  container_width_px?: number;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -459,7 +497,8 @@ export type BlockTypeSlug =
   | "feature_list"
   | "gallery"
   | "person_card"
-  | "raw_html";
+  | "raw_html"
+  | "two_column";
 
 export type BlockRecord = {
   id: string;

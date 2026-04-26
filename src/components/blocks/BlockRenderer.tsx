@@ -17,6 +17,7 @@ import FeatureListBlock from "./FeatureListBlock";
 import GalleryBlock from "./GalleryBlock";
 import PersonCardBlock from "./PersonCardBlock";
 import RawHtmlBlock from "./RawHtmlBlock";
+import TwoColumnBlock from "./TwoColumnBlock";
 
 /** Renders a single block-usage by dispatching on type. Null if unknown. */
 export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
@@ -44,6 +45,7 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "gallery":        return <GalleryBlock content={content} />;
     case "person_card":    return <PersonCardBlock content={content} />;
     case "raw_html":       return <RawHtmlBlock content={content} />;
+    case "two_column":     return <TwoColumnBlock content={content} />;
     default: {
       console.warn(`[blocks] unknown block type: ${usage.block.type_slug}`);
       return null;

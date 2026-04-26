@@ -25,6 +25,7 @@ import PricingTableEditor from "./editors/PricingTableEditor";
 import FeatureListEditor from "./editors/FeatureListEditor";
 import GalleryEditor from "./editors/GalleryEditor";
 import PersonCardEditor from "./editors/PersonCardEditor";
+import TwoColumnEditor from "./editors/TwoColumnEditor";
 import { getBrandTokens } from "@/lib/brand-tokens";
 
 export const dynamic = "force-dynamic";
@@ -282,6 +283,9 @@ export default async function EditBlock({
       )}
       {block.type_slug === "person_card" && (
         <PersonCardEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "two_column" && (
+        <TwoColumnEditor content={block.content} onSave={saveContent} />
       )}
     </div>
   );
