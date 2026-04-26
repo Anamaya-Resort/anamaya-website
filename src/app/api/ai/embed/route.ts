@@ -148,14 +148,9 @@ export async function POST(req: Request) {
 
       const embeddings = await embedBatch(chunks);
 
-      // Replace-then-insert keeps the stored set in sync without leaving
-      // orphan chunks if the body got shorter.
-      await sb
-        .from("content_chunks")
-        .delete()
-        .eq("source_kind", "inventory")
-        .eq("source_id", row.id);
-
+      // Upsert the new chunks first, then delete any leftover indices.
+      // This way a failed insert leaves the old set intact rather than
+      // taking the page offline from retrieval until the next run.
       const inserts = chunks.map((content, idx) => ({
         source_kind: "inventory",
         source_id: row.id,
@@ -170,10 +165,22 @@ export async function POST(req: Request) {
         source_hash: sourceHash,
       }));
 
-      const { error: insertErr } = await sb
+      const { error: upsertErr } = await sb
         .from("content_chunks")
-        .insert(inserts);
-      if (insertErr) throw new Error(insertErr.message);
+        .upsert(inserts, {
+          onConflict: "source_kind,source_id,chunk_index",
+        });
+      if (upsertErr) throw new Error(upsertErr.message);
+
+      // Drop any chunks at indices the new run no longer produces (body
+      // got shorter). This must come AFTER upsert to keep retrieval live.
+      const { error: trimErr } = await sb
+        .from("content_chunks")
+        .delete()
+        .eq("source_kind", "inventory")
+        .eq("source_id", row.id)
+        .gte("chunk_index", chunks.length);
+      if (trimErr) throw new Error(trimErr.message);
 
       result.embedded += 1;
       result.chunksWritten += chunks.length;

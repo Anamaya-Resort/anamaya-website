@@ -37,6 +37,7 @@ export async function embedText(text: string): Promise<EmbeddingResult> {
       model: DEFAULT_MODEL,
       input: text,
     }),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {
@@ -81,6 +82,7 @@ export async function embedBatch(texts: string[]): Promise<EmbeddingResult[]> {
       model: DEFAULT_MODEL,
       input: texts,
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!res.ok) {

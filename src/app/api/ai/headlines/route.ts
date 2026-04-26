@@ -109,26 +109,54 @@ function buildMessages({
 }
 
 function parseHeadlines(text: string): string[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    // Some models wrap JSON in prose. Pluck the first {...} block.
-    const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return [];
-    try {
-      parsed = JSON.parse(m[0]);
-    } catch {
-      return [];
-    }
+  // Try in order: full JSON parse, first {...} block, first [...] block,
+  // numbered/bulleted prose list. JSON-mode usually delivers the first;
+  // the others are defenses for models that ignore the format hint.
+  const fromJson = tryJsonParse(text);
+  const candidate =
+    fromJson ??
+    tryJsonParse(matchFirst(text, /\{[\s\S]*\}/)) ??
+    tryJsonParse(matchFirst(text, /\[[\s\S]*\]/));
+
+  let arr: unknown[] | null = null;
+  if (Array.isArray(candidate)) {
+    arr = candidate;
+  } else if (candidate && typeof candidate === "object") {
+    const obj = candidate as Record<string, unknown>;
+    const v =
+      obj.headlines ?? obj.alternatives ?? obj.options ?? obj.titles ?? obj.items;
+    if (Array.isArray(v)) arr = v;
   }
-  if (!parsed || typeof parsed !== "object") return [];
-  const obj = parsed as Record<string, unknown>;
-  const arr = obj.headlines ?? obj.alternatives ?? obj.options ?? obj.titles;
-  if (!Array.isArray(arr)) return [];
-  return arr
+
+  if (!arr) {
+    // Last resort: parse a numbered or bulleted prose list.
+    arr = parseProseList(text);
+  }
+
+  return (arr ?? [])
     .filter((v): v is string => typeof v === "string")
-    .map((s) => s.trim())
+    .map((s) => s.replace(/^["'\s]+|["'\s]+$/g, "").trim())
     .filter((s) => s.length > 0)
     .slice(0, TARGET_COUNT);
+}
+
+function tryJsonParse(text: string | null): unknown {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function matchFirst(text: string, re: RegExp): string | null {
+  const m = text.match(re);
+  return m ? m[0] : null;
+}
+
+function parseProseList(text: string): string[] {
+  return text
+    .split(/\r?\n+/)
+    .map((line) => line.replace(/^\s*(?:\d+[\.)]|[-*•])\s+/, "").trim())
+    .filter((line) => line.length > 0 && line.length < 400);
 }

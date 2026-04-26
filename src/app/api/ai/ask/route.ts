@@ -31,15 +31,22 @@ type AskBody = {
 };
 
 const MAX_HISTORY_TURNS = 6;
+const MAX_HISTORY_CHAR_BUDGET = 16_000;
+const MAX_TURN_CHARS = 4_000;
 const MAX_QUESTION_CHARS = 1000;
 const RETRIEVAL_COUNT = 6;
-const RETRIEVAL_THRESHOLD = 0.62;
+// Same threshold as match_content_chunks default — keep the two in sync
+// so the visitor agent and any future tool see consistent recall.
+const RETRIEVAL_THRESHOLD = 0.65;
 
 // Module-level rate-limit state. Survives within a single serverless
 // instance — good enough for a soft cap; replace with Upstash/Redis
 // when traffic warrants it.
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const RATE_LIMIT_MAX = 30;
+// Cap the bucket map so a flood of unique IPs can't grow it without bound.
+// LRU-style eviction: oldest entry is dropped when the cap is reached.
+const RATE_LIMIT_MAX_BUCKETS = 10_000;
 const ipBuckets = new Map<string, number[]>();
 
 function bad(reason: string, status = 400) {
@@ -103,9 +110,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const history = (body.history ?? [])
-    .filter((m) => m && (m.role === "user" || m.role === "assistant"))
-    .slice(-MAX_HISTORY_TURNS * 2);
+  const history = sanitizeHistory(body.history ?? []);
 
   const messages = buildMessages({
     question,
@@ -192,10 +197,49 @@ function withinRateLimit(ip: string): boolean {
   const cutoff = now - RATE_LIMIT_WINDOW_MS;
   const bucket = (ipBuckets.get(ip) ?? []).filter((t) => t > cutoff);
   if (bucket.length >= RATE_LIMIT_MAX) {
+    // Refresh recency so the limited IP doesn't get evicted while it's
+    // still being throttled. delete + set re-orders the Map's iteration.
+    ipBuckets.delete(ip);
     ipBuckets.set(ip, bucket);
     return false;
   }
   bucket.push(now);
+  ipBuckets.delete(ip);
   ipBuckets.set(ip, bucket);
+  evictOldBuckets();
   return true;
+}
+
+function evictOldBuckets() {
+  if (ipBuckets.size <= RATE_LIMIT_MAX_BUCKETS) return;
+  // Map iteration is insertion order; oldest entry is the first key.
+  const toDrop = ipBuckets.size - RATE_LIMIT_MAX_BUCKETS;
+  let i = 0;
+  for (const key of ipBuckets.keys()) {
+    if (i >= toDrop) break;
+    ipBuckets.delete(key);
+    i += 1;
+  }
+}
+
+function sanitizeHistory(
+  raw: unknown[],
+): { role: "user" | "assistant"; content: string }[] {
+  const out: { role: "user" | "assistant"; content: string }[] = [];
+  let charBudget = MAX_HISTORY_CHAR_BUDGET;
+  // Walk newest-first so the most recent context survives when truncated.
+  for (let i = raw.length - 1; i >= 0; i -= 1) {
+    const m = raw[i] as { role?: unknown; content?: unknown } | null;
+    if (!m || (m.role !== "user" && m.role !== "assistant")) continue;
+    const content = typeof m.content === "string" ? m.content : "";
+    if (!content) continue;
+    const trimmed = content.length > MAX_TURN_CHARS
+      ? content.slice(0, MAX_TURN_CHARS)
+      : content;
+    if (trimmed.length > charBudget) break;
+    charBudget -= trimmed.length;
+    out.unshift({ role: m.role, content: trimmed });
+    if (out.length >= MAX_HISTORY_TURNS * 2) break;
+  }
+  return out;
 }

@@ -61,6 +61,22 @@ function splitModelRef(ref: string): [string, string] {
   return [ref.slice(0, idx), ref.slice(idx + 1)];
 }
 
+function friendlyOpenAIError(status: number, raw: string): string {
+  // Surface the most common failures in language an end-user can act on,
+  // without leaking internal IDs or full stack-style details.
+  if (status === 401) return "OpenAI rejected the API key. Check OPENAI_API_KEY.";
+  if (status === 403) return "OpenAI denied the request — billing or org-policy issue.";
+  if (status === 429)
+    return "OpenAI rate limit hit. Wait a moment and try again.";
+  if (status === 400 && /content_policy|content filter/i.test(raw))
+    return "Request was blocked by the model's content policy.";
+  if (status >= 500)
+    return "OpenAI is having trouble right now. Try again shortly.";
+  // Trim to keep accidental dumps short.
+  const snippet = raw.replace(/\s+/g, " ").trim().slice(0, 200);
+  return `OpenAI ${status}: ${snippet || "unknown error"}`;
+}
+
 async function runOpenAI(
   input: RunChatInput & { endpoint: string },
 ): Promise<RunChatResult> {
@@ -78,20 +94,35 @@ async function runOpenAI(
     body.response_format = { type: "json_object" };
   }
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  // Hard timeout so a hung upstream doesn't pin the serverless function
+  // until the platform kills it. 60s is generous for chat completions.
+  let res: Response;
+  try {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch (err) {
+    const isAbort =
+      err instanceof DOMException && err.name === "TimeoutError";
+    return {
+      ok: false,
+      reason: isAbort
+        ? "Model request timed out after 60s — try a faster model or a shorter prompt."
+        : `Network error reaching OpenAI: ${err instanceof Error ? err.message : "unknown"}`,
+    };
+  }
 
   if (!res.ok) {
     const err = await res.text().catch(() => "");
     return {
       ok: false,
-      reason: `OpenAI ${res.status}: ${err.slice(0, 300) || res.statusText}`,
+      reason: friendlyOpenAIError(res.status, err),
     };
   }
   const json = (await res.json()) as {
