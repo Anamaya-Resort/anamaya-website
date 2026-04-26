@@ -3,8 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { extractRetreatToStaging, pushStagedRetreat } from "@/lib/imports/actions";
 import type { ExtractedRetreat } from "@/lib/imports/retreat-extractor";
+import { SubmitButton } from "../SubmitButton";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export default async function RetreatImportDetail({
   params,
@@ -60,26 +62,26 @@ export default async function RetreatImportDetail({
         </div>
         <div className="flex items-center gap-2">
           <form action={reExtract}>
-            <button
-              type="submit"
+            <SubmitButton
+              pendingLabel="Extracting…"
               className="whitespace-nowrap rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal hover:bg-zinc-50"
             >
               {staging ? "Re-extract" : "Extract"}
-            </button>
+            </SubmitButton>
           </form>
           {staging && (
             <form action={pushToAO}>
-              <button
-                type="submit"
-                className="whitespace-nowrap rounded-full bg-anamaya-green px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+              <SubmitButton
+                pendingLabel="Pushing…"
                 title={
                   staging.ao_retreat_id
                     ? "Update the existing retreat in AnamayOS"
                     : "Create a new retreat in AnamayOS"
                 }
+                className="whitespace-nowrap rounded-full bg-anamaya-green px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
               >
                 {staging.ao_retreat_id ? "Re-push to AO" : "Push to AO"}
-              </button>
+              </SubmitButton>
             </form>
           )}
         </div>

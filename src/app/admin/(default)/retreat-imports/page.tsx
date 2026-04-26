@@ -2,8 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { batchExtractRetreats, extractRetreatToStaging } from "@/lib/imports/actions";
+import { SubmitButton } from "./SubmitButton";
 
 export const dynamic = "force-dynamic";
+// Image fetches dominate runtime — 10 retreats × ~10 images each can
+// exceed the default Vercel function timeout. 300s is the Pro max.
+export const maxDuration = 300;
 
 type StagingRow = {
   id: string;
@@ -117,12 +121,12 @@ export default async function RetreatImportsIndex({
           <input type="checkbox" name="include_already_staged" value="1" />
           Include already-staged
         </label>
-        <button
-          type="submit"
+        <SubmitButton
+          pendingLabel="Extracting…"
           className="ml-auto whitespace-nowrap rounded-full bg-anamaya-green px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
         >
           Extract Batch
-        </button>
+        </SubmitButton>
       </form>
 
       <ul className="grid grid-cols-1 gap-2">
@@ -151,12 +155,12 @@ export default async function RetreatImportsIndex({
                 ) : null}
                 <form action={extractOne}>
                   <input type="hidden" name="url_inventory_id" value={r.id} />
-                  <button
-                    type="submit"
+                  <SubmitButton
+                    pendingLabel="Extracting…"
                     className="whitespace-nowrap rounded-full bg-anamaya-green px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
                   >
                     {s ? "Re-extract" : "Extract"}
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             </li>

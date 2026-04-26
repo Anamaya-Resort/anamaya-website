@@ -156,7 +156,7 @@ function uniq<T>(arr: T[], keyFn: (x: T) => string): T[] {
 
 // ── Field extractors ─────────────────────────────────────────────────
 
-const MONTHS = "(?:January|February|March|April|May|June|July|August|September|October|November|December)";
+const MONTHS = "(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)";
 
 /**
  * Match a date range like:
@@ -203,10 +203,11 @@ function extractDates(text: string): { start?: string; end?: string; text?: stri
 }
 
 function toIso(monthName: string, day: string, year: string): string {
+  const key = monthName.toLowerCase().slice(0, 3);
   const monthIdx = [
-    "january", "february", "march", "april", "may", "june",
-    "july", "august", "september", "october", "november", "december",
-  ].indexOf(monthName.toLowerCase());
+    "jan", "feb", "mar", "apr", "may", "jun",
+    "jul", "aug", "sep", "oct", "nov", "dec",
+  ].indexOf(key);
   const mm = String(monthIdx + 1).padStart(2, "0");
   const dd = String(Number(day)).padStart(2, "0");
   return `${year}-${mm}-${dd}`;
@@ -253,6 +254,26 @@ function extractPricingTiers(html: string): ExtractedTier[] {
       const price = m[0];
       const name = text.replace(price, "").replace(/[—–:-]+\s*$/, "").trim() || "Tier";
       out.push({ name, price });
+    }
+  }
+
+  // Parallel-list pattern (Anamaya WP layout): a column of <strong> labels
+  // followed by a column of $prices, both as separate paragraphs/lines.
+  // Pair them by index. Skip the first label if it looks like a column
+  // header (e.g. "Occupancy") rather than a tier name.
+  if (out.length === 0) {
+    const labels: string[] = [];
+    for (const m of html.matchAll(/<strong\b[^>]*>([\s\S]*?)<\/strong>/gi)) {
+      const t = stripTags(m[1]);
+      if (t && !PRICE_RE.test(t)) labels.push(t);
+    }
+    PRICE_RE.lastIndex = 0;
+    const prices = stripTags(html).match(/\$[\d,]+(?:\s*\/\s*\w+)?/g) ?? [];
+    if (prices.length > 0 && labels.length >= prices.length) {
+      const offset = labels.length === prices.length + 1 ? 1 : 0;
+      for (let i = 0; i < prices.length; i++) {
+        out.push({ name: labels[i + offset], price: prices[i] });
+      }
     }
   }
 
@@ -323,19 +344,51 @@ function extractTestimonials(html: string): ExtractedTestimonial[] {
   return out;
 }
 
-function extractRetreatLeader(html: string): ExtractedRetreat["retreat_leader"] | undefined {
-  const section = findSectionByHeading(html, /(retreat[\s-]?leader|teacher|your host|about your guide|your guide)/i);
-  if (!section) return undefined;
-  const photo = findImages(section)[0]?.src;
-  const nameH = section.match(/<h[2-4]\b[^>]*>([\s\S]*?)<\/h[2-4]>/i);
-  const paragraphs = findTagBlocks(section, "p")
-    .map((p) => p.full)
-    .join("\n");
-  return {
-    name: nameH ? stripTags(nameH[1]) : undefined,
-    photo_url: photo,
-    bio_html: paragraphs || undefined,
-  };
+/**
+ * Two strategies, in order:
+ *   1. Find a "Retreat Leader / Your Guide / Your Host" labeled section.
+ *   2. Anamaya WP pages don't use that label — they put the leader's name
+ *      after a dash/em-dash in the page title (e.g. "Sacred Femme Women's
+ *      Retreat – Sierra Kliscz"). Use that as a hint, then look for a
+ *      heading in the body that contains those words and grab the photo
+ *      and bio paragraphs near it.
+ */
+function extractRetreatLeader(
+  html: string,
+  pageTitle: string,
+): ExtractedRetreat["retreat_leader"] | undefined {
+  const labeled = findSectionByHeading(html, /(retreat[\s-]?leader|teacher|your host|about your guide|your guide)/i);
+  if (labeled) {
+    const photo = findImages(labeled)[0]?.src;
+    const nameH = labeled.match(/<h[2-4]\b[^>]*>([\s\S]*?)<\/h[2-4]>/i);
+    const paragraphs = findTagBlocks(labeled, "p").map((p) => p.full).join("\n");
+    return {
+      name: nameH ? stripTags(nameH[1]) : undefined,
+      photo_url: photo,
+      bio_html: paragraphs || undefined,
+    };
+  }
+
+  const titleHint = decode(pageTitle).match(/[—–-]\s*([A-Z][\w'’.\- ]+?)\s*$/);
+  if (!titleHint) return undefined;
+  const leaderName = titleHint[1].trim();
+  const escaped = leaderName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const headingRe = new RegExp(`<h([2-4])\\b[^>]*>\\s*([\\s\\S]*?${escaped}[\\s\\S]*?)<\\/h\\1>`, "i");
+  const headingMatch = html.match(headingRe);
+  if (!headingMatch) return { name: leaderName };
+
+  const headingIdx = headingMatch.index ?? 0;
+  const lookbackStart = Math.max(0, headingIdx - 800);
+  const lookback = html.slice(lookbackStart, headingIdx);
+  const photoMatch = [...lookback.matchAll(/<img\b[^>]*>/gi)].pop();
+  const photo = photoMatch ? attr(photoMatch[0], "src") ?? attr(photoMatch[0], "data-src") : undefined;
+
+  const afterHeading = html.slice(headingIdx + headingMatch[0].length);
+  const nextH = afterHeading.search(/<h[1-4]\b/i);
+  const bioRegion = nextH >= 0 ? afterHeading.slice(0, nextH) : afterHeading.slice(0, 4000);
+  const bioParas = findTagBlocks(bioRegion, "p").map((p) => p.full).join("\n");
+
+  return { name: leaderName, photo_url: photo, bio_html: bioParas || undefined };
 }
 
 // ── Top-level extractor ──────────────────────────────────────────────
@@ -380,21 +433,29 @@ export function extractRetreat(input: ExtractInput): ExtractResult {
   const locMatch = plainText.match(/(Anamaya[^.,\n]*?Costa Rica|[A-Z][a-zA-Z ]+,\s*Costa Rica)/);
   if (locMatch) location = locMatch[1].trim();
 
-  const whatsIncludedSection = findSectionByHeading(bodyHtml, /what'?s\s+included/i);
+  // The Anamaya WP retreat template doesn't always render an explicit
+  // "What's Included" list — many pages weave inclusions into prose under
+  // "Retreat Details" or "Highlights". Only warn when a section IS found
+  // but contains no list items, since that signals a parse miss.
+  const whatsIncludedSection =
+    findSectionByHeading(bodyHtml, /what'?s\s+included/i) ??
+    findSectionByHeading(bodyHtml, /(retreat\s+highlights?|inclusions?|highlights?)/i);
   const whatsIncluded = whatsIncludedSection ? extractListItems(whatsIncludedSection) : [];
-  if (whatsIncluded.length === 0) warnings.push('"What\'s Included" list not found');
+  if (whatsIncludedSection && whatsIncluded.length === 0) {
+    warnings.push('"What\'s Included" section found but no list items parsed');
+  }
 
   const whatToExpectSection = findSectionByHeading(bodyHtml, /what\s+to\s+expect/i);
   const whoIsThisForSection = findSectionByHeading(bodyHtml, /who\s+is\s+this\s+(for|retreat)/i);
 
-  const pricingSection = findSectionByHeading(bodyHtml, /(pricing|rates?|cost|investment)/i);
+  const pricingSection = findSectionByHeading(bodyHtml, /(pricing|prices?|rates?|cost|investment)/i);
   const pricingTiers = pricingSection ? extractPricingTiers(pricingSection) : extractPricingTiers(bodyHtml);
   if (pricingTiers.length === 0) warnings.push("no pricing tiers detected");
 
   const itinerary = extractItinerary(bodyHtml);
   const workshops = extractWorkshops(bodyHtml);
   const testimonials = extractTestimonials(bodyHtml);
-  const retreat_leader = extractRetreatLeader(bodyHtml);
+  const retreat_leader = extractRetreatLeader(bodyHtml, title);
   if (!retreat_leader?.name) warnings.push("could not identify retreat leader/teacher");
 
   const galleryImages = extractGallery(bodyHtml, sourceHosts);
@@ -404,7 +465,7 @@ export function extractRetreat(input: ExtractInput): ExtractResult {
 
   return {
     retreat: {
-      name: title.trim(),
+      name: decode(title.trim()),
       tagline,
       location,
       dates_start: dates.start,
