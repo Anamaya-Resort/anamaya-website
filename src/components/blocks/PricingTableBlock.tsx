@@ -1,6 +1,7 @@
 import type { PricingTableContent, PricingTier } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
+import DecorationOverlay from "./shared/DecorationOverlay";
 
 /**
  * Pricing table — N tiers in a responsive grid. `price` is a free-form
@@ -15,13 +16,15 @@ export default function PricingTableBlock({ content }: { content: PricingTableCo
   const color = resolveBrandColor(content?.text_color);
   const pad = content?.padding_y_px ?? 64;
   const cols = content?.columns ?? Math.min(tiers.length, 4);
+  const contentWidth = content?.content_width_px ?? 1200;
 
   return (
     <section
-      className="w-full"
+      className="relative w-full overflow-hidden"
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
-      <div className="mx-auto w-full max-w-[1200px] px-6">
+      <DecorationOverlay frame={content} />
+      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
         {content?.heading && (
           <h2 className="mb-3 text-center font-heading text-3xl">{content.heading}</h2>
         )}

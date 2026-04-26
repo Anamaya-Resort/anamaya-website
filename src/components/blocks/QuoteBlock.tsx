@@ -1,6 +1,7 @@
 import type { QuoteContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
+import DecorationOverlay from "./shared/DecorationOverlay";
 
 /**
  * Quote / testimonial. Three layouts:
@@ -13,16 +14,20 @@ export default function QuoteBlock({ content }: { content: QuoteContent }) {
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";
   const color = resolveBrandColor(content?.text_color);
   const pad = content?.padding_y_px ?? (variant === "banner" ? 80 : 48);
+  const defaultWidth = variant === "card" ? 800 : 900;
+  const contentWidth = content?.content_width_px ?? defaultWidth;
 
   return (
     <section
-      className="w-full"
+      className="relative w-full overflow-hidden"
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
+      <DecorationOverlay frame={content} />
       <div
-        className={`mx-auto w-full px-6 ${
-          variant === "card" ? "max-w-[800px]" : "max-w-[900px] text-center"
+        className={`relative mx-auto w-full px-6 ${
+          variant === "card" ? "" : "text-center"
         }`}
+        style={{ maxWidth: contentWidth }}
       >
         {variant === "card" ? (
           <CardLayout content={content} />

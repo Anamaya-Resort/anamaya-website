@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GalleryContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import DecorationOverlay from "./shared/DecorationOverlay";
 
 /**
  * Image gallery — uniform grid, masonry, or a horizontal-scroll carousel.
@@ -19,6 +20,7 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
   const lightbox = content?.lightbox !== false;
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";
   const pad = content?.padding_y_px ?? 64;
+  const contentWidth = content?.content_width_px ?? 1400;
 
   const close = useCallback(() => setActiveIdx(null), []);
   const next = useCallback(
@@ -44,8 +46,12 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
   if (images.length === 0) return null;
 
   return (
-    <section className="w-full" style={{ backgroundColor: bg, paddingTop: pad, paddingBottom: pad }}>
-      <div className="mx-auto w-full max-w-[1400px] px-6">
+    <section
+      className="relative w-full overflow-hidden"
+      style={{ backgroundColor: bg, paddingTop: pad, paddingBottom: pad }}
+    >
+      <DecorationOverlay frame={content} />
+      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
         {content?.heading && (
           <h2 className="mb-8 text-center font-heading text-3xl">{content.heading}</h2>
         )}

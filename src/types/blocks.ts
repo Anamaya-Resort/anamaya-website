@@ -1,8 +1,11 @@
 // Content schemas for each block type. Stored as jsonb in blocks.content
 // (or block_usages.override_content for per-usage overrides).
 
-export type RichTextContent = {
+export type RichTextContent = SectionFrame & {
   html: string;
+  bg_color?: string;
+  text_color?: string;
+  padding_y_px?: number;
 };
 
 /**
@@ -137,8 +140,52 @@ export type BlockCta = {
   cta_font?: "body" | "heading";
 };
 
+/**
+ * Section frame mixin — gives any block a constrained centered content
+ * area inside a full-bleed section, plus an optional decorative overlay
+ * (botanical illustration, ornament, etc.) anchored to a corner that
+ * can bleed past the content edge.
+ *
+ * Pattern: section is full-width with bg, content is constrained to
+ * `content_width_px`, decoration is absolutely positioned to the section
+ * (so it can bleed). Mobile hides the decoration by default to keep
+ * the content centered and prominent.
+ */
+export type SectionFrame = {
+  /** Inner content max-width in px (desktop). Falls back to a per-block default. */
+  content_width_px?: number;
+  /** Decoration image URL (PNG with alpha works best). */
+  decoration_url?: string;
+  decoration_alt?: string;
+  decoration_position?:
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right"
+    | "left-center"
+    | "right-center";
+  /** Max width in px. Default 240. */
+  decoration_size_px?: number;
+  /** 0-100. Default 100. */
+  decoration_opacity?: number;
+  decoration_flip_x?: boolean;
+  decoration_flip_y?: boolean;
+  /**
+   * Offset in px from the anchor edge. Negative values push the
+   * decoration off-screen (the bleed effect — section overflow is hidden
+   * so anything past the edge gets clipped).
+   */
+  decoration_offset_x_px?: number;
+  decoration_offset_y_px?: number;
+  /**
+   * Show decoration on mobile? Default false — mobile prioritizes the
+   * content area; decorations would crowd it.
+   */
+  decoration_show_mobile?: boolean;
+};
+
 /** Rich Text with Background — any HTML on a branded background. */
-export type RichBgContent = BlockCta & {
+export type RichBgContent = BlockCta & SectionFrame & {
   html?: string;
   bg_color?: string;                           // brand key or hex
   bg_image_url?: string;                       // optional background image
@@ -178,7 +225,7 @@ export type VideoShowcaseContent = BlockCta & {
 
 /** Double-row checklist. */
 export type ChecklistItem = { text: string };
-export type ChecklistContent = BlockCta & {
+export type ChecklistContent = BlockCta & SectionFrame & {
   heading?: string;
   heading_font?: "body" | "heading";
   heading_color?: string;
@@ -309,7 +356,7 @@ export type DividerContent = {
  *   - "pull":   large centered pull-quote, no photo
  *   - "banner": full-width with optional bg color/image
  */
-export type QuoteContent = BlockCta & {
+export type QuoteContent = BlockCta & SectionFrame & {
   quote: string;
   attribution?: string;
   attribution_role?: string;
@@ -348,7 +395,7 @@ export type PricingTier = {
   note?: string;
   highlight?: boolean;       // visual emphasis (the "best value" tier)
 };
-export type PricingTableContent = BlockCta & {
+export type PricingTableContent = BlockCta & SectionFrame & {
   heading?: string;
   intro?: string;
   tiers: PricingTier[];
@@ -377,7 +424,7 @@ export type FeatureListItem = {
   image_alt?: string;
   href?: string;
 };
-export type FeatureListContent = BlockCta & {
+export type FeatureListContent = BlockCta & SectionFrame & {
   heading?: string;
   intro?: string;
   items: FeatureListItem[];
@@ -397,7 +444,7 @@ export type GalleryImage = {
   height?: number;
   caption?: string;
 };
-export type GalleryContent = {
+export type GalleryContent = SectionFrame & {
   heading?: string;
   images: GalleryImage[];
   layout?: "grid" | "masonry" | "carousel";
@@ -414,7 +461,7 @@ export type GalleryContent = {
  * "side-by-side" puts the photo to the left of the text; "stacked"
  * centers the photo above the text.
  */
-export type PersonCardContent = BlockCta & {
+export type PersonCardContent = BlockCta & SectionFrame & {
   name: string;
   photo_url?: string;
   photo_alt?: string;
@@ -462,7 +509,7 @@ export type TwoColumnSide = {
   content: unknown;
 };
 
-export type TwoColumnContent = BlockCta & {
+export type TwoColumnContent = BlockCta & SectionFrame & {
   left?: TwoColumnSide;
   right?: TwoColumnSide;
   /** Left column width %. 20-80. Default 50. */

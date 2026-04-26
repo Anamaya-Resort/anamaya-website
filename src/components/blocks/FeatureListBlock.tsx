@@ -1,6 +1,7 @@
 import type { FeatureListContent, FeatureListItem } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
+import DecorationOverlay from "./shared/DecorationOverlay";
 
 /**
  * Feature / inclusions list. Three layouts:
@@ -16,13 +17,15 @@ export default function FeatureListBlock({ content }: { content: FeatureListCont
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";
   const color = resolveBrandColor(content?.text_color);
   const pad = content?.padding_y_px ?? 64;
+  const contentWidth = content?.content_width_px ?? 1200;
 
   return (
     <section
-      className="w-full"
+      className="relative w-full overflow-hidden"
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
-      <div className="mx-auto w-full max-w-[1200px] px-6">
+      <DecorationOverlay frame={content} />
+      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
         {content?.heading && (
           <h2 className="mb-3 text-center font-heading text-3xl">{content.heading}</h2>
         )}

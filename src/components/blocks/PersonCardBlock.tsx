@@ -2,6 +2,7 @@ import type { PersonCardContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import ProseHtml from "@/components/ProseHtml";
 import CtaButton from "./shared/CtaButton";
+import DecorationOverlay from "./shared/DecorationOverlay";
 
 /**
  * Person card — used for retreat-leader, teacher, and guest-speaker bios.
@@ -18,13 +19,15 @@ export default function PersonCardBlock({ content }: { content: PersonCardConten
   const color = resolveBrandColor(content?.text_color);
   const pad = content?.padding_y_px ?? 64;
   const photoPct = clamp(content?.photo_width_pct ?? 30, 20, 50);
+  const contentWidth = content?.content_width_px ?? 1100;
 
   return (
     <section
-      className="w-full"
+      className="relative w-full overflow-hidden"
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
-      <div className="mx-auto w-full max-w-[1100px] px-6">
+      <DecorationOverlay frame={content} />
+      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
         {layout === "stacked" ? (
           <div className="flex flex-col items-center text-center">
             {content.photo_url && (

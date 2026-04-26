@@ -1,6 +1,7 @@
 import type { RichBgContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
+import DecorationOverlay from "./shared/DecorationOverlay";
 
 /** Rich text content on a branded background (color + optional image). */
 export default function RichBgBlock({ content }: { content: RichBgContent }) {
@@ -21,10 +22,11 @@ export default function RichBgBlock({ content }: { content: RichBgContent }) {
       ? fit
       : `${scalePct}% auto`;
   const bgRepeat = fit === "tile" ? "repeat" : "no-repeat";
+  const contentWidth = content?.content_width_px ?? 720;
 
   return (
     <section
-      className="w-full"
+      className="relative w-full overflow-hidden"
       style={{
         backgroundColor: bg,
         backgroundImage: bgImage,
@@ -36,7 +38,8 @@ export default function RichBgBlock({ content }: { content: RichBgContent }) {
         paddingBottom: pad,
       }}
     >
-      <div className="mx-auto w-full max-w-[1200px] px-6">
+      <DecorationOverlay frame={content} />
+      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
         <div
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: content?.html ?? "" }}

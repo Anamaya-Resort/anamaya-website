@@ -2,6 +2,7 @@ import type { BlockUsage, TwoColumnContent, TwoColumnSide } from "@/types/blocks
 import { resolveBrandColor } from "@/config/brand-tokens";
 import BlockRenderer from "./BlockRenderer";
 import CtaButton from "./shared/CtaButton";
+import DecorationOverlay from "./shared/DecorationOverlay";
 
 /**
  * Two-column layout primitive. Each side carries another block type's
@@ -16,7 +17,7 @@ export default function TwoColumnBlock({ content }: { content: TwoColumnContent 
   const color = resolveBrandColor(content?.text_color) ?? undefined;
   const padY = content?.padding_y_px ?? 64;
   const gap = content?.gap_px ?? 48;
-  const containerWidth = content?.container_width_px ?? 1200;
+  const contentWidth = content?.content_width_px ?? content?.container_width_px ?? 1200;
   const leftPct = Math.max(20, Math.min(80, content?.left_width_pct ?? 50));
   const rightPct = 100 - leftPct;
   const valign = content?.vertical_align ?? "top";
@@ -29,10 +30,11 @@ export default function TwoColumnBlock({ content }: { content: TwoColumnContent 
 
   return (
     <section
-      className="w-full"
+      className="relative w-full overflow-hidden"
       style={{ backgroundColor: bg, color, paddingTop: padY, paddingBottom: padY }}
     >
-      <div className="mx-auto w-full px-6" style={{ maxWidth: containerWidth }}>
+      <DecorationOverlay frame={content} />
+      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
         <div
           className={`grid ${stack ? "grid-cols-1 md:grid-cols-[var(--cols)]" : ""}`}
           style={

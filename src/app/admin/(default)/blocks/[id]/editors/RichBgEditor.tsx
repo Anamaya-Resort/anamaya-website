@@ -7,6 +7,7 @@ import ContainerFieldset from "@/components/admin/blocks/ContainerFieldset";
 import MediaFieldset from "@/components/admin/blocks/MediaFieldset";
 import ImageTransformFieldset from "@/components/admin/blocks/ImageTransformFieldset";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
+import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
 import RTE from "@/components/admin/rte/RichTextEditor";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { RichBgContent } from "@/types/blocks";
@@ -101,6 +102,13 @@ export default function RichBgEditor(props: {
               placeholder="Write your content…"
             />
           </div>
+
+          <SectionFrameFieldset
+            frame={draft}
+            onChange={(u) => patch(u)}
+            defaultWidth={720}
+            onCommit={commit}
+          />
 
           <CtaFieldset
             cta={draft}
