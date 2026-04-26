@@ -281,6 +281,166 @@ export type ImageTextContent = BlockCta & {
   padding_y_px?: number;
 };
 
+// ─── GENERAL-PURPOSE BLOCKS (used by retreats + other pages) ──────────
+
+/**
+ * Divider — a thin horizontal break between sections. Three variants:
+ *   - "rule":     a centered horizontal line
+ *   - "ornament": a centered SVG/image flourish (used by the legacy WP
+ *                 retreat template's flower divider)
+ *   - "spacer":   blank vertical space, no visible mark
+ */
+export type DividerContent = {
+  variant?: "rule" | "ornament" | "spacer";
+  /** Total vertical space in px (default 48). */
+  spacing_px?: number;
+  /** Brand-token key or hex; only meaningful for "rule" / "ornament". */
+  color?: string;
+  /** For "ornament": image URL of the flourish; falls back to a built-in SVG. */
+  ornament_url?: string;
+  /** For "ornament": max width of the ornament in px (default 80). */
+  ornament_width_px?: number;
+  bg_color?: string;
+};
+
+/**
+ * Quote / testimonial. Three layout variants:
+ *   - "card":   bordered card, photo + name on the side
+ *   - "pull":   large centered pull-quote, no photo
+ *   - "banner": full-width with optional bg color/image
+ */
+export type QuoteContent = BlockCta & {
+  quote: string;
+  attribution?: string;
+  attribution_role?: string;
+  photo_url?: string;
+  photo_alt?: string;
+  variant?: "card" | "pull" | "banner";
+  bg_color?: string;
+  text_color?: string;
+  padding_y_px?: number;
+};
+
+/**
+ * Date range / dates pill. Renders a formatted date range with optional
+ * label ("Dates:", "Retreat dates:"). When dates are missing falls back
+ * to fallback_text (e.g. "Custom dates available year-round").
+ */
+export type DateRangeContent = {
+  label?: string;
+  /** ISO-8601 date string (YYYY-MM-DD). */
+  start_date?: string;
+  /** ISO-8601 date string (YYYY-MM-DD). */
+  end_date?: string;
+  fallback_text?: string;
+  bg_color?: string;
+  text_color?: string;
+  align?: "left" | "center" | "right";
+  size_px?: number;
+  padding_y_px?: number;
+};
+
+/** Pricing table — N tiers of "name + price + note". */
+export type PricingTier = {
+  name: string;
+  price?: string;            // raw string so "Sold out", "From $1,234" etc all work
+  currency?: string;
+  note?: string;
+  highlight?: boolean;       // visual emphasis (the "best value" tier)
+};
+export type PricingTableContent = BlockCta & {
+  heading?: string;
+  intro?: string;
+  tiers: PricingTier[];
+  footnote?: string;
+  /** Force a specific column count; default = number of tiers (auto-fits). */
+  columns?: 1 | 2 | 3 | 4;
+  bg_color?: string;
+  text_color?: string;
+  padding_y_px?: number;
+};
+
+/**
+ * Feature / inclusions list. A list of items each with a title +
+ * optional description, price, image, icon. Three layouts:
+ *   - "stack": vertical list, full width
+ *   - "grid":  N-column responsive grid
+ *   - "split": image on alternating sides per item
+ */
+export type FeatureListItem = {
+  title: string;
+  description?: string;
+  price?: string;
+  /** Brand-token key or hex; only meaningful for icon variant. */
+  icon?: "check" | "star" | "heart" | "leaf" | "sparkle" | "dot";
+  image_url?: string;
+  image_alt?: string;
+  href?: string;
+};
+export type FeatureListContent = BlockCta & {
+  heading?: string;
+  intro?: string;
+  items: FeatureListItem[];
+  layout?: "stack" | "grid" | "split";
+  /** For "grid" layout: 2-4 columns (default 3). */
+  columns?: 2 | 3 | 4;
+  bg_color?: string;
+  text_color?: string;
+  padding_y_px?: number;
+};
+
+/** Image gallery — uniform grid, masonry, or single-row carousel. */
+export type GalleryImage = {
+  url: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  caption?: string;
+};
+export type GalleryContent = {
+  heading?: string;
+  images: GalleryImage[];
+  layout?: "grid" | "masonry" | "carousel";
+  columns?: 2 | 3 | 4 | 5;
+  /** Click image to open full-size in a lightbox. Default true. */
+  lightbox?: boolean;
+  bg_color?: string;
+  padding_y_px?: number;
+};
+
+/**
+ * Person card — used for retreat-leader, teacher, guest-speaker bios.
+ * Composes a photo + name + credentials line + rich-text body + link.
+ * "side-by-side" puts the photo to the left of the text; "stacked"
+ * centers the photo above the text.
+ */
+export type PersonCardContent = BlockCta & {
+  name: string;
+  photo_url?: string;
+  photo_alt?: string;
+  credentials?: string;        // single line under name (RYT-500, "Founder", etc.)
+  html?: string;               // rich-text bio
+  link_label?: string;
+  link_href?: string;
+  layout?: "side-by-side" | "stacked";
+  /** For side-by-side: photo column width 20-50% (default 30). */
+  photo_width_pct?: number;
+  bg_color?: string;
+  text_color?: string;
+  padding_y_px?: number;
+};
+
+/**
+ * Raw HTML escape hatch — for one-off legacy markup (custom tables,
+ * embedded scripts) that doesn't fit any other block. Sanitized at
+ * render time. Use sparingly; prefer a typed block when possible.
+ */
+export type RawHtmlContent = {
+  html: string;
+  bg_color?: string;
+  padding_y_px?: number;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -291,7 +451,15 @@ export type BlockTypeSlug =
   | "checklist"
   | "newsletter"
   | "image_overlay"
-  | "image_text";
+  | "image_text"
+  | "divider"
+  | "quote"
+  | "date_range"
+  | "pricing_table"
+  | "feature_list"
+  | "gallery"
+  | "person_card"
+  | "raw_html";
 
 export type BlockRecord = {
   id: string;

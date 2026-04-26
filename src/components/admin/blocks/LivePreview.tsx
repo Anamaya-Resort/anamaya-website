@@ -12,6 +12,14 @@ import ChecklistBlock from "@/components/blocks/ChecklistBlock";
 import NewsletterBlock from "@/components/blocks/NewsletterBlock";
 import ImageOverlayBlock from "@/components/blocks/ImageOverlayBlock";
 import ImageTextBlock from "@/components/blocks/ImageTextBlock";
+import DividerBlock from "@/components/blocks/DividerBlock";
+import QuoteBlock from "@/components/blocks/QuoteBlock";
+import DateRangeBlock from "@/components/blocks/DateRangeBlock";
+import PricingTableBlock from "@/components/blocks/PricingTableBlock";
+import FeatureListBlock from "@/components/blocks/FeatureListBlock";
+import GalleryBlock from "@/components/blocks/GalleryBlock";
+import PersonCardBlock from "@/components/blocks/PersonCardBlock";
+import RawHtmlBlock from "@/components/blocks/RawHtmlBlock";
 import VariantCarousel from "./VariantCarousel";
 
 /**
@@ -99,6 +107,14 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "newsletter":     return <NewsletterBlock content={content} />;
     case "image_overlay":  return <ImageOverlayBlock content={content} />;
     case "image_text":     return <ImageTextBlock content={content} />;
+    case "divider":        return <DividerBlock content={content} />;
+    case "quote":          return <QuoteBlock content={content} />;
+    case "date_range":     return <DateRangeBlock content={content} />;
+    case "pricing_table":  return <PricingTableBlock content={content} />;
+    case "feature_list":   return <FeatureListBlock content={content} />;
+    case "gallery":        return <GalleryBlock content={content} />;
+    case "person_card":    return <PersonCardBlock content={content} />;
+    case "raw_html":       return <RawHtmlBlock content={content} />;
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">

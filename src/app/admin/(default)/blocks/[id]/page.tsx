@@ -17,6 +17,14 @@ import ChecklistEditor from "./editors/ChecklistEditor";
 import NewsletterEditor from "./editors/NewsletterEditor";
 import ImageOverlayEditor from "./editors/ImageOverlayEditor";
 import ImageTextEditor from "./editors/ImageTextEditor";
+import DividerEditor from "./editors/DividerEditor";
+import QuoteEditor from "./editors/QuoteEditor";
+import DateRangeEditor from "./editors/DateRangeEditor";
+import RawHtmlEditor from "./editors/RawHtmlEditor";
+import PricingTableEditor from "./editors/PricingTableEditor";
+import FeatureListEditor from "./editors/FeatureListEditor";
+import GalleryEditor from "./editors/GalleryEditor";
+import PersonCardEditor from "./editors/PersonCardEditor";
 import { getBrandTokens } from "@/lib/brand-tokens";
 
 export const dynamic = "force-dynamic";
@@ -250,6 +258,30 @@ export default async function EditBlock({
           variants={siblings}
           typeName={type?.name ?? block.type_slug}
         />
+      )}
+      {block.type_slug === "divider" && (
+        <DividerEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "quote" && (
+        <QuoteEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "date_range" && (
+        <DateRangeEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "raw_html" && (
+        <RawHtmlEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "pricing_table" && (
+        <PricingTableEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "feature_list" && (
+        <FeatureListEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "gallery" && (
+        <GalleryEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "person_card" && (
+        <PersonCardEditor content={block.content} onSave={saveContent} />
       )}
     </div>
   );

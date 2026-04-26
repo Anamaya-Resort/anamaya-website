@@ -134,6 +134,70 @@ function emptyContentFor(typeSlug: string): unknown {
       padding_y_px: 48,
       vertical_align: "center",
     };
+    case "divider": return {
+      variant: "rule",
+      spacing_px: 48,
+      color: "brandDivider",
+    };
+    case "quote": return {
+      quote: "An experience that changed everything.",
+      attribution: "",
+      attribution_role: "",
+      variant: "pull",
+      padding_y_px: 48,
+    };
+    case "date_range": return {
+      label: "Dates:",
+      start_date: "",
+      end_date: "",
+      fallback_text: "Custom dates available year-round",
+      align: "center",
+      size_px: 18,
+      padding_y_px: 16,
+    };
+    case "pricing_table": return {
+      heading: "Pricing",
+      intro: "",
+      tiers: [
+        { name: "Standard", price: "$1,800", note: "Shared room, 7 nights" },
+        { name: "Premium",  price: "$2,400", note: "Private room, 7 nights", highlight: true },
+      ],
+      footnote: "",
+      padding_y_px: 64,
+    };
+    case "feature_list": return {
+      heading: "What's included",
+      intro: "",
+      layout: "grid",
+      columns: 3,
+      items: [
+        { title: "Daily yoga", description: "Twice-daily group classes", icon: "leaf" },
+        { title: "Three meals", description: "Locally-sourced, vegetarian", icon: "heart" },
+        { title: "Private room", description: "Ensuite bathroom, ocean view", icon: "star" },
+      ],
+      padding_y_px: 64,
+    };
+    case "gallery": return {
+      heading: "",
+      images: [],
+      layout: "grid",
+      columns: 3,
+      lightbox: true,
+      padding_y_px: 64,
+    };
+    case "person_card": return {
+      name: "",
+      photo_url: "",
+      credentials: "",
+      html: "<p>Bio goes here.</p>",
+      layout: "side-by-side",
+      photo_width_pct: 30,
+      padding_y_px: 64,
+    };
+    case "raw_html": return {
+      html: "",
+      padding_y_px: 32,
+    };
     default:           return {};
   }
 }
