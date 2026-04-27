@@ -271,7 +271,7 @@ export async function duplicateBlock(id: string): Promise<string> {
   const sb = supabaseServer();
   const { data: source, error: readErr } = await sb
     .from("blocks")
-    .select("type_slug, name, slug, content")
+    .select("type_slug, name, slug, content, snapshot_url, snapshot_updated_at")
     .eq("id", id)
     .maybeSingle();
   if (readErr || !source) throw new Error("Source block not found");
@@ -292,6 +292,8 @@ export async function duplicateBlock(id: string): Promise<string> {
       name: `Dup-${source.name}`,
       slug,
       content: source.content,
+      snapshot_url: source.snapshot_url,
+      snapshot_updated_at: source.snapshot_updated_at,
     })
     .select("id")
     .single();
