@@ -127,16 +127,16 @@ export default async function BlocksIndex({
   });
 
   return (
-    <div className="space-y-10">
-      <header>
-        <h1 className="text-2xl font-semibold text-anamaya-charcoal">Blocks</h1>
-        <p className="mt-1 max-w-3xl text-sm text-anamaya-charcoal/70">
+    <div className="space-y-8">
+      <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200">
+        <h1 className="text-3xl font-semibold text-anamaya-charcoal">Blocks</h1>
+        <p className="mt-2 max-w-3xl text-base text-anamaya-charcoal/70">
           Reusable content blocks are the building pieces of every page. Edit a block once and
           your changes flow through to every page that uses it. Create multiple blocks of the
           same type when you need different variants for different pages. Filter by category
           below to find the layout you need.
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           {ALL_CATEGORIES.map((c) => (
             <CategoryTag key={c} cat={c} active={selectedTag === c} />
           ))}
@@ -149,7 +149,7 @@ export default async function BlocksIndex({
             </Link>
           )}
         </div>
-      </header>
+      </section>
 
       {selectedTag && visibleTypes.length === 0 && (
         <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-6 text-sm italic text-anamaya-charcoal/60">
@@ -170,19 +170,18 @@ export default async function BlocksIndex({
         }
 
         const cats = BLOCK_CATEGORIES[t.slug] ?? [];
+        const items = byType.get(t.slug) ?? [];
 
         return (
-          <section key={t.slug}>
-            <header className="mb-3 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
-                  {t.name}
-                </h2>
+          <section key={t.slug} className="space-y-4">
+            <header className="flex flex-col gap-3 rounded-lg bg-white p-5 shadow-sm ring-1 ring-zinc-200 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-anamaya-charcoal">{t.name}</h2>
                 {t.description && (
-                  <p className="text-xs text-anamaya-charcoal/60">{t.description}</p>
+                  <p className="mt-1 text-sm text-anamaya-charcoal/60">{t.description}</p>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 md:justify-end">
                 {cats.map((c) => (
                   <CategoryTag key={c} cat={c} active={selectedTag === c} />
                 ))}
@@ -197,50 +196,46 @@ export default async function BlocksIndex({
               </div>
             </header>
 
-            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {(byType.get(t.slug) ?? []).map((b) => (
-                <li key={b.id}>
-                  <Link
-                    href={`/admin/blocks/${b.id}`}
-                    className="grid items-stretch rounded-md border border-zinc-200 bg-white transition-shadow hover:shadow-sm"
-                    style={{ gridTemplateColumns: "1fr 1fr" }}
-                  >
-                    {/* Left: text details — wraps to accommodate the
-                        50/50 split so the thumbnail on the right gets
-                        maximum breathing room. */}
-                    <div className="min-w-0 px-4 py-3 text-sm">
-                      <div className="break-words font-semibold text-anamaya-charcoal">
-                        {b.name}
-                      </div>
-                      <code className="mt-1 inline-block max-w-full truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-anamaya-charcoal/80">
-                        [#{b.slug}]
-                      </code>
-                    </div>
-                    {/* Right: WebP snapshot (if saved) — 50% of the card. */}
-                    <div className="overflow-hidden rounded-r-md bg-zinc-50">
-                      {b.snapshot_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={b.snapshot_url}
-                          alt=""
-                          className="h-full w-full object-contain"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-[10px] italic text-anamaya-charcoal/40">
-                          No preview
+            {items.length > 0 ? (
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {items.map((b) => (
+                  <li key={b.id}>
+                    <Link
+                      href={`/admin/blocks/${b.id}`}
+                      className="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-zinc-200 transition-shadow hover:shadow-md"
+                    >
+                      <div className="px-4 pb-3 pt-4">
+                        <div className="break-words text-sm font-semibold text-anamaya-charcoal">
+                          {b.name}
                         </div>
-                      )}
-                    </div>
-                  </Link>
-                </li>
-              ))}
-              {(byType.get(t.slug) ?? []).length === 0 && (
-                <li className="text-sm italic text-anamaya-charcoal/50">
-                  No {t.name.toLowerCase()} blocks yet.
-                </li>
-              )}
-            </ul>
+                        <code className="mt-1 inline-block max-w-full truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-anamaya-charcoal/80">
+                          [#{b.slug}]
+                        </code>
+                      </div>
+                      <div className="aspect-[4/3] w-full overflow-hidden bg-zinc-50">
+                        {b.snapshot_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={b.snapshot_url}
+                            alt=""
+                            className="h-full w-full object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs italic text-anamaya-charcoal/40">
+                            No preview
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-1 text-sm italic text-anamaya-charcoal/50">
+                No {t.name.toLowerCase()} blocks yet.
+              </p>
+            )}
           </section>
         );
       })}
