@@ -5,7 +5,102 @@ import { createBlock } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function BlocksIndex() {
+type Category =
+  | "video"
+  | "image"
+  | "2-column"
+  | "rich-text"
+  | "grid"
+  | "gallery"
+  | "signup"
+  | "table";
+
+const ALL_CATEGORIES: Category[] = [
+  "video",
+  "image",
+  "2-column",
+  "rich-text",
+  "grid",
+  "gallery",
+  "signup",
+  "table",
+];
+
+const BLOCK_CATEGORIES: Record<string, Category[]> = {
+  rich_text: ["rich-text"],
+  rich_bg: ["rich-text", "image"],
+  raw_html: ["rich-text"],
+  hero: ["image", "video"],
+  cta_banner: ["image", "rich-text"],
+  press_bar: ["image", "grid"],
+  image_overlay: ["image", "rich-text"],
+  image_text: ["image", "rich-text", "2-column"],
+  divider: ["image"],
+  quote: ["rich-text", "image"],
+  person_card: ["image", "rich-text"],
+  video_showcase: ["video"],
+  gallery: ["gallery", "image"],
+  newsletter: ["signup"],
+  pricing_table: ["table"],
+  date_range: ["table"],
+  feature_list: ["grid"],
+  checklist: ["grid", "rich-text"],
+  two_column: ["2-column"],
+};
+
+const CATEGORY_COLORS: Record<Category, string> = {
+  video: "bg-rose-100 text-rose-800 ring-rose-200 hover:bg-rose-200",
+  image: "bg-amber-100 text-amber-800 ring-amber-200 hover:bg-amber-200",
+  "2-column": "bg-violet-100 text-violet-800 ring-violet-200 hover:bg-violet-200",
+  "rich-text": "bg-sky-100 text-sky-800 ring-sky-200 hover:bg-sky-200",
+  grid: "bg-emerald-100 text-emerald-800 ring-emerald-200 hover:bg-emerald-200",
+  gallery: "bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200 hover:bg-fuchsia-200",
+  signup: "bg-teal-100 text-teal-800 ring-teal-200 hover:bg-teal-200",
+  table: "bg-orange-100 text-orange-800 ring-orange-200 hover:bg-orange-200",
+};
+
+const CATEGORY_COLORS_ACTIVE: Record<Category, string> = {
+  video: "bg-rose-600 text-white ring-rose-700",
+  image: "bg-amber-600 text-white ring-amber-700",
+  "2-column": "bg-violet-600 text-white ring-violet-700",
+  "rich-text": "bg-sky-600 text-white ring-sky-700",
+  grid: "bg-emerald-600 text-white ring-emerald-700",
+  gallery: "bg-fuchsia-600 text-white ring-fuchsia-700",
+  signup: "bg-teal-600 text-white ring-teal-700",
+  table: "bg-orange-600 text-white ring-orange-700",
+};
+
+function CategoryTag({
+  cat,
+  active,
+  selected,
+}: {
+  cat: Category;
+  active: boolean;
+  selected: Category | null;
+}) {
+  const href =
+    selected === cat ? "/admin/blocks" : `/admin/blocks?tag=${encodeURIComponent(cat)}`;
+  const cls = active ? CATEGORY_COLORS_ACTIVE[cat] : CATEGORY_COLORS[cat];
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ring-inset transition-colors ${cls}`}
+    >
+      {cat}
+    </Link>
+  );
+}
+
+export default async function BlocksIndex({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string }>;
+}) {
+  const { tag } = await searchParams;
+  const selectedTag = (ALL_CATEGORIES as string[]).includes(tag ?? "")
+    ? (tag as Category)
+    : null;
   const sb = supabaseServer();
   // Defensive: if migration 0008 hasn't been applied yet, the `slug`
   // column won't exist and the list page would come up empty. Try the
@@ -27,30 +122,56 @@ export default async function BlocksIndex() {
     fetchBlocks(),
   ]);
 
-  const byType = new Map<string, any[]>();
+  const byType = new Map<string, (typeof blocks)[number][]>();
   for (const b of blocks) {
     const arr = byType.get(b.type_slug) ?? [];
     arr.push(b);
     byType.set(b.type_slug, arr);
   }
 
+  const visibleTypes = (types ?? []).filter((t) => {
+    if (!selectedTag) return true;
+    return (BLOCK_CATEGORIES[t.slug] ?? []).includes(selectedTag);
+  });
+
   return (
     <div className="space-y-10">
       <header>
         <h1 className="text-2xl font-semibold text-anamaya-charcoal">Blocks</h1>
-        <p className="mt-1 text-sm text-anamaya-charcoal/70">
-          Reusable content blocks. Edit once — changes flow through to every page that uses them.
-          Create multiple blocks of the same type for different variants on different pages.
+        <p className="mt-1 max-w-3xl text-sm text-anamaya-charcoal/70">
+          Reusable content blocks are the building pieces of every page. Edit a block once and
+          your changes flow through to every page that uses it. Create multiple blocks of the
+          same type when you need different variants for different pages. Filter by category
+          below to find the layout you need.
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {ALL_CATEGORIES.map((c) => (
+            <CategoryTag
+              key={c}
+              cat={c}
+              active={selectedTag === c}
+              selected={selectedTag}
+            />
+          ))}
+          {selectedTag && (
+            <Link
+              href="/admin/blocks"
+              className="ml-1 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60 underline hover:text-anamaya-charcoal"
+            >
+              Clear
+            </Link>
+          )}
+        </div>
       </header>
 
-      {(types ?? []).map((t) => {
-        async function newBlock(formData: FormData) {
+      {visibleTypes.map((t) => {
+        async function newBlock() {
           "use server";
-          const name = String(formData.get("name") ?? "").trim() || `New ${t.name}`;
-          const id = await createBlock(t.slug, name);
+          const id = await createBlock(t.slug, `New ${t.name}`);
           redirect(`/admin/blocks/${id}`);
         }
+
+        const cats = BLOCK_CATEGORIES[t.slug] ?? [];
 
         return (
           <section key={t.slug}>
@@ -63,19 +184,24 @@ export default async function BlocksIndex() {
                   <p className="text-xs text-anamaya-charcoal/60">{t.description}</p>
                 )}
               </div>
-              <form action={newBlock} className="flex items-center gap-2">
-                <input
-                  name="name"
-                  placeholder={`New ${t.name} name`}
-                  className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
-                />
-                <button
-                  type="submit"
-                  className="whitespace-nowrap rounded-full bg-anamaya-green px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
-                >
-                  + Create
-                </button>
-              </form>
+              <div className="flex flex-wrap items-center gap-2">
+                {cats.map((c) => (
+                  <CategoryTag
+                    key={c}
+                    cat={c}
+                    active={selectedTag === c}
+                    selected={selectedTag}
+                  />
+                ))}
+                <form action={newBlock}>
+                  <button
+                    type="submit"
+                    className="whitespace-nowrap rounded-full bg-anamaya-green px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+                  >
+                    + Create
+                  </button>
+                </form>
+              </div>
             </header>
 
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
