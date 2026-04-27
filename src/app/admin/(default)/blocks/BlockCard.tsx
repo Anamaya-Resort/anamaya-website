@@ -26,8 +26,8 @@ export default function BlockCard({ block }: { block: Block }) {
   function onDuplicate() {
     startTransition(async () => {
       try {
-        const newId = await duplicateBlock(block.id);
-        router.push(`/admin/blocks/${newId}`);
+        await duplicateBlock(block.id);
+        router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to duplicate");
       }

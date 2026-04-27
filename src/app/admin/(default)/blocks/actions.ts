@@ -271,17 +271,25 @@ export async function duplicateBlock(id: string): Promise<string> {
   const sb = supabaseServer();
   const { data: source, error: readErr } = await sb
     .from("blocks")
-    .select("type_slug, name, content")
+    .select("type_slug, name, slug, content")
     .eq("id", id)
     .maybeSingle();
   if (readErr || !source) throw new Error("Source block not found");
 
-  const slug = await nextAvailableSlug(source.type_slug);
+  const baseSlug = `Dup-${source.slug}`;
+  const { data: taken } = await sb
+    .from("blocks")
+    .select("slug")
+    .like("slug", `${baseSlug}%`);
+  const used = new Set((taken ?? []).map((r) => r.slug));
+  let slug = baseSlug;
+  for (let n = 2; used.has(slug); n++) slug = `${baseSlug}-${n}`;
+
   const { data, error } = await sb
     .from("blocks")
     .insert({
       type_slug: source.type_slug,
-      name: `${source.name} (copy)`,
+      name: `Dup-${source.name}`,
       slug,
       content: source.content,
     })
