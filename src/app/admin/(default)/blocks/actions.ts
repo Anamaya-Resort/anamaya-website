@@ -276,7 +276,9 @@ export async function duplicateBlock(id: string): Promise<string> {
     .maybeSingle();
   if (readErr || !source) throw new Error("Source block not found");
 
-  const baseSlug = `Dup-${source.slug}`;
+  // Slug must be lowercase so it survives the editor's onBlur normaliser
+  // (which lowercases everything) without changing on first save.
+  const baseSlug = `dup-${source.slug}`;
   const { data: taken } = await sb
     .from("blocks")
     .select("slug")

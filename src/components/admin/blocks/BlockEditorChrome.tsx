@@ -90,8 +90,10 @@ export default function BlockEditorChrome<T>({
   const normalized = normalize(content);
   const [name, setName] = useState(initialName);
   const [slug, setSlug] = useState(initialSlug);
-  const nameIsDup = name.startsWith("Dup-");
-  const slugIsDup = slug.startsWith("Dup-");
+  // Match both "Dup-" (display name capitalisation) and "dup-" (slug
+  // is auto-lowercased on save, so the prefix flips to lowercase).
+  const nameIsDup = /^dup-/i.test(name);
+  const slugIsDup = /^dup-/i.test(slug);
   const [draft, setDraft] = useState<T>(normalized);
   const [preview, setPreview] = useState<T>(normalized);
   const [saving, setSaving] = useState(false);

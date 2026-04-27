@@ -29,7 +29,9 @@ export default function BlockCard({ block }: { block: Block }) {
         await duplicateBlock(block.id);
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to duplicate");
+        const msg = e instanceof Error ? e.message : "Failed to duplicate";
+        setError(msg);
+        if (typeof window !== "undefined") window.alert(`Duplicate failed: ${msg}`);
       }
     });
   }
@@ -62,7 +64,7 @@ export default function BlockCard({ block }: { block: Block }) {
         href={`/admin/blocks/${block.id}`}
         className="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-zinc-200 transition-shadow hover:shadow-md"
       >
-        <div className="px-4 pb-3 pr-36 pt-4">
+        <div className="px-4 pb-3 pr-44 pt-4">
           <div className="break-words text-sm font-semibold text-anamaya-charcoal">
             {block.name}
           </div>
