@@ -65,7 +65,7 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
   return (
     <section className="mb-8">
       <header className="mb-2">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-anamaya-charcoal/60">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-800">
           {label}
         </h3>
       </header>

@@ -90,6 +90,8 @@ export default function BlockEditorChrome<T>({
   const normalized = normalize(content);
   const [name, setName] = useState(initialName);
   const [slug, setSlug] = useState(initialSlug);
+  const nameIsDup = name.startsWith("Dup-");
+  const slugIsDup = slug.startsWith("Dup-");
   const [draft, setDraft] = useState<T>(normalized);
   const [preview, setPreview] = useState<T>(normalized);
   const [saving, setSaving] = useState(false);
@@ -133,18 +135,22 @@ export default function BlockEditorChrome<T>({
       {/* Name + Slug + Shortcode header */}
       <div className="mb-5 grid gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-800">
             Display name
           </span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-lg font-semibold text-anamaya-charcoal focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+            className={`w-full rounded-md border bg-white px-3 py-1.5 text-lg font-semibold focus:outline-none focus:ring-1 ${
+              nameIsDup
+                ? "border-red-500 text-red-600 focus:border-red-600 focus:ring-red-500"
+                : "border-zinc-300 text-anamaya-charcoal focus:border-anamaya-green focus:ring-anamaya-green"
+            }`}
             placeholder="Untitled block"
           />
         </label>
         <div className="block">
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-anamaya-charcoal/60">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-800">
             Block name (slug)
           </span>
           <input
@@ -155,7 +161,11 @@ export default function BlockEditorChrome<T>({
                 s.trim().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/gi, "").toLowerCase(),
               )
             }
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 font-mono text-sm text-anamaya-charcoal focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+            className={`w-full rounded-md border bg-white px-3 py-1.5 font-mono text-sm focus:outline-none focus:ring-1 ${
+              slugIsDup
+                ? "border-red-500 text-red-600 focus:border-red-600 focus:ring-red-500"
+                : "border-zinc-300 text-anamaya-charcoal focus:border-anamaya-green focus:ring-anamaya-green"
+            }`}
             placeholder={`e.g. ${typeSlug}_1`}
           />
           <div className="mt-2 flex items-center gap-2">

@@ -124,7 +124,7 @@ export default async function EditBlock({
     <div>
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs uppercase tracking-wider text-anamaya-olive-dark">
+          <div className="text-lg font-bold uppercase tracking-wider text-zinc-800">
             {block.type_slug}
           </div>
           <p className="mt-1 text-xs text-anamaya-charcoal/60">

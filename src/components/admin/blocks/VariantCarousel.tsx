@@ -42,7 +42,7 @@ export default function VariantCarousel({
   if (variants.length <= 1) {
     return (
       <section className="mb-8">
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-anamaya-charcoal/60">
+        <h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-zinc-800">
           Variants
         </h3>
         <p className="rounded-md bg-white px-4 py-3 text-sm italic text-anamaya-charcoal/60 ring-1 ring-zinc-200">
@@ -55,7 +55,7 @@ export default function VariantCarousel({
   return (
     <section className="mb-8">
       <header className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-anamaya-charcoal/60">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-800">
           Variants ({variants.length})
         </h3>
         {pages > 1 && (
