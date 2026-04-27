@@ -32,7 +32,7 @@ const BLOCK_CATEGORIES: Record<string, Category[]> = {
   raw_html: ["rich-text"],
   hero: ["image", "video"],
   cta_banner: ["image", "rich-text"],
-  press_bar: ["image", "grid"],
+  press_bar: ["image"],
   image_overlay: ["image", "rich-text"],
   image_text: ["image", "rich-text", "2-column"],
   divider: ["image"],
@@ -60,31 +60,23 @@ const CATEGORY_COLORS: Record<Category, string> = {
 };
 
 const CATEGORY_COLORS_ACTIVE: Record<Category, string> = {
-  video: "bg-rose-600 text-white ring-rose-700",
-  image: "bg-amber-600 text-white ring-amber-700",
-  "2-column": "bg-violet-600 text-white ring-violet-700",
-  "rich-text": "bg-sky-600 text-white ring-sky-700",
-  grid: "bg-emerald-600 text-white ring-emerald-700",
-  gallery: "bg-fuchsia-600 text-white ring-fuchsia-700",
-  signup: "bg-teal-600 text-white ring-teal-700",
-  table: "bg-orange-600 text-white ring-orange-700",
+  video: "bg-rose-600 text-white ring-rose-700 hover:bg-rose-700",
+  image: "bg-amber-600 text-white ring-amber-700 hover:bg-amber-700",
+  "2-column": "bg-violet-600 text-white ring-violet-700 hover:bg-violet-700",
+  "rich-text": "bg-sky-600 text-white ring-sky-700 hover:bg-sky-700",
+  grid: "bg-emerald-600 text-white ring-emerald-700 hover:bg-emerald-700",
+  gallery: "bg-fuchsia-600 text-white ring-fuchsia-700 hover:bg-fuchsia-700",
+  signup: "bg-teal-600 text-white ring-teal-700 hover:bg-teal-700",
+  table: "bg-orange-600 text-white ring-orange-700 hover:bg-orange-700",
 };
 
-function CategoryTag({
-  cat,
-  active,
-  selected,
-}: {
-  cat: Category;
-  active: boolean;
-  selected: Category | null;
-}) {
-  const href =
-    selected === cat ? "/admin/blocks" : `/admin/blocks?tag=${encodeURIComponent(cat)}`;
+function CategoryTag({ cat, active }: { cat: Category; active: boolean }) {
+  const href = active ? "/admin/blocks" : `/admin/blocks?tag=${encodeURIComponent(cat)}`;
   const cls = active ? CATEGORY_COLORS_ACTIVE[cat] : CATEGORY_COLORS[cat];
   return (
     <Link
       href={href}
+      title={active ? `Clear filter (${cat})` : `Filter by ${cat}`}
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ring-inset transition-colors ${cls}`}
     >
       {cat}
@@ -146,12 +138,7 @@ export default async function BlocksIndex({
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {ALL_CATEGORIES.map((c) => (
-            <CategoryTag
-              key={c}
-              cat={c}
-              active={selectedTag === c}
-              selected={selectedTag}
-            />
+            <CategoryTag key={c} cat={c} active={selectedTag === c} />
           ))}
           {selectedTag && (
             <Link
@@ -163,6 +150,17 @@ export default async function BlocksIndex({
           )}
         </div>
       </header>
+
+      {selectedTag && visibleTypes.length === 0 && (
+        <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-6 text-sm italic text-anamaya-charcoal/60">
+          No block types match the <span className="font-semibold not-italic">{selectedTag}</span>{" "}
+          filter.{" "}
+          <Link href="/admin/blocks" className="underline hover:text-anamaya-charcoal">
+            Show all
+          </Link>
+          .
+        </div>
+      )}
 
       {visibleTypes.map((t) => {
         async function newBlock() {
@@ -186,12 +184,7 @@ export default async function BlocksIndex({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {cats.map((c) => (
-                  <CategoryTag
-                    key={c}
-                    cat={c}
-                    active={selectedTag === c}
-                    selected={selectedTag}
-                  />
+                  <CategoryTag key={c} cat={c} active={selectedTag === c} />
                 ))}
                 <form action={newBlock}>
                   <button
