@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FeatureListContent, FeatureListItem } from "@/types/blocks";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -217,6 +218,14 @@ export default function FeatureListEditor({
           onChange={(e) => setState((s) => ({ ...s, padding_y_px: Number(e.target.value) }))}
         />
       </Field>
+
+      <div className="sm:col-span-2">
+        <SectionFrameFieldset
+          frame={state}
+          onChange={(u) => setState((s) => ({ ...s, ...u }))}
+          defaultWidth={1200}
+        />
+      </div>
 
       <button
         type="submit"

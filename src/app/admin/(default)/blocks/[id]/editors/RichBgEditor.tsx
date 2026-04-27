@@ -106,7 +106,7 @@ export default function RichBgEditor(props: {
           <SectionFrameFieldset
             frame={draft}
             onChange={(u) => patch(u)}
-            defaultWidth={720}
+            defaultWidth={1200}
             onCommit={commit}
           />
 

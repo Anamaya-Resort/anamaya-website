@@ -22,7 +22,7 @@ export default function RichBgBlock({ content }: { content: RichBgContent }) {
       ? fit
       : `${scalePct}% auto`;
   const bgRepeat = fit === "tile" ? "repeat" : "no-repeat";
-  const contentWidth = content?.content_width_px ?? 720;
+  const contentWidth = content?.content_width_px ?? 1200;
 
   return (
     <section

@@ -14,6 +14,7 @@ import type {
   DateRangeContent,
   RawHtmlContent,
 } from "@/types/blocks";
+import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -87,14 +88,6 @@ export default function TwoColumnEditor({
             onChange={(e) => patch({ gap_px: Number(e.target.value) })}
           />
         </Field>
-        <Field label="Content max-width (px)">
-          <input
-            type="number"
-            className={inputCls}
-            value={state.content_width_px ?? state.container_width_px ?? 1200}
-            onChange={(e) => patch({ content_width_px: Number(e.target.value) })}
-          />
-        </Field>
         <Field label="Vertical alignment">
           <select
             className={inputCls}
@@ -153,120 +146,11 @@ export default function TwoColumnEditor({
         onChange={(s) => setSide("right", s)}
       />
 
-      <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-          Decoration overlay (optional, hidden on mobile by default)
-        </legend>
-        <div className="sm:col-span-2">
-          <Field label="Decoration image URL">
-            <input
-              className={inputCls}
-              value={state.decoration_url ?? ""}
-              onChange={(e) =>
-                patch({ decoration_url: e.target.value || undefined })
-              }
-              placeholder="https://… (PNG with alpha works best)"
-            />
-          </Field>
-        </div>
-        {state.decoration_url && (
-          <>
-            <Field label="Position">
-              <select
-                className={inputCls}
-                value={state.decoration_position ?? "top-right"}
-                onChange={(e) =>
-                  patch({
-                    decoration_position: e.target
-                      .value as TwoColumnContent["decoration_position"],
-                  })
-                }
-              >
-                <option value="top-left">Top left</option>
-                <option value="top-right">Top right</option>
-                <option value="bottom-left">Bottom left</option>
-                <option value="bottom-right">Bottom right</option>
-                <option value="left-center">Left center</option>
-                <option value="right-center">Right center</option>
-              </select>
-            </Field>
-            <Field label="Size (px)">
-              <input
-                type="number"
-                className={inputCls}
-                value={state.decoration_size_px ?? 240}
-                onChange={(e) =>
-                  patch({ decoration_size_px: Number(e.target.value) })
-                }
-              />
-            </Field>
-            <Field label="Offset X (negative bleeds off-screen)">
-              <input
-                type="number"
-                className={inputCls}
-                value={state.decoration_offset_x_px ?? 0}
-                onChange={(e) =>
-                  patch({ decoration_offset_x_px: Number(e.target.value) })
-                }
-              />
-            </Field>
-            <Field label="Offset Y (negative bleeds off-screen)">
-              <input
-                type="number"
-                className={inputCls}
-                value={state.decoration_offset_y_px ?? 0}
-                onChange={(e) =>
-                  patch({ decoration_offset_y_px: Number(e.target.value) })
-                }
-              />
-            </Field>
-            <Field label="Opacity (0-100)">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                className={inputCls}
-                value={state.decoration_opacity ?? 100}
-                onChange={(e) =>
-                  patch({ decoration_opacity: Number(e.target.value) })
-                }
-              />
-            </Field>
-            <div className="flex items-end gap-4">
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={!!state.decoration_flip_x}
-                  onChange={(e) =>
-                    patch({ decoration_flip_x: e.target.checked })
-                  }
-                />
-                Flip X
-              </label>
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={!!state.decoration_flip_y}
-                  onChange={(e) =>
-                    patch({ decoration_flip_y: e.target.checked })
-                  }
-                />
-                Flip Y
-              </label>
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={!!state.decoration_show_mobile}
-                  onChange={(e) =>
-                    patch({ decoration_show_mobile: e.target.checked })
-                  }
-                />
-                Show on mobile
-              </label>
-            </div>
-          </>
-        )}
-      </fieldset>
+      <SectionFrameFieldset
+        frame={state}
+        onChange={(u) => patch(u)}
+        defaultWidth={1200}
+      />
 
       <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">

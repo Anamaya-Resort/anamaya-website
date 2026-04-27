@@ -8,17 +8,23 @@ export default function RichTextBlock({ content }: { content: RichTextContent })
   const bg = resolveBrandColor(content?.bg_color) ?? "#ffffff";
   const color = resolveBrandColor(content?.text_color) ?? undefined;
   const pad = content?.padding_y_px ?? 48;
-  const contentWidth = content?.content_width_px ?? 720;
+  const contentWidth = content?.content_width_px;
+  const inner = (
+    <div
+      className={contentWidth ? "relative mx-auto w-full" : "relative w-full"}
+      style={contentWidth ? { maxWidth: contentWidth } : undefined}
+    >
+      <ProseHtml html={content.html} />
+    </div>
+  );
 
   return (
     <section
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-hidden px-6"
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
       <DecorationOverlay frame={content} />
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
-        <ProseHtml html={content.html} />
-      </div>
+      {inner}
     </section>
   );
 }

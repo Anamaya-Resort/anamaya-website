@@ -7,6 +7,7 @@ import BlockEditorChrome, {
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
+import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ChecklistContent, ChecklistItem } from "@/types/blocks";
 
@@ -183,6 +184,13 @@ function Form({ state }: { state: BlockEditorState<ChecklistContent> }) {
         onRemove={(i) => removeItem("columns_bottom", i)}
         onChangeText={(i, t) => updateItemText("columns_bottom", i, t)}
         onBlur={commit}
+      />
+
+      <SectionFrameFieldset
+        frame={draft}
+        onChange={(u) => patch(u)}
+        defaultWidth={1200}
+        onCommit={commit}
       />
 
       <CtaFieldset cta={draft} onChange={(u) => patch(u)} brandTokens={brandTokens} />
