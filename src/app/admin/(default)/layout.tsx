@@ -11,7 +11,7 @@ export default async function DefaultAdminLayout({
   const user = await getSessionUser();
 
   return (
-    <div className="min-h-screen bg-zinc-100">
+    <div className="min-h-screen overflow-x-hidden bg-zinc-100">
       <nav className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-6">

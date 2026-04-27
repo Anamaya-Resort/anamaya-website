@@ -127,7 +127,7 @@ export default async function BlocksIndex({
   });
 
   return (
-    <div className="space-y-8">
+    <div className="mx-[calc(50%-50vw)] w-screen space-y-8 px-8">
       <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200">
         <h1 className="text-3xl font-semibold text-anamaya-charcoal">Blocks</h1>
         <p className="mt-2 max-w-3xl text-base text-anamaya-charcoal/70">
