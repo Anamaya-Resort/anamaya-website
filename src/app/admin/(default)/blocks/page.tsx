@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { createBlock } from "./actions";
+import BlockCard from "./BlockCard";
 
 export const dynamic = "force-dynamic";
 
@@ -199,35 +200,15 @@ export default async function BlocksIndex({
             {items.length > 0 ? (
               <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((b) => (
-                  <li key={b.id}>
-                    <Link
-                      href={`/admin/blocks/${b.id}`}
-                      className="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-zinc-200 transition-shadow hover:shadow-md"
-                    >
-                      <div className="px-4 pb-3 pt-4">
-                        <div className="break-words text-sm font-semibold text-anamaya-charcoal">
-                          {b.name}
-                        </div>
-                        <code className="mt-1 inline-block max-w-full truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-anamaya-charcoal/80">
-                          [#{b.slug}]
-                        </code>
-                      </div>
-                      <div className="aspect-[4/3] w-full overflow-hidden bg-zinc-50">
-                        {b.snapshot_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={b.snapshot_url}
-                            alt=""
-                            className="h-full w-full object-contain"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-xs italic text-anamaya-charcoal/40">
-                            No preview
-                          </div>
-                        )}
-                      </div>
-                    </Link>
+                  <li key={b.id} className="h-full">
+                    <BlockCard
+                      block={{
+                        id: b.id,
+                        name: b.name,
+                        slug: b.slug,
+                        snapshot_url: b.snapshot_url ?? null,
+                      }}
+                    />
                   </li>
                 ))}
               </ul>
