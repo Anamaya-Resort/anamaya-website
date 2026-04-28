@@ -1,15 +1,14 @@
 import "server-only";
 
 /**
- * AI-based extraction for retreat leaders. The regex extractor handles the
- * single-leader case via the page-title hint, but Anamaya retreats often
- * feature multiple teachers (co-leaders, special guests, assistants) whose
- * names only appear inline — sometimes only as headshot captions or as the
- * opening line of a bio. The shapes vary too much for regex.
+ * AI-based extraction for retreat content. Two parallel calls:
+ *   - extractRetreatBodyAI       → leaders + description
+ *   - extractRetreatWorkshopsAI  → optional workshops with pricing schema
  *
- * A small, cheap model (gpt-4o-mini, JSON mode) sees the cleaned page once
- * and returns a structured leader array. `actions.ts` calls this first and
- * falls back to `extractRetreatLeadersRegex` only if the AI call fails.
+ * Originally these were a single combined call, but gpt-4o-mini reliably
+ * skipped the workshops field when also asked to produce full leader bios
+ * + description (the long earlier output saturated its attention). Two
+ * dedicated, focused calls cost ~2× a single call but are reliable.
  */
 
 import { runChat, type ChatMessage } from "@/lib/ai/client";
@@ -26,8 +25,11 @@ export type AIExtractResult =
       ok: true;
       leaders: ExtractedLeader[];
       description_html?: string;
-      workshops: ExtractedWorkshop[];
     }
+  | { ok: false; reason: string };
+
+export type AIWorkshopsResult =
+  | { ok: true; workshops: ExtractedWorkshop[] }
   | { ok: false; reason: string };
 
 /**
@@ -40,12 +42,7 @@ export type AIExtractResult =
  */
 function compactForAI(html: string): string {
   let out = html;
-  // Drop scripts/styles/svgs/templates entirely.
   out = out.replace(/<(script|style|svg|template|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
-  // Strip attrs from every opening tag, keeping only what helps the model:
-  //   img → src + alt
-  //   a   → href
-  //   everything else → bare tag
   out = out.replace(/<([a-z0-9]+)\b([^>]*)>/gi, (_, tag: string, attrs: string) => {
     if (tag === "img") {
       const src =
@@ -61,10 +58,7 @@ function compactForAI(html: string): string {
     }
     return `<${tag}>`;
   });
-  // Collapse whitespace.
   out = out.replace(/\s+/g, " ").trim();
-  // Drop obviously-empty wrapper tags. Safe because they have no content
-  // by definition — no nesting issues.
   for (let i = 0; i < 5; i++) {
     const before = out;
     out = out.replace(/<(div|span|section|article|header|footer|main|aside|figure|figcaption|p)>\s*<\/\1>/gi, "");
@@ -87,7 +81,7 @@ export async function extractRetreatBodyAI(input: {
     {
       role: "system",
       content:
-        "You extract structured information from an Anamaya retreat web page. " +
+        "You extract teacher info and a description from an Anamaya retreat web page. " +
         "Return ONLY JSON in the form {\"leaders\": [...], \"description_html\": \"...\"}. No commentary. " +
         "" +
         "leaders: an array of teacher objects. Each has: " +
@@ -99,34 +93,19 @@ export async function extractRetreatBodyAI(input: {
         "Role guidance: " +
         "- primary: the lead teacher whose name dominates the page title; if only one teacher, they are primary. " +
         "- co: equal-billing partner — both/all names listed in the title joined by '&' or 'and' or ','. " +
-        "- guest: labeled 'Special Guest', 'Guest Teacher', 'Featured Guest', or appears as a separate visiting teacher. " +
+        "- guest: labeled 'Special Guest', 'Guest Teacher', 'Featured Guest'. " +
         "- assistant: labeled 'Assistant', 'Co-host', or clearly subordinate billing. " +
-        "Pull photo_url from the exact src= of an <img> visually associated with the teacher (their headshot). " +
+        "Pull photo_url from the exact src= of an <img> visually associated with the teacher. " +
         "If you cannot confidently identify any teacher, return leaders: []. " +
         "" +
-        "description_html: the main descriptive prose that explains what the retreat is about — the 'About this retreat' / overview / introduction paragraphs. " +
-        "Wrap each paragraph in <p>…</p>. Preserve <strong>, <em>, <ul>/<li> if present, but strip everything else (no divs, classes, styles, or section wrappers). " +
-        "EXCLUDE: teacher bios (those go in leaders[].bio_html), pricing tables, dates/booking widgets, gallery captions, navigation, footer, repeated CTAs ('Book Now', 'Reserve Your Spot'). " +
-        "Aim for 2–8 paragraphs of meaningful body copy. If the page has no descriptive prose, return description_html: \"\". " +
-        "" +
-        "workshops: an array of optional retreat workshops (also called 'sessions', 'classes', or 'experiences') that have their OWN price separate from the base retreat rate. Each has: " +
-        "title (string, required — workshop name, e.g. 'THRIVE Workshop'), " +
-        "description_html (string, optional — <p>…</p> body of the workshop blurb), " +
-        "instructor_name (string, optional — must match one of leaders[].name if attributable), " +
-        "session_count (integer, optional — number of sessions in the series; 1 for a one-off), " +
-        "session_duration_minutes (integer, optional — minutes per session, e.g. 90), " +
-        "price_full (number, optional — full-series price in whole dollars, e.g. 60 for $60), " +
-        "price_single (number, optional — per-single-session price if offered alongside a series, e.g. 35), " +
-        "currency (string, optional — default 'USD'). " +
-        "Parse phrases like '(2 x 90 minutes sessions)' as session_count=2, session_duration_minutes=90. " +
-        "Parse '$60 for two 90 minute sessions, or $35 for one session' as price_full=60, price_single=35. " +
-        "EXCLUDE: the base retreat rate (that's pricing_tiers, not a workshop), excursions/extras like surf lessons or zipline (those are not workshops), and yoga class packs. " +
-        "Only include items the page presents as standalone optional workshops with their own price. If none, return workshops: [].",
+        "description_html: the main descriptive prose explaining what the retreat is about — overview / introduction paragraphs. " +
+        "Wrap each paragraph in <p>…</p>. Preserve <strong>, <em>, <ul>/<li> if present. " +
+        "EXCLUDE: teacher bios, pricing tables, dates/booking widgets, gallery captions, nav, footer, repeated CTAs. " +
+        "Aim for 2–8 paragraphs.",
     },
     {
       role: "user",
-      content:
-        `Page title: ${input.title}\n\nPage HTML (cleaned):\n${compact}`,
+      content: `Page title: ${input.title}\n\nPage HTML (cleaned):\n${compact}`,
     },
   ];
 
@@ -170,8 +149,6 @@ export async function extractRetreatBodyAI(input: {
     });
   }
 
-  // If multiple leaders but none flagged primary, promote the first to primary
-  // so downstream "set is_primary" logic in push.ts has someone to mark.
   if (leaders.length > 1 && !leaders.some((l) => l.role === "primary")) {
     leaders[0] = { ...leaders[0], role: "primary" };
   }
@@ -180,6 +157,72 @@ export async function extractRetreatBodyAI(input: {
   const descRaw = typeof parsedObj.description_html === "string" ? parsedObj.description_html.trim() : "";
   const description_html = descRaw.length > 0 ? descRaw : undefined;
 
+  return { ok: true, leaders, description_html };
+}
+
+/**
+ * Dedicated workshops extraction. A focused short prompt that asks ONLY
+ * about workshops + pricing — combining with leaders/description in one
+ * call caused gpt-4o-mini to consistently emit `workshops: []` even when
+ * the page clearly had workshops, because the long leader bios + prose
+ * earlier in the response saturated its attention.
+ */
+export async function extractRetreatWorkshopsAI(input: {
+  title: string;
+  bodyHtml: string;
+}): Promise<AIWorkshopsResult> {
+  const compact = compactForAI(input.bodyHtml);
+  if (compact.length < 200) {
+    return { ok: false, reason: "compacted body too short for AI extraction" };
+  }
+
+  const messages: ChatMessage[] = [
+    {
+      role: "system",
+      content:
+        "You extract OPTIONAL WORKSHOPS from an Anamaya retreat web page. " +
+        "Return ONLY JSON in the form {\"workshops\": [...]}. No commentary. " +
+        "" +
+        "Each workshop object has: " +
+        "title (string, required — e.g. 'THRIVE Workshop'), " +
+        "description_html (string, optional — <p>…</p> body of the workshop blurb), " +
+        "instructor_name (string, optional), " +
+        "session_count (integer, optional — number of sessions in the series; 1 for a one-off), " +
+        "session_duration_minutes (integer, optional — minutes per session, e.g. 90), " +
+        "price_full (number, optional — full-series price in whole dollars, e.g. 60), " +
+        "price_single (number, optional — per-single-session price, e.g. 35), " +
+        "currency (string, optional — default 'USD'). " +
+        "" +
+        "Parse '(2 x 90 minutes sessions)' as session_count=2, session_duration_minutes=90. " +
+        "Parse '$60 for two 90 minute sessions, or $35 for one session' as price_full=60, price_single=35. " +
+        "Parse 'The price for this 90-min workshop is $60' as session_duration_minutes=90, price_full=60. " +
+        "" +
+        "INCLUDE: items presented as standalone optional workshops with their own price (typically under headings like 'Optional Workshops', 'Workshops', 'Extras with Pricing'). " +
+        "EXCLUDE: the base retreat rate, excursions like surf lessons or zipline tours, yoga class packs, spa services. " +
+        "If no workshops, return workshops: [].",
+    },
+    {
+      role: "user",
+      content: `Page title: ${input.title}\n\nPage HTML (cleaned):\n${compact}`,
+    },
+  ];
+
+  const res = await runChat({
+    modelRef: MODEL_REF,
+    messages,
+    maxTokens: 3000,
+    responseFormat: "json",
+  });
+  if (!res.ok) return { ok: false, reason: res.reason };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(res.text);
+  } catch {
+    return { ok: false, reason: "AI response was not valid JSON" };
+  }
+
+  const parsedObj = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
   const workshopsRaw = Array.isArray(parsedObj.workshops) ? (parsedObj.workshops as unknown[]) : [];
   const workshops: ExtractedWorkshop[] = [];
   for (const raw of workshopsRaw) {
@@ -199,7 +242,7 @@ export async function extractRetreatBodyAI(input: {
     });
   }
 
-  return { ok: true, leaders, description_html, workshops };
+  return { ok: true, workshops };
 }
 
 function numOrUndef(v: unknown): number | undefined {

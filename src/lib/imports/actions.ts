@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 import { decode, extractRetreat, type ExtractedRetreat } from "./retreat-extractor";
-import { extractRetreatBodyAI } from "./retreat-ai-extractor";
+import { extractRetreatBodyAI, extractRetreatWorkshopsAI } from "./retreat-ai-extractor";
 import { importImage, type ImageBucket, type SkippedImage } from "./images";
 import { pushStagedRetreatToAO, type PushResult } from "./push";
 import { getSessionUser } from "@/lib/session";
@@ -62,42 +62,51 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
     sourceHosts: WP_HOSTS,
   });
 
-  // AI-based body extraction. Anamaya retreats have multi-teacher billing
-  // (co-leaders, special guests) and free-form descriptive prose that the
-  // regex baseline can't reliably separate. If the AI call succeeds, use
-  // its leaders + description + workshops; otherwise keep the regex
-  // fallback so we still get *something*.
+  // AI-based body extraction. Two parallel calls: one for leaders +
+  // description, one for workshops. (Combining them into a single call
+  // caused gpt-4o-mini to drop the workshops field after generating long
+  // leader bios.) Both fall back to regex if their call fails.
   if (bodyHtml.length >= 500) {
-    const ai = await extractRetreatBodyAI({
-      title: invRow.title ?? "",
-      bodyHtml,
-    });
-    if (ai.ok) {
-      if (ai.leaders.length > 0) {
-        retreat.retreat_leaders = ai.leaders;
-        // The regex pass adds a "could not identify retreat leader/teacher"
-        // warning when it finds nothing. Drop it once AI succeeded.
+    const [aiBody, aiWorkshops] = await Promise.all([
+      extractRetreatBodyAI({ title: invRow.title ?? "", bodyHtml }),
+      extractRetreatWorkshopsAI({ title: invRow.title ?? "", bodyHtml }),
+    ]);
+
+    if (aiBody.ok) {
+      if (aiBody.leaders.length > 0) {
+        retreat.retreat_leaders = aiBody.leaders;
         const idx = warnings.indexOf("could not identify retreat leader/teacher");
         if (idx !== -1) warnings.splice(idx, 1);
       }
-      if (ai.description_html) {
-        retreat.description_html = ai.description_html;
-        retreat.description_text = ai.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      if (aiBody.description_html) {
+        retreat.description_html = aiBody.description_html;
+        retreat.description_text = aiBody.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       }
-      if (ai.workshops.length > 0) {
-        retreat.workshops = ai.workshops;
-      }
-      retreat.ai_status = {
-        ok: true,
-        leaders_count: ai.leaders.length,
-        workshops_count: ai.workshops.length,
-        description_present: Boolean(ai.description_html),
-        model: "openai:gpt-4o-mini",
-      };
     } else {
-      warnings.push(`AI extraction failed: ${ai.reason}`);
-      retreat.ai_status = { ok: false, reason: ai.reason, model: "openai:gpt-4o-mini" };
+      warnings.push(`AI body extraction failed: ${aiBody.reason}`);
     }
+
+    if (aiWorkshops.ok) {
+      // Empty AI workshops still wins — the regex fallback at best returns
+      // a stray description sentence under a "workshop" heading, which is
+      // worse than nothing.
+      retreat.workshops = aiWorkshops.workshops;
+    } else {
+      warnings.push(`AI workshops extraction failed: ${aiWorkshops.reason}`);
+    }
+
+    retreat.ai_status = {
+      ok: aiBody.ok && aiWorkshops.ok,
+      reason: aiBody.ok && aiWorkshops.ok
+        ? undefined
+        : [aiBody.ok ? null : `body: ${aiBody.reason}`, aiWorkshops.ok ? null : `workshops: ${aiWorkshops.reason}`]
+            .filter(Boolean)
+            .join("; "),
+      leaders_count: aiBody.ok ? aiBody.leaders.length : 0,
+      workshops_count: aiWorkshops.ok ? aiWorkshops.workshops.length : 0,
+      description_present: aiBody.ok ? Boolean(aiBody.description_html) : false,
+      model: "openai:gpt-4o-mini",
+    };
   } else {
     retreat.ai_status = { ok: false, reason: "scraped HTML too short — AI skipped" };
   }
