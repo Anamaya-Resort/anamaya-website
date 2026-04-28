@@ -526,6 +526,57 @@ export type TwoColumnContent = BlockCta & SectionFrame & {
   container_width_px?: number;
 };
 
+/**
+ * Details + Rates (Dynamic). Two-column section: rich text on the left
+ * (typically the standard "Retreat Details" boilerplate), pricing on the
+ * right pulled live from AnamayOS so the rate sheet stays in sync with
+ * the database. Falls back to a manually-entered tier list when AO is
+ * unreachable, returns no tiers, or no `retreat_id` is set — the block
+ * always renders something even if the data layer is dark.
+ *
+ * Optional CTA renders below the columns (e.g. "Book this retreat"),
+ * matching the BlockCta pattern used by all other branded blocks.
+ *
+ * "Source of truth" is the AO retreat — the website never owns retreat
+ * pricing. To keep the editor sane the AO retreat is identified by its
+ * UUID; legacy WP slugs are not supported as a lookup key.
+ */
+export type DetailsRatesDynamicContent = BlockCta & SectionFrame & {
+  bg_color?: string;
+  text_color?: string;
+  padding_y_px?: number;
+  /** Container max width in px. Default 1200. */
+  container_width_px?: number;
+  /** Gap between columns in px. Default 48. */
+  gap_px?: number;
+  /** Left column width %, 20-80. Default 55. */
+  left_width_pct?: number;
+  vertical_align?: "top" | "center" | "bottom";
+
+  // ── Left column ────────────────────────────────────────────────────
+  heading_left?: string;
+  html_left?: string;
+
+  // ── Right column ───────────────────────────────────────────────────
+  heading_right?: string;
+  /**
+   * AnamayOS retreat UUID. When set, the block fetches active pricing
+   * tiers from AO and renders them. When omitted (or AO is unreachable
+   * or has no active tiers) the block falls back to `manual_tiers`.
+   */
+  retreat_id?: string;
+  /**
+   * Manual override / fallback tiers. Used when:
+   *  - retreat_id is empty
+   *  - the AO query fails or env vars aren't set
+   *  - AO returns zero active tiers for the retreat
+   * Editors can pre-populate these so the block is never empty.
+   */
+  manual_tiers?: PricingTier[];
+  /** Footnote text below the tier list (e.g. "All prices in USD, excl. taxes."). */
+  pricing_note?: string;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -545,7 +596,8 @@ export type BlockTypeSlug =
   | "gallery"
   | "person_card"
   | "raw_html"
-  | "two_column";
+  | "two_column"
+  | "details_rates_dynamic";
 
 export type BlockRecord = {
   id: string;
