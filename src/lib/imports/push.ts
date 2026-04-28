@@ -87,8 +87,13 @@ export async function pushStagedRetreatToAO(
 
   await replacePricingTiers(ao, ao_retreat_id, data.pricing_tiers, warnings);
   await replaceGalleryMedia(ao, ao_retreat_id, data.gallery_images);
-  const leaderPersonId = await upsertRetreatLeaders(ao, ao_retreat_id, data.retreat_leaders, warnings);
-  await replaceWorkshops(ao, ao_retreat_id, data.workshops, leaderPersonId);
+  const { primaryPersonId: leaderPersonId, idsByName: leaderIdsByName } = await upsertRetreatLeaders(
+    ao,
+    ao_retreat_id,
+    data.retreat_leaders,
+    warnings,
+  );
+  await replaceWorkshops(ao, ao_retreat_id, data.workshops, leaderPersonId, leaderIdsByName, warnings);
   await replaceTestimonials(ao, ao_retreat_id, data.testimonials, warnings);
 
   await sb
@@ -203,9 +208,10 @@ async function upsertRetreatLeaders(
   retreatId: string,
   leaders: ExtractedLeader[],
   warnings: string[],
-): Promise<string | null> {
+): Promise<{ primaryPersonId: string | null; idsByName: Map<string, string> }> {
   await ao.from("retreat_teachers").delete().eq("retreat_id", retreatId);
-  if (leaders.length === 0) return null;
+  const idsByName = new Map<string, string>();
+  if (leaders.length === 0) return { primaryPersonId: null, idsByName };
 
   let primaryPersonId: string | null = null;
 
@@ -214,6 +220,7 @@ async function upsertRetreatLeaders(
     if (!leader.name) continue;
     const personId = await ensurePerson(ao, leader, warnings);
     if (!personId) continue;
+    idsByName.set(leader.name.toLowerCase().replace(/\s+/g, " ").trim(), personId);
 
     await ao
       .from("teacher_profiles")
@@ -258,7 +265,7 @@ async function upsertRetreatLeaders(
     await ao.from("retreats").update({ leader_person_id: primaryPersonId }).eq("id", retreatId);
   }
 
-  return primaryPersonId;
+  return { primaryPersonId, idsByName };
 }
 
 /**
@@ -322,23 +329,51 @@ async function replaceWorkshops(
   retreatId: string,
   workshops: ExtractedWorkshop[],
   leaderPersonId: string | null,
+  leaderIdsByName: Map<string, string>,
+  warnings: string[],
 ): Promise<void> {
   await ao.from("retreat_workshops").delete().eq("retreat_id", retreatId);
   if (workshops.length === 0) return;
 
-  const rows = workshops.map((w, i) => ({
-    retreat_id: retreatId,
-    name: w.title,
-    description: w.description ?? null,
-    workshop_kind: "workshop",
-    price: parsePriceNumeric(w.price ?? "") ?? 0,
-    currency: "USD",
-    payout_person_id: leaderPersonId,
-    sort_order: i,
-    is_active: true,
-  }));
+  const rows = workshops.map((w, i) => {
+    // Prefer the AI-structured numeric price; fall back to parsing the
+    // legacy `w.price` string if present.
+    const price = w.price_full ?? parsePriceNumeric(w.price ?? "") ?? 0;
+    // Match instructor by name to a leader person if possible; otherwise
+    // fall back to the retreat's primary leader for payouts.
+    const matchedInstructor = w.instructor_name
+      ? leaderIdsByName.get(normalizeName(w.instructor_name))
+      : undefined;
+    return {
+      retreat_id: retreatId,
+      name: w.title,
+      description: w.description_html ?? w.description ?? null,
+      workshop_kind: "workshop",
+      price,
+      currency: w.currency ?? "USD",
+      payout_person_id: matchedInstructor ?? leaderPersonId,
+      sort_order: i,
+      is_active: true,
+    };
+  });
   const { error } = await ao.from("retreat_workshops").insert(rows);
   if (error) throw new Error(`retreat_workshops insert: ${error.message}`);
+
+  // The AO retreat_workshops table doesn't currently have columns for
+  // session_count, session_duration_minutes, or price_single. Surface
+  // any data we had to drop so the admin knows.
+  const dropped = workshops.filter(
+    (w) => w.session_count != null || w.session_duration_minutes != null || w.price_single != null,
+  );
+  if (dropped.length > 0) {
+    warnings.push(
+      `${dropped.length} workshop(s) had session_count/duration/price_single fields that are not yet stored in retreat_workshops — extend the AO schema to preserve them on push.`,
+    );
+  }
+}
+
+function normalizeName(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 /**
