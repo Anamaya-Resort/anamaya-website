@@ -30,12 +30,15 @@ export default async function RetreatImportsIndex({
   const { status } = await searchParams;
   const sb = supabaseServer();
 
+  // Retreats migrate from anamaya.com (v1) — production is authoritative
+  // and includes ~15 retreats not on staging. Other content types still
+  // pull from v2 (staging) where they're more up to date.
   const { data: retreats } = await sb
     .from("url_inventory")
     .select("id, url, title, date_modified")
-    .eq("source_site", "v2")
+    .eq("source_site", "v1")
     .eq("post_type", "retreat")
-    .neq("url", "https://anamayastg.wpenginepowered.com/retreats/")
+    .neq("url", "https://anamaya.com/retreats/")
     .order("date_modified", { ascending: false })
     .limit(200);
 

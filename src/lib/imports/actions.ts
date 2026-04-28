@@ -235,9 +235,9 @@ export async function batchExtractRetreats(opts: {
     const { data: candidates } = await sb
       .from("url_inventory")
       .select("id, date_modified")
-      .eq("source_site", "v2")
+      .eq("source_site", "v1")
       .eq("post_type", "retreat")
-      .neq("url", "https://anamayastg.wpenginepowered.com/retreats/")
+      .neq("url", "https://anamaya.com/retreats/")
       .order("date_modified", { ascending: false })
       .limit(200);
 

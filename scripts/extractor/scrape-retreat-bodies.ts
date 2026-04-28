@@ -1,13 +1,20 @@
-// Scrape the rendered HTML of each v2 retreat page and store the main
-// content block. The Elementor Theme Builder injects retreat sections
-// (Retreat Dates, Base Rates, Workshops, Teacher Bio, etc.) that the WP
-// REST API does NOT return in content.rendered — the only way to get
-// them is to render the actual page.
+// Scrape the rendered HTML of each retreat page (anamaya.com — production
+// is the source of truth for retreats; the staging WP holds the older
+// retreat data) and store the main content block. The Elementor Theme
+// Builder injects retreat sections (Retreat Dates, Base Rates, Workshops,
+// Teacher Bio, etc.) that the WP REST API does NOT return in
+// content.rendered — the only way to get them is to render the actual
+// page.
 
-import { sb, resolveSite, chunk } from "./lib";
+import { requireEnv, sb, chunk } from "./lib";
+
+const SITE_LABEL = "v1";
 
 const CONCURRENCY = 5;
-const CONTAINER_START_RE = /<div\s+data-elementor-type="single-post"[^>]*>/i;
+// Most retreats render under data-elementor-type="single-post"; a small
+// number of older retreat pages use the legacy value "single". Accept
+// either — both wrap the actual retreat post body on retreat URLs.
+const CONTAINER_START_RE = /<div\s+data-elementor-type="single(?:-post)?"[^>]*>/i;
 
 type Row = { id: string; url: string; wp_id: number };
 
@@ -56,7 +63,12 @@ async function scrapeOne(url: string): Promise<string | null> {
 }
 
 async function main() {
-  const { label } = resolveSite();
+  // Retreats are scraped from anamaya.com only — production has the
+  // current retreat list (incl. ~15 retreats not on staging) and is
+  // authoritative. SITE env is intentionally ignored here.
+  const label = SITE_LABEL;
+  // Confirm v1 base url is set so we fail fast if .env.local is missing it.
+  requireEnv("WP_SOURCE_URL_V1");
   const client = sb();
 
   const { data: rows, error } = await client
@@ -65,6 +77,7 @@ async function main() {
     .eq("source_site", label)
     .eq("post_type", "retreat")
     .not("wp_id", "is", null)
+    .neq("url", "https://anamaya.com/retreats/")
     .neq("url", "https://anamayastg.wpenginepowered.com/retreats/")
     .order("id");
   if (error) throw error;
