@@ -84,10 +84,13 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
         retreat.description_html = ai.description_html;
         retreat.description_text = ai.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       }
-      // Regex workshops are unreliable (typically grabs a stray sentence with a
-      // matched heading). The AI pass either returns a clean structured list
-      // or an empty array — either way, override.
-      retreat.workshops = ai.workshops;
+      // AI workshops have proper pricing/duration metadata; regex returns at
+      // best a stray sentence. Override only when AI actually found some — an
+      // empty AI result might mean the model missed them, in which case the
+      // regex fallback is still better than nothing.
+      if (ai.workshops.length > 0) {
+        retreat.workshops = ai.workshops;
+      }
     } else {
       warnings.push(`AI extraction failed: ${ai.reason}`);
     }

@@ -19,7 +19,7 @@ const MODEL_REF = "openai:gpt-4o-mini";
 const VALID_ROLES: ReadonlySet<LeaderRole> = new Set(["primary", "co", "guest", "assistant"]);
 
 /** Max chars of HTML to send to the model — keeps cost predictable. */
-const MAX_HTML_CHARS = 28_000;
+const MAX_HTML_CHARS = 60_000;
 
 export type AIExtractResult =
   | {
@@ -31,33 +31,43 @@ export type AIExtractResult =
   | { ok: false; reason: string };
 
 /**
- * Strip class/style/data-* attrs and Elementor wrapper noise so the model
- * sees content, not template scaffolding. Keeps `src`/`alt` on imgs and
- * heading/paragraph/strong structure intact.
+ * Strip class/style/data-* attrs so the model sees content, not Elementor
+ * scaffolding. Preserves nesting structure — earlier versions tried to
+ * flatten wrapper divs via non-greedy regex (`<(div|...)>([\s\S]*?)</\1>`)
+ * but that match-the-FIRST-closing-tag behavior corrupts nested content
+ * (chews up the workshop section, leaves orphaned closing tags). Safer to
+ * keep the tags bare and let the model ignore them.
  */
 function compactForAI(html: string): string {
   let out = html;
   // Drop scripts/styles/svgs/templates entirely.
   out = out.replace(/<(script|style|svg|template|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
-  // Drop opening tags' class/style/data-*/id/role/aria-* attrs (and their Elementor cousins).
+  // Strip attrs from every opening tag, keeping only what helps the model:
+  //   img → src + alt
+  //   a   → href
+  //   everything else → bare tag
   out = out.replace(/<([a-z0-9]+)\b([^>]*)>/gi, (_, tag: string, attrs: string) => {
     if (tag === "img") {
-      const src = attrs.match(/\bsrc\s*=\s*"([^"]*)"/i)?.[1];
+      const src =
+        attrs.match(/\bsrc\s*=\s*"([^"]*)"/i)?.[1] ??
+        attrs.match(/\bdata-src\s*=\s*"([^"]*)"/i)?.[1];
+      if (!src) return "";
       const alt = attrs.match(/\balt\s*=\s*"([^"]*)"/i)?.[1];
-      const dsrc = attrs.match(/\bdata-src\s*=\s*"([^"]*)"/i)?.[1];
-      const finalSrc = src || dsrc;
-      if (!finalSrc) return "";
-      return `<img src="${finalSrc}"${alt ? ` alt="${alt}"` : ""}>`;
+      return `<img src="${src}"${alt ? ` alt="${alt}"` : ""}>`;
+    }
+    if (tag === "a") {
+      const href = attrs.match(/\bhref\s*=\s*"([^"]*)"/i)?.[1];
+      return href ? `<a href="${href}">` : `<a>`;
     }
     return `<${tag}>`;
   });
   // Collapse whitespace.
   out = out.replace(/\s+/g, " ").trim();
-  // Drop empty/wrapper tags that add nothing for the model.
+  // Drop obviously-empty wrapper tags. Safe because they have no content
+  // by definition — no nesting issues.
   for (let i = 0; i < 5; i++) {
     const before = out;
-    out = out.replace(/<(div|span|section|article|header|footer|main|aside|figure|figcaption)>\s*<\/\1>/gi, "");
-    out = out.replace(/<(div|span|section|article|header|footer|main|aside)>([\s\S]*?)<\/\1>/gi, "$2");
+    out = out.replace(/<(div|span|section|article|header|footer|main|aside|figure|figcaption|p)>\s*<\/\1>/gi, "");
     if (out === before) break;
   }
   if (out.length > MAX_HTML_CHARS) out = out.slice(0, MAX_HTML_CHARS);
@@ -123,7 +133,7 @@ export async function extractRetreatBodyAI(input: {
   const res = await runChat({
     modelRef: MODEL_REF,
     messages,
-    maxTokens: 4000,
+    maxTokens: 6000,
     responseFormat: "json",
   });
   if (!res.ok) return { ok: false, reason: res.reason };
