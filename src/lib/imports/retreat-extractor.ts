@@ -29,6 +29,17 @@ export type ExtractedItineraryDay = {
 export type ExtractedWorkshop = {
   title: string;
   description?: string;
+  description_html?: string;
+  instructor_name?: string;
+  /** Number of sessions in the series (1 if it's a single workshop). */
+  session_count?: number;
+  /** Duration of each session in minutes. */
+  session_duration_minutes?: number;
+  /** Price for the full series in dollars (no cents). */
+  price_full?: number;
+  /** Per-single-session price if offered alongside a series. */
+  price_single?: number;
+  currency?: string;
   price?: string;
   image_url?: string;
 };

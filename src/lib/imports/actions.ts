@@ -84,6 +84,10 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
         retreat.description_html = ai.description_html;
         retreat.description_text = ai.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       }
+      // Regex workshops are unreliable (typically grabs a stray sentence with a
+      // matched heading). The AI pass either returns a clean structured list
+      // or an empty array — either way, override.
+      retreat.workshops = ai.workshops;
     } else {
       warnings.push(`AI extraction failed: ${ai.reason}`);
     }

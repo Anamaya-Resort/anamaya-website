@@ -269,11 +269,22 @@ function ExtractedView({ data }: { data: ExtractedRetreat }) {
 
       {data.workshops.length > 0 && (
         <Card title={`Workshops (${data.workshops.length})`}>
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-4">
             {data.workshops.map((w, i) => (
-              <li key={i}>
-                <strong className="text-anamaya-charcoal">{w.title}</strong>
-                {w.price && <span className="ml-2 text-anamaya-charcoal/70">{w.price}</span>}
+              <li key={i} className="border-t border-zinc-100 pt-4 first:border-0 first:pt-0">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <strong className="text-sm text-anamaya-charcoal">{w.title}</strong>
+                  {w.instructor_name && (
+                    <span className="text-xs text-anamaya-charcoal/60">with {w.instructor_name}</span>
+                  )}
+                  <WorkshopMeta w={w} />
+                </div>
+                {w.description_html && (
+                  <div
+                    className="prose prose-sm mt-2 max-w-none text-sm text-anamaya-charcoal/80"
+                    dangerouslySetInnerHTML={{ __html: w.description_html }}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -342,6 +353,38 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-xs uppercase tracking-wider text-anamaya-charcoal/60">{label}</span>
       <span className="text-anamaya-charcoal">{value}</span>
     </div>
+  );
+}
+
+function WorkshopMeta({
+  w,
+}: {
+  w: ExtractedRetreat["workshops"][number];
+}) {
+  const parts: string[] = [];
+  if (w.session_count && w.session_duration_minutes) {
+    parts.push(`${w.session_count} × ${w.session_duration_minutes} min`);
+  } else if (w.session_duration_minutes) {
+    parts.push(`${w.session_duration_minutes} min`);
+  } else if (w.session_count) {
+    parts.push(`${w.session_count} sessions`);
+  }
+  const currency = w.currency ?? "USD";
+  const sym = currency === "USD" ? "$" : `${currency} `;
+  if (w.price_full != null) {
+    parts.push(
+      w.price_single != null
+        ? `${sym}${w.price_full} full / ${sym}${w.price_single} single`
+        : `${sym}${w.price_full}`,
+    );
+  } else if (w.price_single != null) {
+    parts.push(`${sym}${w.price_single}/session`);
+  } else if (w.price) {
+    parts.push(w.price);
+  }
+  if (parts.length === 0) return null;
+  return (
+    <span className="text-xs text-anamaya-charcoal/70">{parts.join(" · ")}</span>
   );
 }
 

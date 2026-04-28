@@ -13,7 +13,7 @@ import "server-only";
  */
 
 import { runChat, type ChatMessage } from "@/lib/ai/client";
-import type { ExtractedLeader, LeaderRole } from "./retreat-extractor";
+import type { ExtractedLeader, ExtractedWorkshop, LeaderRole } from "./retreat-extractor";
 
 const MODEL_REF = "openai:gpt-4o-mini";
 const VALID_ROLES: ReadonlySet<LeaderRole> = new Set(["primary", "co", "guest", "assistant"]);
@@ -22,7 +22,12 @@ const VALID_ROLES: ReadonlySet<LeaderRole> = new Set(["primary", "co", "guest", 
 const MAX_HTML_CHARS = 28_000;
 
 export type AIExtractResult =
-  | { ok: true; leaders: ExtractedLeader[]; description_html?: string }
+  | {
+      ok: true;
+      leaders: ExtractedLeader[];
+      description_html?: string;
+      workshops: ExtractedWorkshop[];
+    }
   | { ok: false; reason: string };
 
 /**
@@ -92,7 +97,21 @@ export async function extractRetreatBodyAI(input: {
         "description_html: the main descriptive prose that explains what the retreat is about — the 'About this retreat' / overview / introduction paragraphs. " +
         "Wrap each paragraph in <p>…</p>. Preserve <strong>, <em>, <ul>/<li> if present, but strip everything else (no divs, classes, styles, or section wrappers). " +
         "EXCLUDE: teacher bios (those go in leaders[].bio_html), pricing tables, dates/booking widgets, gallery captions, navigation, footer, repeated CTAs ('Book Now', 'Reserve Your Spot'). " +
-        "Aim for 2–8 paragraphs of meaningful body copy. If the page has no descriptive prose, return description_html: \"\".",
+        "Aim for 2–8 paragraphs of meaningful body copy. If the page has no descriptive prose, return description_html: \"\". " +
+        "" +
+        "workshops: an array of optional retreat workshops (also called 'sessions', 'classes', or 'experiences') that have their OWN price separate from the base retreat rate. Each has: " +
+        "title (string, required — workshop name, e.g. 'THRIVE Workshop'), " +
+        "description_html (string, optional — <p>…</p> body of the workshop blurb), " +
+        "instructor_name (string, optional — must match one of leaders[].name if attributable), " +
+        "session_count (integer, optional — number of sessions in the series; 1 for a one-off), " +
+        "session_duration_minutes (integer, optional — minutes per session, e.g. 90), " +
+        "price_full (number, optional — full-series price in whole dollars, e.g. 60 for $60), " +
+        "price_single (number, optional — per-single-session price if offered alongside a series, e.g. 35), " +
+        "currency (string, optional — default 'USD'). " +
+        "Parse phrases like '(2 x 90 minutes sessions)' as session_count=2, session_duration_minutes=90. " +
+        "Parse '$60 for two 90 minute sessions, or $35 for one session' as price_full=60, price_single=35. " +
+        "EXCLUDE: the base retreat rate (that's pricing_tiers, not a workshop), excursions/extras like surf lessons or zipline (those are not workshops), and yoga class packs. " +
+        "Only include items the page presents as standalone optional workshops with their own price. If none, return workshops: [].",
     },
     {
       role: "user",
@@ -151,5 +170,33 @@ export async function extractRetreatBodyAI(input: {
   const descRaw = typeof parsedObj.description_html === "string" ? parsedObj.description_html.trim() : "";
   const description_html = descRaw.length > 0 ? descRaw : undefined;
 
-  return { ok: true, leaders, description_html };
+  const workshopsRaw = Array.isArray(parsedObj.workshops) ? (parsedObj.workshops as unknown[]) : [];
+  const workshops: ExtractedWorkshop[] = [];
+  for (const raw of workshopsRaw) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const title = typeof r.title === "string" ? r.title.trim() : "";
+    if (!title) continue;
+    workshops.push({
+      title,
+      description_html: typeof r.description_html === "string" && r.description_html.trim() ? r.description_html.trim() : undefined,
+      instructor_name: typeof r.instructor_name === "string" && r.instructor_name.trim() ? r.instructor_name.trim() : undefined,
+      session_count: numOrUndef(r.session_count),
+      session_duration_minutes: numOrUndef(r.session_duration_minutes),
+      price_full: numOrUndef(r.price_full),
+      price_single: numOrUndef(r.price_single),
+      currency: typeof r.currency === "string" && r.currency.trim() ? r.currency.trim() : undefined,
+    });
+  }
+
+  return { ok: true, leaders, description_html, workshops };
+}
+
+function numOrUndef(v: unknown): number | undefined {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v.replace(/[^\d.]/g, ""));
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return undefined;
 }
