@@ -91,6 +91,11 @@ function stripTags(html: string): string {
   return decode(html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
 }
 
+/** Split inner HTML on <br> (any variant) into an array of fragments. */
+function splitOnBr(html: string): string[] {
+  return html.split(/<br\s*\/?\s*>/gi);
+}
+
 /** Find every `<tag>...</tag>` block (non-greedy, balanced shallowly). */
 function findTagBlocks(html: string, tag: string): { inner: string; full: string; index: number }[] {
   const re = new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "gi");
@@ -124,6 +129,18 @@ function findImages(html: string): { src: string; alt?: string }[] {
  * null if not found.
  */
 function findSectionByHeading(html: string, headingPattern: RegExp): string | null {
+  const all = findSectionsByHeading(html, headingPattern);
+  return all[0] ?? null;
+}
+
+/**
+ * Like `findSectionByHeading` but returns every match. Useful when the
+ * page has multiple plausibly-named headings (e.g. an Elementor template
+ * with `<h4>Rates for Retreat</h4>` in one widget and the actual table
+ * under `<h3>Women's Retreat Prices:</h3>` in the next) — callers can
+ * try each in turn until one yields data.
+ */
+function findSectionsByHeading(html: string, headingPattern: RegExp): string[] {
   const headings: { index: number; level: number; text: string }[] = [];
   for (const m of html.matchAll(/<h([1-4])\b[^>]*>([\s\S]*?)<\/h\1>/gi)) {
     headings.push({
@@ -132,14 +149,15 @@ function findSectionByHeading(html: string, headingPattern: RegExp): string | nu
       text: stripTags(m[2]),
     });
   }
+  const out: string[] = [];
   for (let i = 0; i < headings.length; i++) {
     const h = headings[i];
     if (!headingPattern.test(h.text)) continue;
     const start = h.index;
     const end = headings.slice(i + 1).find((n) => n.level <= h.level)?.index ?? html.length;
-    return html.slice(start, end);
+    out.push(html.slice(start, end));
   }
-  return null;
+  return out;
 }
 
 function uniq<T>(arr: T[], keyFn: (x: T) => string): T[] {
@@ -224,6 +242,21 @@ function extractListItems(html: string): string[] {
     const text = stripTags(li.inner);
     if (text) items.push(text);
   }
+  if (items.length > 0) return items;
+
+  // Anamaya WP retreat pages render "Retreat Highlights" as paragraph
+  // bullets — `<p><span><strong>Embodied Learning:</strong> body…</p>`
+  // rather than a `<ul>`. Treat any paragraph that opens with a labelled
+  // <strong>/<b> (allowing inert wrappers like <span>) as a list item.
+  // Match `<strong>Label:</strong>` near the start so we don't sweep up
+  // body paragraphs that just happen to bold a phrase mid-sentence.
+  const LABELED_RE = /^(?:\s*<(?:span|em|i|u|font)\b[^>]*>)*\s*<(?:strong|b)\b[^>]*>([^<]{1,60})<\/(?:strong|b)>/i;
+  for (const p of findTagBlocks(html, "p")) {
+    const m = p.inner.match(LABELED_RE);
+    if (!m) continue;
+    const text = stripTags(p.inner);
+    if (text) items.push(text);
+  }
   return items;
 }
 
@@ -241,6 +274,27 @@ function extractPricingTiers(html: string): ExtractedTier[] {
   for (const tr of findTagBlocks(html, "tr")) {
     const cells = findTagBlocks(tr.inner, "td");
     if (cells.length < 2) continue;
+
+    // BR-stacked layout (Anamaya WP retreat template): a single row with
+    // labels stacked in one cell via <br> and prices stacked in another.
+    // Pair them by index instead of treating the whole cell as one tier.
+    const priceCellIdx = cells.findIndex((c) => PRICE_RE.test(stripTags(c.inner)));
+    if (priceCellIdx === -1) continue;
+    const labelCellIdx = cells.findIndex((c, i) => i !== priceCellIdx && stripTags(c.inner));
+    const priceLines = splitOnBr(cells[priceCellIdx].inner)
+      .map(stripTags)
+      .filter((t) => PRICE_RE.test(t));
+    const labelLines = labelCellIdx >= 0
+      ? splitOnBr(cells[labelCellIdx].inner).map(stripTags).filter(Boolean)
+      : [];
+    if (priceLines.length > 1 && labelLines.length >= priceLines.length) {
+      const offset = labelLines.length === priceLines.length + 1 ? 1 : 0;
+      for (let i = 0; i < priceLines.length; i++) {
+        out.push({ name: labelLines[i + offset] ?? `Tier ${i + 1}`, price: priceLines[i] });
+      }
+      continue;
+    }
+
     const cellTexts = cells.map((c) => stripTags(c.inner)).filter(Boolean);
     const priceCell = cellTexts.find((t) => PRICE_RE.test(t));
     if (!priceCell) continue;
@@ -459,8 +513,17 @@ export function extractRetreat(input: ExtractInput): ExtractResult {
   const whatToExpectSection = findSectionByHeading(bodyHtml, /what\s+to\s+expect/i);
   const whoIsThisForSection = findSectionByHeading(bodyHtml, /who\s+is\s+this\s+(for|retreat)/i);
 
-  const pricingSection = findSectionByHeading(bodyHtml, /(pricing|prices?|rates?|cost|investment)/i);
-  const pricingTiers = pricingSection ? extractPricingTiers(pricingSection) : extractPricingTiers(bodyHtml);
+  // Try each pricing-related heading match in turn. Anamaya's Elementor
+  // retreat template often has a styled <h4>Rates for Retreat</h4> in
+  // one widget and the actual table under <h3>Women's Retreat Prices:</h3>
+  // in the next — taking only the first match misses the table entirely.
+  const pricingSections = findSectionsByHeading(bodyHtml, /(pricing|prices?|rates?|cost|investment)/i);
+  let pricingTiers: ExtractedTier[] = [];
+  for (const section of pricingSections) {
+    pricingTiers = extractPricingTiers(section);
+    if (pricingTiers.length > 0) break;
+  }
+  if (pricingTiers.length === 0) pricingTiers = extractPricingTiers(bodyHtml);
   if (pricingTiers.length === 0) warnings.push("no pricing tiers detected");
 
   const itinerary = extractItinerary(bodyHtml);
