@@ -65,8 +65,8 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
   // AI-based body extraction. Anamaya retreats have multi-teacher billing
   // (co-leaders, special guests) and free-form descriptive prose that the
   // regex baseline can't reliably separate. If the AI call succeeds, use
-  // its leaders + description; otherwise keep the regex fallback so we
-  // still get *something*.
+  // its leaders + description + workshops; otherwise keep the regex
+  // fallback so we still get *something*.
   if (bodyHtml.length >= 500) {
     const ai = await extractRetreatBodyAI({
       title: invRow.title ?? "",
@@ -84,16 +84,22 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
         retreat.description_html = ai.description_html;
         retreat.description_text = ai.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       }
-      // AI workshops have proper pricing/duration metadata; regex returns at
-      // best a stray sentence. Override only when AI actually found some — an
-      // empty AI result might mean the model missed them, in which case the
-      // regex fallback is still better than nothing.
       if (ai.workshops.length > 0) {
         retreat.workshops = ai.workshops;
       }
+      retreat.ai_status = {
+        ok: true,
+        leaders_count: ai.leaders.length,
+        workshops_count: ai.workshops.length,
+        description_present: Boolean(ai.description_html),
+        model: "openai:gpt-4o-mini",
+      };
     } else {
       warnings.push(`AI extraction failed: ${ai.reason}`);
+      retreat.ai_status = { ok: false, reason: ai.reason, model: "openai:gpt-4o-mini" };
     }
+  } else {
+    retreat.ai_status = { ok: false, reason: "scraped HTML too short — AI skipped" };
   }
 
   const imagePlan: { url: string; bucket: ImageBucket; pathPrefix: string; alt?: string }[] = [];

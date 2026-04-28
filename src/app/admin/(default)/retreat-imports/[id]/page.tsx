@@ -175,6 +175,7 @@ function Warnings({ warnings }: { warnings: string[] }) {
 function ExtractedView({ data }: { data: ExtractedRetreat }) {
   return (
     <div className="space-y-4">
+      <AIStatusBanner status={data.ai_status} />
       <Card title="Basics">
         <Row label="Name" value={data.name} />
         {data.tagline && <Row label="Tagline" value={data.tagline} />}
@@ -352,6 +353,32 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="grid grid-cols-[140px_1fr] gap-2 py-0.5 text-sm">
       <span className="text-xs uppercase tracking-wider text-anamaya-charcoal/60">{label}</span>
       <span className="text-anamaya-charcoal">{value}</span>
+    </div>
+  );
+}
+
+function AIStatusBanner({ status }: { status: ExtractedRetreat["ai_status"] }) {
+  if (!status) {
+    return (
+      <div className="rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-xs text-anamaya-charcoal/70">
+        AI extractor: <strong>not run</strong> — staged record predates the AI pass. Re-extract to use AI.
+      </div>
+    );
+  }
+  if (!status.ok) {
+    return (
+      <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800">
+        AI extractor failed: <strong>{status.reason}</strong>
+        {" — "}falling back to regex. Check OPENAI_API_KEY on the server.
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-md border border-anamaya-green/40 bg-anamaya-green/10 px-3 py-2 text-xs text-anamaya-charcoal">
+      AI extractor (<code>{status.model}</code>):{" "}
+      <strong>{status.leaders_count ?? 0}</strong> leaders ·{" "}
+      <strong>{status.workshops_count ?? 0}</strong> workshops ·{" "}
+      description {status.description_present ? "✓" : "—"}
     </div>
   );
 }

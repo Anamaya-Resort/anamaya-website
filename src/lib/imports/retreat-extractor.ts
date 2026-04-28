@@ -99,6 +99,18 @@ export type ExtractedRetreat = {
 
   /** Original WP-Engine image URLs collected from the page (pre-import). */
   source_image_urls: string[];
+
+  /** Diagnostic record of whether/how AI extraction ran. Persisted on the
+   *  staged record so the review UI can show exactly what the AI returned
+   *  — "regex fallback" vs "AI succeeded" vs "AI errored: <reason>". */
+  ai_status?: {
+    ok: boolean;
+    reason?: string;
+    leaders_count?: number;
+    workshops_count?: number;
+    description_present?: boolean;
+    model?: string;
+  };
 };
 
 export type ExtractResult = {
