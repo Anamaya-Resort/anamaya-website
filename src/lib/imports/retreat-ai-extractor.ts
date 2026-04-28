@@ -88,7 +88,10 @@ export async function extractRetreatBodyAI(input: {
         "name (string, required), " +
         "role (one of \"primary\", \"co\", \"guest\", \"assistant\"), " +
         "credentials (string, optional — e.g. \"E-RYT 500\", \"PhD\"), " +
-        "bio_html (string, optional — short HTML <p>…</p> bio), " +
+        "bio_html (string — REQUIRED whenever the page contains any biographical paragraphs about the teacher. " +
+        "Wrap each paragraph in <p>…</p>, preserve <strong>/<em>. " +
+        "Look anywhere on the page: bios are often near the BOTTOM (after pricing/workshops/gallery), inside a section with the teacher's photo and an h3/h4 of their name. " +
+        "Almost every Anamaya retreat page has a bio — only omit this field if you are 100% certain the page contains zero biographical text about the teacher), " +
         "photo_url (string, optional — exact src of their headshot <img>). " +
         "Role guidance: " +
         "- primary: the lead teacher whose name dominates the page title; if only one teacher, they are primary. " +

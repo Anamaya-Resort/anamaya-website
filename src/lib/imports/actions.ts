@@ -77,6 +77,12 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
         retreat.retreat_leaders = aiBody.leaders;
         const idx = warnings.indexOf("could not identify retreat leader/teacher");
         if (idx !== -1) warnings.splice(idx, 1);
+        const missingBio = aiBody.leaders.filter((l) => !l.bio_html?.trim()).map((l) => l.name);
+        if (missingBio.length > 0) {
+          warnings.push(
+            `bio missing for ${missingBio.length} leader(s): ${missingBio.join(", ")} — re-extract; gpt-4o-mini occasionally drops bio_html`,
+          );
+        }
       }
       if (aiBody.description_html) {
         retreat.description_html = aiBody.description_html;
