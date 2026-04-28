@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
-import { extractRetreat, type ExtractedRetreat } from "./retreat-extractor";
+import { decode, extractRetreat, type ExtractedRetreat } from "./retreat-extractor";
+import { extractRetreatLeadersAI } from "./retreat-ai-extractor";
 import { importImage, type ImageBucket, type SkippedImage } from "./images";
 import { pushStagedRetreatToAO, type PushResult } from "./push";
 import { getSessionUser } from "@/lib/session";
@@ -61,14 +62,35 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
     sourceHosts: WP_HOSTS,
   });
 
+  // AI-based teacher extraction. Anamaya retreats often have multi-teacher
+  // billing (co-leaders, special guests) the regex baseline can't separate.
+  // If the AI call succeeds with a non-empty list, override the regex result;
+  // otherwise keep the regex fallback so we still get *something*.
+  if (bodyHtml.length >= 500) {
+    const aiLeaders = await extractRetreatLeadersAI({
+      title: invRow.title ?? "",
+      bodyHtml,
+    });
+    if (aiLeaders.ok && aiLeaders.leaders.length > 0) {
+      retreat.retreat_leaders = aiLeaders.leaders;
+      // The regex pass adds a "could not identify retreat leader/teacher"
+      // warning when it finds nothing. Drop it once AI succeeded.
+      const idx = warnings.indexOf("could not identify retreat leader/teacher");
+      if (idx !== -1) warnings.splice(idx, 1);
+    } else if (!aiLeaders.ok) {
+      warnings.push(`AI teacher extraction failed: ${aiLeaders.reason}`);
+    }
+  }
+
   const imagePlan: { url: string; bucket: ImageBucket; pathPrefix: string; alt?: string }[] = [];
   const galleryPrefix = `staging/${url_inventory_id}/gallery`;
   for (const img of retreat.gallery_images) {
     imagePlan.push({ url: img.url, bucket: "retreat-media", pathPrefix: galleryPrefix, alt: img.alt });
   }
-  if (retreat.retreat_leader?.photo_url) {
+  for (const leader of retreat.retreat_leaders) {
+    if (!leader.photo_url) continue;
     imagePlan.push({
-      url: retreat.retreat_leader.photo_url,
+      url: leader.photo_url,
       bucket: "retreat-leader-photos",
       pathPrefix: `staging/${url_inventory_id}/leader`,
     });
@@ -107,14 +129,10 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
     gallery_images: retreat.gallery_images
       .map((g) => ({ ...g, url: urlMap.get(g.url) ?? g.url }))
       .filter((g) => urlMap.has(g.url) || g.url.startsWith("http") === false || !WP_HOSTS.some((h) => g.url.includes(h))),
-    retreat_leader: retreat.retreat_leader
-      ? {
-          ...retreat.retreat_leader,
-          photo_url: retreat.retreat_leader.photo_url
-            ? urlMap.get(retreat.retreat_leader.photo_url) ?? retreat.retreat_leader.photo_url
-            : undefined,
-        }
-      : undefined,
+    retreat_leaders: retreat.retreat_leaders.map((l) => ({
+      ...l,
+      photo_url: l.photo_url ? urlMap.get(l.photo_url) ?? l.photo_url : undefined,
+    })),
   };
 
   const { data: existing } = await sb
@@ -126,7 +144,7 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
   const row = {
     url_inventory_id,
     url_path: invRow.url ?? "",
-    title: invRow.title ?? null,
+    title: invRow.title ? decode(invRow.title) : null,
     extracted_json: rewritten as unknown as Record<string, unknown>,
     warnings,
     status: "pending_review" as const,

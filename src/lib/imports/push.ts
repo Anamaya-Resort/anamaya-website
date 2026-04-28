@@ -3,10 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { aoSupabaseAdmin } from "@/lib/ao-supabase";
 import { supabaseServer } from "@/lib/supabase-server";
 import type {
+  ExtractedLeader,
   ExtractedRetreat,
   ExtractedTestimonial,
   ExtractedTier,
   ExtractedWorkshop,
+  LeaderRole,
 } from "./retreat-extractor";
 
 const PLACEHOLDER_EMAIL_DOMAIN = "imported.anamaya.local";
@@ -85,7 +87,7 @@ export async function pushStagedRetreatToAO(
 
   await replacePricingTiers(ao, ao_retreat_id, data.pricing_tiers, warnings);
   await replaceGalleryMedia(ao, ao_retreat_id, data.gallery_images);
-  const leaderPersonId = await upsertRetreatLeader(ao, ao_retreat_id, data.retreat_leader, warnings);
+  const leaderPersonId = await upsertRetreatLeaders(ao, ao_retreat_id, data.retreat_leaders, warnings);
   await replaceWorkshops(ao, ao_retreat_id, data.workshops, leaderPersonId);
   await replaceTestimonials(ao, ao_retreat_id, data.testimonials, warnings);
 
@@ -186,81 +188,133 @@ function nameSlug(name: string): string {
 }
 
 /**
- * Find or create a person row for the retreat leader, then upsert the
- * teacher_profiles + retreat_teachers rows. Idempotent across re-pushes:
- * matches an existing person by full_name (case-insensitive) before
- * creating a new placeholder row. Placeholder emails use a reserved
+ * Find or create person rows for every leader on the retreat, then upsert
+ * teacher_profiles + retreat_teachers links. Idempotent across re-pushes:
+ * matches existing persons by full_name (case-insensitive) before creating
+ * a new placeholder row. Placeholder emails use a reserved
  * `imported.anamaya.local` domain so admins can spot synthetic rows and
  * fix them before sending any communication.
+ *
+ * Returns the person_id of the primary leader (used as workshop payout
+ * default) — falls back to the first co-leader, then any leader.
  */
-async function upsertRetreatLeader(
+async function upsertRetreatLeaders(
   ao: SupabaseClient,
   retreatId: string,
-  leader: ExtractedRetreat["retreat_leader"],
+  leaders: ExtractedLeader[],
   warnings: string[],
 ): Promise<string | null> {
   await ao.from("retreat_teachers").delete().eq("retreat_id", retreatId);
-  if (!leader?.name) return null;
+  if (leaders.length === 0) return null;
 
+  let primaryPersonId: string | null = null;
+
+  for (let i = 0; i < leaders.length; i++) {
+    const leader = leaders[i];
+    if (!leader.name) continue;
+    const personId = await ensurePerson(ao, leader, warnings);
+    if (!personId) continue;
+
+    await ao
+      .from("teacher_profiles")
+      .upsert(
+        {
+          person_id: personId,
+          public_bio: leader.bio_html ? stripHtml(leader.bio_html) : "",
+          photo_url: leader.photo_url ?? null,
+          is_active: true,
+        },
+        { onConflict: "person_id" },
+      );
+
+    const isPrimary = leader.role === "primary";
+    const { error: tErr } = await ao.from("retreat_teachers").insert({
+      retreat_id: retreatId,
+      person_id: personId,
+      role: aoLeaderRole(leader.role),
+      is_primary: isPrimary,
+      sort_order: i,
+    });
+    if (tErr) warnings.push(`retreat_teachers link failed for "${leader.name}": ${tErr.message}`);
+
+    if (isPrimary && !primaryPersonId) primaryPersonId = personId;
+  }
+
+  // Fallback: if no leader had role=primary, treat the first one we
+  // successfully linked as the de-facto primary so workshops/payout still
+  // have an owner.
+  if (!primaryPersonId) {
+    const { data: firstTeacher } = await ao
+      .from("retreat_teachers")
+      .select("person_id")
+      .eq("retreat_id", retreatId)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    primaryPersonId = (firstTeacher as { person_id?: string } | null)?.person_id ?? null;
+  }
+
+  if (primaryPersonId) {
+    await ao.from("retreats").update({ leader_person_id: primaryPersonId }).eq("id", retreatId);
+  }
+
+  return primaryPersonId;
+}
+
+/**
+ * Map our extractor's role enum to AnamayOS's `retreat_teachers.role`
+ * column. AO uses "lead" for the headline teacher and free-form strings
+ * for the rest; keeping the discriminator faithful to extraction lets
+ * the AO admin filter/display by role without losing data.
+ */
+function aoLeaderRole(role: LeaderRole): string {
+  switch (role) {
+    case "primary":   return "lead";
+    case "co":        return "co_lead";
+    case "guest":     return "guest";
+    case "assistant": return "assistant";
+  }
+}
+
+/**
+ * Find an existing person by name or insert a new placeholder. Extracted
+ * so multiple leaders can share the lookup logic.
+ */
+async function ensurePerson(
+  ao: SupabaseClient,
+  leader: ExtractedLeader,
+  warnings: string[],
+): Promise<string | null> {
   const fullName = leader.name.trim();
   const slug = nameSlug(fullName);
   const placeholderEmail = `imported-${slug}@${PLACEHOLDER_EMAIL_DOMAIN}`;
 
   const { data: existing } = await ao
     .from("persons")
-    .select("id, email")
+    .select("id")
     .ilike("full_name", fullName)
     .limit(1)
     .maybeSingle();
+  if (existing?.id) return existing.id;
 
-  let personId: string;
-  if (existing?.id) {
-    personId = existing.id;
-  } else {
-    const { data: created, error } = await ao
-      .from("persons")
-      .insert({
-        email: placeholderEmail,
-        full_name: fullName,
-        avatar_url: leader.photo_url ?? null,
-        notes: "Imported from anamaya.com retreat page — replace placeholder email before sending any communication.",
-      })
-      .select("id")
-      .single();
-    if (error) {
-      warnings.push(`could not create retreat-leader person "${fullName}": ${error.message}`);
-      return null;
-    }
-    personId = created.id;
-    warnings.push(
-      `created placeholder person "${fullName}" (email: ${placeholderEmail}). Replace email before any outbound communication.`,
-    );
+  const { data: created, error } = await ao
+    .from("persons")
+    .insert({
+      email: placeholderEmail,
+      full_name: fullName,
+      avatar_url: leader.photo_url ?? null,
+      notes: "Imported from anamaya.com retreat page — replace placeholder email before sending any communication.",
+    })
+    .select("id")
+    .single();
+  if (error) {
+    warnings.push(`could not create person "${fullName}": ${error.message}`);
+    return null;
   }
-
-  await ao
-    .from("teacher_profiles")
-    .upsert(
-      {
-        person_id: personId,
-        public_bio: leader.bio_html ? stripHtml(leader.bio_html) : "",
-        photo_url: leader.photo_url ?? null,
-        is_active: true,
-      },
-      { onConflict: "person_id" },
-    );
-
-  const { error: tErr } = await ao.from("retreat_teachers").insert({
-    retreat_id: retreatId,
-    person_id: personId,
-    role: "lead",
-    is_primary: true,
-    sort_order: 0,
-  });
-  if (tErr) warnings.push(`retreat_teachers link failed: ${tErr.message}`);
-
-  await ao.from("retreats").update({ leader_person_id: personId }).eq("id", retreatId);
-
-  return personId;
+  warnings.push(
+    `created placeholder person "${fullName}" (email: ${placeholderEmail}). Replace email before any outbound communication.`,
+  );
+  return created.id;
 }
 
 async function replaceWorkshops(

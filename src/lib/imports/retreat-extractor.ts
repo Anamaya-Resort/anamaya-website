@@ -39,6 +39,28 @@ export type ExtractedTestimonial = {
   photo_url?: string;
 };
 
+/**
+ * Roles a person can play on a retreat. Mirrors the discriminator the
+ * AnamayOS retreat schema understands; the AI/regex extractor decides
+ * which role each person plays from page-context cues (title position,
+ * headshot size, bio length, surrounding "Special Guest" / "Co-Teacher"
+ * labels, etc.).
+ *
+ * - primary    The lead teacher whose name dominates the page title.
+ * - co         Equal-billing partner — both names in the title.
+ * - guest      Visiting teacher featured for part of the retreat.
+ * - assistant  Supporting role — smaller billing, often "Assistant".
+ */
+export type LeaderRole = "primary" | "co" | "guest" | "assistant";
+
+export type ExtractedLeader = {
+  role: LeaderRole;
+  name: string;
+  credentials?: string;
+  bio_html?: string;
+  photo_url?: string;
+};
+
 export type ExtractedRetreat = {
   name: string;
   tagline?: string;
@@ -47,12 +69,7 @@ export type ExtractedRetreat = {
   dates_end?: string;
   dates_text?: string;
 
-  retreat_leader?: {
-    name?: string;
-    credentials?: string;
-    photo_url?: string;
-    bio_html?: string;
-  };
+  retreat_leaders: ExtractedLeader[];
 
   pricing_tiers: ExtractedTier[];
   whats_included: string[];
@@ -83,7 +100,7 @@ const ENTITIES: Record<string, string> = {
   "#8211": "–", "#8212": "—", "#8216": "‘", "#8217": "’",
   "#8220": "“", "#8221": "”", "#8230": "…",
 };
-function decode(s: string): string {
+export function decode(s: string): string {
   return s.replace(/&(#?[a-z0-9]+);/gi, (_, k) => ENTITIES[k] ?? `&${k};`);
 }
 
@@ -410,6 +427,11 @@ function extractTestimonials(html: string): ExtractedTestimonial[] {
 }
 
 /**
+ * Regex-only fallback for retreat leaders. Returns at most one leader
+ * (role=primary) — the AI extractor in `retreat-ai-extractor.ts` is the
+ * primary path and handles multi-teacher retreats. This stays as the
+ * graceful-degradation step for when the AI call fails or is offline.
+ *
  * Two strategies, in order:
  *   1. Find a "Retreat Leader / Your Guide / Your Host" labeled section.
  *   2. Anamaya WP pages don't use that label — they put the leader's name
@@ -418,29 +440,32 @@ function extractTestimonials(html: string): ExtractedTestimonial[] {
  *      heading in the body that contains those words and grab the photo
  *      and bio paragraphs near it.
  */
-function extractRetreatLeader(
+export function extractRetreatLeadersRegex(
   html: string,
   pageTitle: string,
-): ExtractedRetreat["retreat_leader"] | undefined {
+): ExtractedLeader[] {
   const labeled = findSectionByHeading(html, /(retreat[\s-]?leader|teacher|your host|about your guide|your guide)/i);
   if (labeled) {
     const photo = findImages(labeled)[0]?.src;
     const nameH = labeled.match(/<h[2-4]\b[^>]*>([\s\S]*?)<\/h[2-4]>/i);
     const paragraphs = findTagBlocks(labeled, "p").map((p) => p.full).join("\n");
-    return {
-      name: nameH ? stripTags(nameH[1]) : undefined,
+    const name = nameH ? stripTags(nameH[1]) : "";
+    if (!name) return [];
+    return [{
+      role: "primary",
+      name,
       photo_url: photo,
       bio_html: paragraphs || undefined,
-    };
+    }];
   }
 
   const titleHint = decode(pageTitle).match(/[—–-]\s*([A-Z][\w'’.\- ]+?)\s*$/);
-  if (!titleHint) return undefined;
+  if (!titleHint) return [];
   const leaderName = titleHint[1].trim();
   const escaped = leaderName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const headingRe = new RegExp(`<h([2-4])\\b[^>]*>\\s*([\\s\\S]*?${escaped}[\\s\\S]*?)<\\/h\\1>`, "i");
   const headingMatch = html.match(headingRe);
-  if (!headingMatch) return { name: leaderName };
+  if (!headingMatch) return [{ role: "primary", name: leaderName }];
 
   const headingIdx = headingMatch.index ?? 0;
   const lookbackStart = Math.max(0, headingIdx - 800);
@@ -453,7 +478,12 @@ function extractRetreatLeader(
   const bioRegion = nextH >= 0 ? afterHeading.slice(0, nextH) : afterHeading.slice(0, 4000);
   const bioParas = findTagBlocks(bioRegion, "p").map((p) => p.full).join("\n");
 
-  return { name: leaderName, photo_url: photo, bio_html: bioParas || undefined };
+  return [{
+    role: "primary",
+    name: leaderName,
+    photo_url: photo,
+    bio_html: bioParas || undefined,
+  }];
 }
 
 // ── Top-level extractor ──────────────────────────────────────────────
@@ -529,8 +559,10 @@ export function extractRetreat(input: ExtractInput): ExtractResult {
   const itinerary = extractItinerary(bodyHtml);
   const workshops = extractWorkshops(bodyHtml);
   const testimonials = extractTestimonials(bodyHtml);
-  const retreat_leader = extractRetreatLeader(bodyHtml, title);
-  if (!retreat_leader?.name) warnings.push("could not identify retreat leader/teacher");
+  // Regex-only baseline. The AI extractor runs separately and overrides
+  // these in actions.ts when it succeeds.
+  const retreat_leaders = extractRetreatLeadersRegex(bodyHtml, title);
+  if (retreat_leaders.length === 0) warnings.push("could not identify retreat leader/teacher");
 
   const galleryImages = extractGallery(bodyHtml, sourceHosts);
   const sourceImageUrls = galleryImages.map((g) => g.url);
@@ -545,7 +577,7 @@ export function extractRetreat(input: ExtractInput): ExtractResult {
       dates_start: dates.start,
       dates_end: dates.end,
       dates_text: dates.text,
-      retreat_leader,
+      retreat_leaders,
       pricing_tiers: pricingTiers,
       whats_included: whatsIncluded,
       what_to_expect_html: whatToExpectSection ?? undefined,

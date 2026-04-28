@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { extractRetreatToStaging, pushStagedRetreat } from "@/lib/imports/actions";
-import type { ExtractedRetreat } from "@/lib/imports/retreat-extractor";
+import { decode, type ExtractedRetreat } from "@/lib/imports/retreat-extractor";
 import { SubmitButton } from "../SubmitButton";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +60,7 @@ export default async function RetreatImportDetail({
             ← Retreat Imports
           </Link>
           <h1 className="mt-1 text-2xl font-semibold text-anamaya-charcoal">
-            {inv.title ?? "(untitled)"}
+            {inv.title ? decode(inv.title) : "(untitled)"}
           </h1>
           <a href={inv.url} target="_blank" rel="noreferrer" className="text-xs text-anamaya-charcoal/60 underline">
             {inv.url}
@@ -184,20 +184,37 @@ function ExtractedView({ data }: { data: ExtractedRetreat }) {
         )}
       </Card>
 
-      {data.retreat_leader && (
-        <Card title="Retreat Leader">
-          {data.retreat_leader.name && <Row label="Name" value={data.retreat_leader.name} />}
-          {data.retreat_leader.credentials && (
-            <Row label="Credentials" value={data.retreat_leader.credentials} />
-          )}
-          {data.retreat_leader.photo_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={data.retreat_leader.photo_url}
-              alt=""
-              className="mt-2 h-32 w-32 rounded-lg object-cover"
-            />
-          )}
+      {data.retreat_leaders.length > 0 && (
+        <Card title={`Retreat Leaders (${data.retreat_leaders.length})`}>
+          <ul className="space-y-4">
+            {data.retreat_leaders.map((l, i) => (
+              <li key={i} className="flex gap-4 border-t border-zinc-100 pt-4 first:border-0 first:pt-0">
+                {l.photo_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={l.photo_url}
+                    alt=""
+                    className="h-24 w-24 flex-shrink-0 rounded-lg object-cover"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="text-sm font-semibold text-anamaya-charcoal">{l.name}</span>
+                    <RoleBadge role={l.role} />
+                  </div>
+                  {l.credentials && (
+                    <p className="text-xs text-anamaya-charcoal/60">{l.credentials}</p>
+                  )}
+                  {l.bio_html && (
+                    <div
+                      className="prose prose-sm mt-2 max-w-none text-sm text-anamaya-charcoal/80"
+                      dangerouslySetInnerHTML={{ __html: l.bio_html }}
+                    />
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 
@@ -316,5 +333,23 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-xs uppercase tracking-wider text-anamaya-charcoal/60">{label}</span>
       <span className="text-anamaya-charcoal">{value}</span>
     </div>
+  );
+}
+
+function RoleBadge({ role }: { role: "primary" | "co" | "guest" | "assistant" }) {
+  const label =
+    role === "primary"   ? "Primary" :
+    role === "co"        ? "Co-leader" :
+    role === "guest"     ? "Guest" :
+                           "Assistant";
+  const color =
+    role === "primary"   ? "bg-anamaya-green/10 text-anamaya-green" :
+    role === "co"        ? "bg-anamaya-mint/30 text-anamaya-charcoal" :
+    role === "guest"     ? "bg-amber-50 text-amber-800" :
+                           "bg-zinc-100 text-anamaya-charcoal/70";
+  return (
+    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${color}`}>
+      {label}
+    </span>
   );
 }

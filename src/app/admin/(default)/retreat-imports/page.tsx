@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { batchExtractRetreats, clearAllStagedRetreats, extractRetreatToStaging } from "@/lib/imports/actions";
+import { decode } from "@/lib/imports/retreat-extractor";
 import { SubmitButton } from "./SubmitButton";
 import { ConfirmSubmitButton } from "./ConfirmSubmitButton";
 
@@ -169,7 +170,7 @@ export default async function RetreatImportsIndex({
             >
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium text-anamaya-charcoal">
-                  {r.title ?? "(untitled)"}
+                  {r.title ? decode(r.title) : "(untitled)"}
                 </div>
                 <div className="truncate text-xs text-anamaya-charcoal/60">{r.url}</div>
               </div>
