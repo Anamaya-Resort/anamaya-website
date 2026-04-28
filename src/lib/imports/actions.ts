@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 import { decode, extractRetreat, type ExtractedRetreat } from "./retreat-extractor";
-import { extractRetreatLeadersAI } from "./retreat-ai-extractor";
+import { extractRetreatBodyAI } from "./retreat-ai-extractor";
 import { importImage, type ImageBucket, type SkippedImage } from "./images";
 import { pushStagedRetreatToAO, type PushResult } from "./push";
 import { getSessionUser } from "@/lib/session";
@@ -62,23 +62,30 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
     sourceHosts: WP_HOSTS,
   });
 
-  // AI-based teacher extraction. Anamaya retreats often have multi-teacher
-  // billing (co-leaders, special guests) the regex baseline can't separate.
-  // If the AI call succeeds with a non-empty list, override the regex result;
-  // otherwise keep the regex fallback so we still get *something*.
+  // AI-based body extraction. Anamaya retreats have multi-teacher billing
+  // (co-leaders, special guests) and free-form descriptive prose that the
+  // regex baseline can't reliably separate. If the AI call succeeds, use
+  // its leaders + description; otherwise keep the regex fallback so we
+  // still get *something*.
   if (bodyHtml.length >= 500) {
-    const aiLeaders = await extractRetreatLeadersAI({
+    const ai = await extractRetreatBodyAI({
       title: invRow.title ?? "",
       bodyHtml,
     });
-    if (aiLeaders.ok && aiLeaders.leaders.length > 0) {
-      retreat.retreat_leaders = aiLeaders.leaders;
-      // The regex pass adds a "could not identify retreat leader/teacher"
-      // warning when it finds nothing. Drop it once AI succeeded.
-      const idx = warnings.indexOf("could not identify retreat leader/teacher");
-      if (idx !== -1) warnings.splice(idx, 1);
-    } else if (!aiLeaders.ok) {
-      warnings.push(`AI teacher extraction failed: ${aiLeaders.reason}`);
+    if (ai.ok) {
+      if (ai.leaders.length > 0) {
+        retreat.retreat_leaders = ai.leaders;
+        // The regex pass adds a "could not identify retreat leader/teacher"
+        // warning when it finds nothing. Drop it once AI succeeded.
+        const idx = warnings.indexOf("could not identify retreat leader/teacher");
+        if (idx !== -1) warnings.splice(idx, 1);
+      }
+      if (ai.description_html) {
+        retreat.description_html = ai.description_html;
+        retreat.description_text = ai.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      }
+    } else {
+      warnings.push(`AI extraction failed: ${ai.reason}`);
     }
   }
 

@@ -71,6 +71,10 @@ export type ExtractedRetreat = {
 
   retreat_leaders: ExtractedLeader[];
 
+  /** Main descriptive prose — the "what is this retreat" body copy. */
+  description_html?: string;
+  description_text?: string;
+
   pricing_tiers: ExtractedTier[];
   whats_included: string[];
   what_to_expect_html?: string;
@@ -93,15 +97,30 @@ export type ExtractResult = {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const ENTITIES: Record<string, string> = {
-  amp: "&", lt: "<", gt: ">", quot: '"', "#039": "'", apos: "'",
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
   nbsp: " ", ndash: "–", mdash: "—", lsquo: "‘", rsquo: "’",
   ldquo: "“", rdquo: "”", hellip: "…",
-  "#8211": "–", "#8212": "—", "#8216": "‘", "#8217": "’",
-  "#8220": "“", "#8221": "”", "#8230": "…",
 };
+/**
+ * Decode HTML entities. Handles named (`&amp;`), decimal numeric (`&#38;`,
+ * `&#038;`, `&#8217;`), and hex numeric (`&#x26;`) refs. WP commonly emits
+ * zero-padded numeric refs like `&#038;` for `&` — a hard-coded map can't
+ * cover every padding variant, so we resolve numeric refs generically.
+ */
 export function decode(s: string): string {
-  return s.replace(/&(#?[a-z0-9]+);/gi, (_, k) => ENTITIES[k] ?? `&${k};`);
+  return s.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi, (_, k: string) => {
+    const key = k.toLowerCase();
+    if (key.startsWith("#x")) {
+      const cp = parseInt(key.slice(2), 16);
+      return Number.isFinite(cp) && cp > 0 ? String.fromCodePoint(cp) : `&${k};`;
+    }
+    if (key.startsWith("#")) {
+      const cp = parseInt(key.slice(1), 10);
+      return Number.isFinite(cp) && cp > 0 ? String.fromCodePoint(cp) : `&${k};`;
+    }
+    return NAMED_ENTITIES[key] ?? `&${k};`;
+  });
 }
 
 function stripTags(html: string): string {

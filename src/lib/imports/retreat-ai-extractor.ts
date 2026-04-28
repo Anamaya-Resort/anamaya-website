@@ -22,7 +22,7 @@ const VALID_ROLES: ReadonlySet<LeaderRole> = new Set(["primary", "co", "guest", 
 const MAX_HTML_CHARS = 28_000;
 
 export type AIExtractResult =
-  | { ok: true; leaders: ExtractedLeader[] }
+  | { ok: true; leaders: ExtractedLeader[]; description_html?: string }
   | { ok: false; reason: string };
 
 /**
@@ -59,7 +59,7 @@ function compactForAI(html: string): string {
   return out;
 }
 
-export async function extractRetreatLeadersAI(input: {
+export async function extractRetreatBodyAI(input: {
   title: string;
   bodyHtml: string;
 }): Promise<AIExtractResult> {
@@ -72,9 +72,10 @@ export async function extractRetreatLeadersAI(input: {
     {
       role: "system",
       content:
-        "You extract retreat teacher information from an Anamaya retreat web page. " +
-        "Return ONLY JSON in the form {\"leaders\": [...]}. No commentary. " +
-        "Each leader object has these fields: " +
+        "You extract structured information from an Anamaya retreat web page. " +
+        "Return ONLY JSON in the form {\"leaders\": [...], \"description_html\": \"...\"}. No commentary. " +
+        "" +
+        "leaders: an array of teacher objects. Each has: " +
         "name (string, required), " +
         "role (one of \"primary\", \"co\", \"guest\", \"assistant\"), " +
         "credentials (string, optional — e.g. \"E-RYT 500\", \"PhD\"), " +
@@ -86,7 +87,12 @@ export async function extractRetreatLeadersAI(input: {
         "- guest: labeled 'Special Guest', 'Guest Teacher', 'Featured Guest', or appears as a separate visiting teacher. " +
         "- assistant: labeled 'Assistant', 'Co-host', or clearly subordinate billing. " +
         "Pull photo_url from the exact src= of an <img> visually associated with the teacher (their headshot). " +
-        "If you cannot confidently identify any teacher, return {\"leaders\": []}.",
+        "If you cannot confidently identify any teacher, return leaders: []. " +
+        "" +
+        "description_html: the main descriptive prose that explains what the retreat is about — the 'About this retreat' / overview / introduction paragraphs. " +
+        "Wrap each paragraph in <p>…</p>. Preserve <strong>, <em>, <ul>/<li> if present, but strip everything else (no divs, classes, styles, or section wrappers). " +
+        "EXCLUDE: teacher bios (those go in leaders[].bio_html), pricing tables, dates/booking widgets, gallery captions, navigation, footer, repeated CTAs ('Book Now', 'Reserve Your Spot'). " +
+        "Aim for 2–8 paragraphs of meaningful body copy. If the page has no descriptive prose, return description_html: \"\".",
     },
     {
       role: "user",
@@ -98,7 +104,7 @@ export async function extractRetreatLeadersAI(input: {
   const res = await runChat({
     modelRef: MODEL_REF,
     messages,
-    maxTokens: 1500,
+    maxTokens: 4000,
     responseFormat: "json",
   });
   if (!res.ok) return { ok: false, reason: res.reason };
@@ -141,5 +147,9 @@ export async function extractRetreatLeadersAI(input: {
     leaders[0] = { ...leaders[0], role: "primary" };
   }
 
-  return { ok: true, leaders };
+  const parsedObj = parsed as Record<string, unknown>;
+  const descRaw = typeof parsedObj.description_html === "string" ? parsedObj.description_html.trim() : "";
+  const description_html = descRaw.length > 0 ? descRaw : undefined;
+
+  return { ok: true, leaders, description_html };
 }

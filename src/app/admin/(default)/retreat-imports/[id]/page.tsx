@@ -184,6 +184,15 @@ function ExtractedView({ data }: { data: ExtractedRetreat }) {
         )}
       </Card>
 
+      {data.description_html && (
+        <Card title="Description">
+          <div
+            className="prose prose-sm max-w-none text-sm text-anamaya-charcoal/80"
+            dangerouslySetInnerHTML={{ __html: data.description_html }}
+          />
+        </Card>
+      )}
+
       {data.retreat_leaders.length > 0 && (
         <Card title={`Retreat Leaders (${data.retreat_leaders.length})`}>
           <ul className="space-y-4">
