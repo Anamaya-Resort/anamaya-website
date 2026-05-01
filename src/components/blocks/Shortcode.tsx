@@ -20,6 +20,7 @@ import PersonCardBlock from "./PersonCardBlock";
 import RawHtmlBlock from "./RawHtmlBlock";
 import UiTopBlock from "./UiTopBlock";
 import UiSideMenuRightBlock from "./UiSideMenuRightBlock";
+import UiAgentBlock from "./UiAgentBlock";
 
 /**
  * Server component that renders the block identified by `slug` (matched
@@ -71,7 +72,7 @@ export default async function Shortcode({ slug }: { slug: string }) {
     case "raw_html":       return <RawHtmlBlock content={content} />;
     case "ui_top":            return <UiTopBlock content={content} />;
     case "ui_side_menu_right": return <UiSideMenuRightBlock content={content} />;
-    case "ui_agent":          return null;
+    case "ui_agent":          return <UiAgentBlock content={content} />;
     default:               return null;
   }
 }

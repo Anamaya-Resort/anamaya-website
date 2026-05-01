@@ -21,6 +21,7 @@ import TwoColumnBlock from "./TwoColumnBlock";
 import DetailsRatesDynamicBlock from "./DetailsRatesDynamicBlock";
 import UiTopBlock from "./UiTopBlock";
 import UiSideMenuRightBlock from "./UiSideMenuRightBlock";
+import UiAgentBlock from "./UiAgentBlock";
 
 /** Renders a single block-usage by dispatching on type. Null if unknown. */
 export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
@@ -52,7 +53,7 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "details_rates_dynamic": return <DetailsRatesDynamicBlock content={content} />;
     case "ui_top":            return <UiTopBlock content={content} />;
     case "ui_side_menu_right": return <UiSideMenuRightBlock content={content} />;
-    case "ui_agent":          return null;
+    case "ui_agent":          return <UiAgentBlock content={content} />;
     default: {
       console.warn(`[blocks] unknown block type: ${usage.block.type_slug}`);
       return null;

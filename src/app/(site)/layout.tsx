@@ -1,5 +1,4 @@
 import AppShell from "@/components/AppShell";
-import VisitorAgent from "@/components/ai/VisitorAgent";
 import TemplateRenderer from "@/components/templates/TemplateRenderer";
 import { getSessionUser } from "@/lib/session";
 
@@ -23,7 +22,6 @@ export default async function SiteLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <AppShell user={user} chrome={chrome}>{children}</AppShell>
-      <VisitorAgent />
     </div>
   );
 }

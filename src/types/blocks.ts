@@ -631,10 +631,17 @@ export type UiSideMenuRightContent = OverlayMixin & {
   use_nav_data?: boolean;       // pull items from data/nav.ts
 };
 
-/** AI assistant bubble — placeholder, editor + renderer arrive later. */
+/**
+ * AI assistant bubble. Wraps the existing VisitorAgent component —
+ * runtime visibility still gates on /api/ai/agent-config (per-tenant
+ * enable/disable), the block content only controls placement and
+ * retrieval scope.
+ */
 export type UiAgentContent = OverlayMixin & {
-  bubble_label?: string;
-  bg_color?: string;
+  /** When set, /api/ai/ask retrieval is scoped to this sub-property
+   *  (UUID of an AnamayOS property). Leave null for the default
+   *  whole-site agent. */
+  property_id_scope?: string | null;
 };
 
 export type BlockTypeSlug =

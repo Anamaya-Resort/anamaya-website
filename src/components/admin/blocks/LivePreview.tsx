@@ -22,6 +22,7 @@ import PersonCardBlock from "@/components/blocks/PersonCardBlock";
 import RawHtmlBlock from "@/components/blocks/RawHtmlBlock";
 import UiTopBlock from "@/components/blocks/UiTopBlock";
 import UiSideMenuRightBlock from "@/components/blocks/UiSideMenuRightBlock";
+import UiAgentBlock from "@/components/blocks/UiAgentBlock";
 import VariantCarousel from "./VariantCarousel";
 
 /**
@@ -158,12 +159,7 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "raw_html":       return <RawHtmlBlock content={content} />;
     case "ui_top":            return <UiTopBlock content={content} />;
     case "ui_side_menu_right": return <UiSideMenuRightBlock content={content} />;
-    case "ui_agent":
-      return (
-        <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs italic text-anamaya-charcoal/50">
-          AI agent overlay (renderer coming in a later phase)
-        </div>
-      );
+    case "ui_agent":          return <UiAgentBlock content={content} />;
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">
