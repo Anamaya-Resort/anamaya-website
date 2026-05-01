@@ -1,12 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { UiSideMenuRightContent, UiNavItem } from "@/types/blocks";
 import { SIDE_MENU } from "@/data/nav";
 import { getSSOLoginUrl } from "@/config/sso";
+import { resolveBrandColor } from "@/config/brand-tokens";
 import { useChromeOptional } from "@/contexts/ChromeContext";
 import UserAvatar from "../UserAvatar";
+
+const DEFAULT_BG_HEX = "#1a1a1a"; // matches the legacy bg-anamaya-charcoal
+
+/** Convert a "#rrggbb" or "#rgb" hex to an `rgba(r,g,b,a)` string with the
+ *  given 0–1 alpha. Falls back to the input string when it isn't a valid
+ *  hex (so brand-token CSS-var refs already resolved by the caller pass
+ *  through unchanged). */
+function applyAlpha(color: string, alpha: number): string {
+  let hex = color.trim();
+  if (!hex.startsWith("#")) return color;
+  hex = hex.slice(1);
+  if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+  if (hex.length !== 6) return color;
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  if ([r, g, b].some(Number.isNaN)) return color;
+  const a = Math.max(0, Math.min(1, alpha));
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
 
 /**
  * Right-anchored slide-out menu overlay. Ports SideMenu.tsx onto the
@@ -27,6 +48,33 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
   const ctaLabel = c.cta_label ?? "BOOK YOUR STAY";
   const ctaHref = c.cta_href ?? "/rg-calendar/";
   const items: UiNavItem[] = c.items?.length ? c.items : SIDE_MENU;
+
+  // Background — brand token (or hex) + 0–100 opacity. Empty bg_color
+  // falls back to the legacy charcoal so existing blocks keep their look.
+  const bgRaw = resolveBrandColor(c.bg_color) ?? DEFAULT_BG_HEX;
+  const bgOpacity = (c.bg_opacity ?? 90) / 100;
+  const bgRgba = applyAlpha(bgRaw, bgOpacity);
+
+  // Headline = top-level rows. Content = sub-items in expanded groups.
+  const headlineFontClass = c.headline_font === "body" ? "font-sans" : "font-heading";
+  const headlineStyle: CSSProperties = {
+    fontSize: c.headline_size_px ?? 14,
+    color: resolveBrandColor(c.headline_color) ?? "#f4f4f5", // zinc-100
+    fontWeight: c.headline_bold ? 700 : 500,
+    fontStyle: c.headline_italic ? "italic" : "normal",
+  };
+  const contentFontClass = c.content_font === "heading" ? "font-heading" : "font-sans";
+  const contentStyle: CSSProperties = {
+    fontSize: c.content_size_px ?? 14,
+    color: resolveBrandColor(c.content_color) ?? "#d4d4d8", // zinc-300
+    fontWeight: c.content_bold ? 700 : 400,
+    fontStyle: c.content_italic ? "italic" : "normal",
+  };
+
+  const decorationTopUrl = c.decoration_top_url || null;
+  const decorationTopHeight = c.decoration_top_height_px ?? 80;
+  const decorationBottomUrl = c.decoration_bottom_url || null;
+  const decorationBottomHeight = c.decoration_bottom_height_px ?? 80;
 
   const chrome = useChromeOptional();
   // When mounted outside a ChromeProvider (admin LivePreview, isolated
@@ -75,10 +123,10 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
         role="dialog"
         aria-modal="true"
         aria-label="Site menu"
-        className={`absolute top-0 right-0 h-full w-full overflow-y-auto bg-anamaya-charcoal/90 backdrop-blur-sm text-zinc-100 shadow-xl transition-transform duration-300 ease-out ${
+        className={`absolute top-0 right-0 h-full w-full overflow-y-auto backdrop-blur-sm text-zinc-100 shadow-xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
-        style={{ maxWidth: widthMaxPx }}
+        style={{ maxWidth: widthMaxPx, backgroundColor: bgRgba }}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
           <span className="text-lg font-semibold tracking-wide">Menu</span>
@@ -96,6 +144,18 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
             </button>
           )}
         </div>
+
+        {decorationTopUrl && (
+          <div className="flex w-full items-center justify-center px-6 pt-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={decorationTopUrl}
+              alt={c.decoration_top_alt ?? ""}
+              style={{ maxHeight: decorationTopHeight }}
+              className="max-w-full object-contain"
+            />
+          </div>
+        )}
 
         <nav className="px-6 py-6">
           {user ? (
@@ -137,7 +197,15 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
 
           <ul className="space-y-1">
             {items.map((item) => (
-              <MenuItem key={item.label} item={item} onNavigate={close} />
+              <MenuItem
+                key={item.label}
+                item={item}
+                onNavigate={close}
+                headlineFontClass={headlineFontClass}
+                headlineStyle={headlineStyle}
+                contentFontClass={contentFontClass}
+                contentStyle={contentStyle}
+              />
             ))}
           </ul>
 
@@ -149,12 +217,38 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
             {ctaLabel}
           </Link>
         </nav>
+
+        {decorationBottomUrl && (
+          <div className="flex w-full items-center justify-center px-6 pb-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={decorationBottomUrl}
+              alt={c.decoration_bottom_alt ?? ""}
+              style={{ maxHeight: decorationBottomHeight }}
+              className="max-w-full object-contain"
+            />
+          </div>
+        )}
       </aside>
     </div>
   );
 }
 
-function MenuItem({ item, onNavigate }: { item: UiNavItem; onNavigate: () => void }) {
+function MenuItem({
+  item,
+  onNavigate,
+  headlineFontClass,
+  headlineStyle,
+  contentFontClass,
+  contentStyle,
+}: {
+  item: UiNavItem;
+  onNavigate: () => void;
+  headlineFontClass: string;
+  headlineStyle: CSSProperties;
+  contentFontClass: string;
+  contentStyle: CSSProperties;
+}) {
   const [expanded, setExpanded] = useState(false);
   if (!item.children?.length) {
     return (
@@ -162,7 +256,8 @@ function MenuItem({ item, onNavigate }: { item: UiNavItem; onNavigate: () => voi
         <Link
           href={item.href ?? "#"}
           onClick={onNavigate}
-          className="block rounded-md px-3 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/10"
+          className={`block rounded-md px-3 py-2 transition-colors hover:bg-white/10 ${headlineFontClass}`}
+          style={headlineStyle}
         >
           {item.label}
         </Link>
@@ -175,7 +270,8 @@ function MenuItem({ item, onNavigate }: { item: UiNavItem; onNavigate: () => voi
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium text-zinc-100 transition-colors hover:bg-white/10"
+        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors hover:bg-white/10 ${headlineFontClass}`}
+        style={headlineStyle}
       >
         <span>{item.label}</span>
         <svg
@@ -197,7 +293,8 @@ function MenuItem({ item, onNavigate }: { item: UiNavItem; onNavigate: () => voi
               <Link
                 href={child.href ?? "#"}
                 onClick={onNavigate}
-                className="block rounded-md px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:bg-white/10 hover:text-white"
+                className={`block rounded-md px-3 py-1.5 transition-colors hover:bg-white/10 hover:text-white ${contentFontClass}`}
+                style={contentStyle}
               >
                 {child.label}
               </Link>

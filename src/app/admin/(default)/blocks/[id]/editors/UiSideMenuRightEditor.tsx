@@ -5,6 +5,8 @@ import BlockEditorChrome, {
   type BlockEditorState,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import { OverlayFields } from "@/components/admin/blocks/OverlayFields";
+import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
+import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { UiNavItem, UiSideMenuRightContent } from "@/types/blocks";
 
@@ -22,6 +24,24 @@ function normalize(c: UiSideMenuRightContent | null | undefined): UiSideMenuRigh
     cta_label: c?.cta_label ?? "BOOK YOUR STAY",
     cta_href: c?.cta_href ?? "/rg-calendar/",
     items: c?.items ?? [],
+    bg_color: c?.bg_color ?? "",
+    bg_opacity: c?.bg_opacity ?? 90,
+    headline_font: c?.headline_font ?? "heading",
+    headline_size_px: c?.headline_size_px ?? 14,
+    headline_color: c?.headline_color ?? "",
+    headline_bold: c?.headline_bold ?? false,
+    headline_italic: c?.headline_italic ?? false,
+    content_font: c?.content_font ?? "body",
+    content_size_px: c?.content_size_px ?? 14,
+    content_color: c?.content_color ?? "",
+    content_bold: c?.content_bold ?? false,
+    content_italic: c?.content_italic ?? false,
+    decoration_top_url: c?.decoration_top_url ?? "",
+    decoration_top_alt: c?.decoration_top_alt ?? "",
+    decoration_top_height_px: c?.decoration_top_height_px ?? 80,
+    decoration_bottom_url: c?.decoration_bottom_url ?? "",
+    decoration_bottom_alt: c?.decoration_bottom_alt ?? "",
+    decoration_bottom_height_px: c?.decoration_bottom_height_px ?? 80,
   };
 }
 
@@ -47,7 +67,7 @@ export default function UiSideMenuRightEditor(props: {
 }
 
 function Form({ state }: { state: BlockEditorState<UiSideMenuRightContent> }) {
-  const { draft, patch } = state;
+  const { draft, patch, brandTokens } = state;
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -80,10 +100,302 @@ function Form({ state }: { state: BlockEditorState<UiSideMenuRightContent> }) {
         </label>
       </div>
 
+      <section className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
+        <header className="mb-3">
+          <h4 className="text-sm font-semibold text-anamaya-charcoal">Background</h4>
+          <p className="mt-0.5 text-xs text-anamaya-charcoal/60">
+            Drawer fill color and translucency. The drawer keeps its
+            backdrop blur regardless.
+          </p>
+        </header>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <span className={labelCls}>Background color</span>
+            <BrandColorSelect
+              value={draft.bg_color}
+              onChange={(v) => patch({ bg_color: v })}
+              brandTokens={brandTokens}
+              allowAuto
+            />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              Leave on Auto for the default charcoal.
+            </p>
+          </div>
+          <label className="block">
+            <span className={labelCls}>Opacity (0–100)</span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              className={inputCls}
+              value={draft.bg_opacity ?? 90}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                patch({
+                  bg_opacity: Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 90,
+                });
+              }}
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
+        <header className="mb-3">
+          <h4 className="text-sm font-semibold text-anamaya-charcoal">Typography</h4>
+          <p className="mt-0.5 text-xs text-anamaya-charcoal/60">
+            Headlines = top-level rows (links + group headers). Contents =
+            sub-items inside expanded groups.
+          </p>
+        </header>
+
+        <div className="space-y-4">
+          <TypeFieldset
+            label="Headlines"
+            font={draft.headline_font ?? "heading"}
+            sizePx={draft.headline_size_px ?? 14}
+            color={draft.headline_color ?? ""}
+            bold={draft.headline_bold ?? false}
+            italic={draft.headline_italic ?? false}
+            brandTokens={brandTokens}
+            onChange={(p) =>
+              patch({
+                headline_font: p.font ?? draft.headline_font,
+                headline_size_px: p.sizePx ?? draft.headline_size_px,
+                headline_color: p.color ?? draft.headline_color,
+                headline_bold: p.bold ?? draft.headline_bold,
+                headline_italic: p.italic ?? draft.headline_italic,
+              })
+            }
+          />
+
+          <TypeFieldset
+            label="Contents"
+            font={draft.content_font ?? "body"}
+            sizePx={draft.content_size_px ?? 14}
+            color={draft.content_color ?? ""}
+            bold={draft.content_bold ?? false}
+            italic={draft.content_italic ?? false}
+            brandTokens={brandTokens}
+            onChange={(p) =>
+              patch({
+                content_font: p.font ?? draft.content_font,
+                content_size_px: p.sizePx ?? draft.content_size_px,
+                content_color: p.color ?? draft.content_color,
+                content_bold: p.bold ?? draft.content_bold,
+                content_italic: p.italic ?? draft.content_italic,
+              })
+            }
+          />
+        </div>
+      </section>
+
+      <section className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
+        <header className="mb-3">
+          <h4 className="text-sm font-semibold text-anamaya-charcoal">
+            Decorative graphics
+          </h4>
+          <p className="mt-0.5 text-xs text-anamaya-charcoal/60">
+            Optional images at the top (above the auth block) and bottom
+            (below the CTA) of the drawer to break up the link list.
+          </p>
+        </header>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <DecorationField
+            label="Top decoration"
+            url={draft.decoration_top_url}
+            alt={draft.decoration_top_alt}
+            heightPx={draft.decoration_top_height_px ?? 80}
+            onChange={(u, a, h) =>
+              patch({
+                decoration_top_url: u,
+                decoration_top_alt: a,
+                decoration_top_height_px: h,
+              })
+            }
+          />
+          <DecorationField
+            label="Bottom decoration"
+            url={draft.decoration_bottom_url}
+            alt={draft.decoration_bottom_alt}
+            heightPx={draft.decoration_bottom_height_px ?? 80}
+            onChange={(u, a, h) =>
+              patch({
+                decoration_bottom_url: u,
+                decoration_bottom_alt: a,
+                decoration_bottom_height_px: h,
+              })
+            }
+          />
+        </div>
+      </section>
+
       <NavItemsEditor
         items={draft.items ?? []}
         onChange={(items) => patch({ items })}
       />
+    </div>
+  );
+}
+
+// ─── Typography fieldset ───────────────────────────────────────────────
+
+function TypeFieldset({
+  label,
+  font,
+  sizePx,
+  color,
+  bold,
+  italic,
+  brandTokens,
+  onChange,
+}: {
+  label: string;
+  font: "body" | "heading";
+  sizePx: number;
+  color: string;
+  bold: boolean;
+  italic: boolean;
+  brandTokens: BlockEditorState<UiSideMenuRightContent>["brandTokens"];
+  onChange: (p: {
+    font?: "body" | "heading";
+    sizePx?: number;
+    color?: string;
+    bold?: boolean;
+    italic?: boolean;
+  }) => void;
+}) {
+  return (
+    <fieldset className="rounded border border-zinc-200 bg-white p-3">
+      <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+        {label}
+      </legend>
+      <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr_auto_auto] sm:items-end">
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-anamaya-charcoal/70">
+            Family
+          </span>
+          <select
+            className={`${inputCls} mt-0.5`}
+            value={font}
+            onChange={(e) => onChange({ font: e.target.value as "body" | "heading" })}
+          >
+            <option value="body">Body</option>
+            <option value="heading">Heading</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-anamaya-charcoal/70">
+            Size (px)
+          </span>
+          <input
+            type="number"
+            min={8}
+            max={48}
+            className={`${inputCls} mt-0.5 w-20`}
+            value={sizePx}
+            onChange={(e) => onChange({ sizePx: Number(e.target.value) || 14 })}
+          />
+        </label>
+        <div>
+          <span className="block text-[10px] uppercase tracking-wider text-anamaya-charcoal/70">
+            Color
+          </span>
+          <BrandColorSelect
+            value={color}
+            onChange={(v) => onChange({ color: v })}
+            brandTokens={brandTokens}
+            allowAuto
+          />
+        </div>
+        <label className="flex items-center gap-1.5 text-xs">
+          <input
+            type="checkbox"
+            checked={bold}
+            onChange={(e) => onChange({ bold: e.target.checked })}
+          />
+          Bold
+        </label>
+        <label className="flex items-center gap-1.5 text-xs">
+          <input
+            type="checkbox"
+            checked={italic}
+            onChange={(e) => onChange({ italic: e.target.checked })}
+          />
+          Italic
+        </label>
+      </div>
+    </fieldset>
+  );
+}
+
+// ─── Decoration field ──────────────────────────────────────────────────
+
+function DecorationField({
+  label,
+  url,
+  alt,
+  heightPx,
+  onChange,
+}: {
+  label: string;
+  url: string | undefined;
+  alt: string | undefined;
+  heightPx: number;
+  onChange: (url: string, alt: string, heightPx: number) => void;
+}) {
+  return (
+    <div>
+      <span className={labelCls}>{label}</span>
+      <div className="rounded-md border border-zinc-200 bg-anamaya-charcoal p-2">
+        <div className="flex items-center justify-center" style={{ minHeight: 80 }}>
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={url}
+              alt={alt ?? ""}
+              style={{ maxHeight: heightPx }}
+              className="max-w-full object-contain"
+            />
+          ) : (
+            <span className="text-[10px] italic text-white/50">no image</span>
+          )}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <ImageUploadButton
+            value={url}
+            onUploaded={(u) => onChange(u, alt ?? "", heightPx)}
+            kind="ui-overlays"
+            maxWidth={1200}
+          />
+          {url && (
+            <button
+              type="button"
+              onClick={() => onChange("", alt ?? "", heightPx)}
+              className="rounded-full border border-red-300 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+        <input
+          className={inputCls}
+          placeholder="Alt text (for screen readers)"
+          value={alt ?? ""}
+          onChange={(e) => onChange(url ?? "", e.target.value, heightPx)}
+        />
+        <input
+          type="number"
+          className={`${inputCls} w-24`}
+          value={heightPx}
+          onChange={(e) =>
+            onChange(url ?? "", alt ?? "", Number(e.target.value) || 80)
+          }
+          title="Max height (px)"
+        />
+      </div>
     </div>
   );
 }

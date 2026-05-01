@@ -631,12 +631,48 @@ export type UiNavItem = {
  * the block content so they're editable via the block editor; for
  * backwards compatibility, when `items` is empty the renderer falls
  * back to the legacy SIDE_MENU constant in `data/nav.ts`.
+ *
+ * Two typography scopes:
+ *   - "headline" → top-level rows (standalone links + group buttons)
+ *   - "content"  → indented sub-items inside expanded groups
+ *
+ * Background is a brand token key (or hex) plus 0–100 opacity; the
+ * underlying drawer keeps its backdrop-blur for the frosted look.
+ *
+ * Decorative graphics render at the top (above the auth block) and
+ * bottom (below the CTA) of the drawer to break up the link list.
  */
 export type UiSideMenuRightContent = OverlayMixin & {
   width_max_px?: number;        // drawer width cap (default 384)
   cta_label?: string;
   cta_href?: string;
   items?: UiNavItem[];
+
+  // Background
+  bg_color?: string;            // brand token key or hex; '' = default charcoal
+  bg_opacity?: number;          // 0–100; default 90
+
+  // Headline typography (top-level rows)
+  headline_font?: "body" | "heading";
+  headline_size_px?: number;
+  headline_color?: string;
+  headline_bold?: boolean;
+  headline_italic?: boolean;
+
+  // Content typography (sub-items inside groups)
+  content_font?: "body" | "heading";
+  content_size_px?: number;
+  content_color?: string;
+  content_bold?: boolean;
+  content_italic?: boolean;
+
+  // Decorative graphics
+  decoration_top_url?: string;
+  decoration_top_alt?: string;
+  decoration_top_height_px?: number;     // default 80
+  decoration_bottom_url?: string;
+  decoration_bottom_alt?: string;
+  decoration_bottom_height_px?: number;  // default 80
 };
 
 /**
