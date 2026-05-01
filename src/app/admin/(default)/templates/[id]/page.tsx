@@ -93,6 +93,15 @@ export default async function EditTemplate({
     .order("type_slug")
     .order("name");
 
+  // Lookup table: type_slug → is_overlay. Defensive: older databases
+  // without 0025 won't have the column; default everything to false.
+  const { data: typesRaw } = await sb
+    .from("block_types")
+    .select("slug, is_overlay");
+  const overlayBySlug = new Map<string, boolean>(
+    (typesRaw ?? []).map((t) => [t.slug as string, Boolean((t as { is_overlay?: boolean }).is_overlay)]),
+  );
+
   return (
     <div>
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -129,11 +138,17 @@ export default async function EditTemplate({
               content: Record<string, unknown> | null;
             };
             const nativeH = Math.max(1, computeNativeHeight(block));
+            const isOverlay = overlayBySlug.get(block.type_slug) ?? false;
+            const c = (block.content ?? {}) as Record<string, unknown>;
             return {
               id: r.id,
               sort_order: r.sort_order,
               native_height: nativeH,
               aspect_ratio: REF_W / nativeH,
+              is_overlay: isOverlay,
+              overlay_z: typeof c.overlay_z === "number" ? c.overlay_z : null,
+              overlay_anchor: typeof c.overlay_anchor === "string" ? (c.overlay_anchor as string) : null,
+              overlay_trigger: typeof c.overlay_trigger === "string" ? (c.overlay_trigger as string) : null,
               block: {
                 id: block.id,
                 slug: block.slug,
@@ -141,6 +156,13 @@ export default async function EditTemplate({
                 type_slug: block.type_slug,
               },
             };
+          })
+          // Overlays first (matches their fixed-position rendering order
+          // — they sit on top of regular blocks at runtime). Within each
+          // group preserve the variant's sort_order.
+          .sort((a, b) => {
+            if (a.is_overlay !== b.is_overlay) return a.is_overlay ? -1 : 1;
+            return a.sort_order - b.sort_order;
           })}
         allBlocks={(allBlocks ?? []) as Array<{
           id: string;

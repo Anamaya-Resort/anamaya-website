@@ -74,6 +74,7 @@ export default function BlockEditorChrome<T>({
   brandTokens,
   variants,
   renderForm,
+  isOverlay,
 }: {
   blockId: string;
   typeSlug: BlockTypeSlug;
@@ -86,6 +87,10 @@ export default function BlockEditorChrome<T>({
   brandTokens: Required<OrgBranding>;
   variants: BlockEditorVariant[];
   renderForm: (state: BlockEditorState<T>) => React.ReactNode;
+  /** Mark this editor's preview as an overlay canvas (checkerboard
+   *  backdrop, contained `position: fixed`). Sourced from
+   *  block_types.is_overlay. */
+  isOverlay?: boolean;
 }) {
   const normalized = normalize(content);
   const [name, setName] = useState(initialName);
@@ -192,6 +197,7 @@ export default function BlockEditorChrome<T>({
         currentId={blockId}
         typeName={typeName}
         variants={variants}
+        isOverlay={isOverlay}
       />
 
       <form

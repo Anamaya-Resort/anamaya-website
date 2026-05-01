@@ -20,6 +20,8 @@ import FeatureListBlock from "@/components/blocks/FeatureListBlock";
 import GalleryBlock from "@/components/blocks/GalleryBlock";
 import PersonCardBlock from "@/components/blocks/PersonCardBlock";
 import RawHtmlBlock from "@/components/blocks/RawHtmlBlock";
+import UiTopBlock from "@/components/blocks/UiTopBlock";
+import UiSideMenuRightBlock from "@/components/blocks/UiSideMenuRightBlock";
 import VariantCarousel from "./VariantCarousel";
 
 /**
@@ -49,6 +51,24 @@ type Props = {
   currentId?: string;
   typeName?: string;
   variants?: Variant[];
+  /**
+   * When true, the preview canvas swaps to a checkerboard backdrop and
+   * establishes its own containing block (via `transform`) so any
+   * `position: fixed` markup inside the rendered block stays within the
+   * preview frame instead of pinning to the page viewport. Use for
+   * blocks whose block_type has is_overlay = true.
+   */
+  isOverlay?: boolean;
+};
+
+// 15px checkerboard via two stacked linear-gradients. No image asset.
+const OVERLAY_CANVAS_BG: React.CSSProperties = {
+  backgroundColor: "#fff",
+  backgroundImage:
+    "linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%)," +
+    "linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%)",
+  backgroundSize: "30px 30px",
+  backgroundPosition: "0 0, 15px 15px",
 };
 
 const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
@@ -59,6 +79,7 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
     currentId,
     typeName,
     variants,
+    isOverlay,
   },
   ref,
 ) {
@@ -75,7 +96,26 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
           rendered block without the negative-margin offset. */}
       <div style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
         <div ref={ref}>
-          <BlockRender typeSlug={typeSlug} content={content} />
+          {isOverlay ? (
+            // Overlay canvas: checkerboard backdrop + transformed wrapper
+            // so the rendered block's `position: fixed` is contained
+            // within this frame instead of pinning to the page viewport.
+            // Minimum height ensures the canvas is visible even when the
+            // overlay itself is anchored to a single edge (e.g. top bar
+            // is only 80px tall).
+            <div
+              className="relative w-full"
+              style={{
+                ...OVERLAY_CANVAS_BG,
+                minHeight: 360,
+                transform: "translate3d(0,0,0)",
+              }}
+            >
+              <BlockRender typeSlug={typeSlug} content={content} />
+            </div>
+          ) : (
+            <BlockRender typeSlug={typeSlug} content={content} />
+          )}
         </div>
       </div>
 
@@ -95,6 +135,7 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
 
 export default LivePreview;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: any }) {
   switch (typeSlug) {
     case "press_bar":      return <PressBarBlock content={content} />;
@@ -115,6 +156,14 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "gallery":        return <GalleryBlock content={content} />;
     case "person_card":    return <PersonCardBlock content={content} />;
     case "raw_html":       return <RawHtmlBlock content={content} />;
+    case "ui_top":            return <UiTopBlock content={content} />;
+    case "ui_side_menu_right": return <UiSideMenuRightBlock content={content} />;
+    case "ui_agent":
+      return (
+        <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs italic text-anamaya-charcoal/50">
+          AI agent overlay (renderer coming in a later phase)
+        </div>
+      );
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">

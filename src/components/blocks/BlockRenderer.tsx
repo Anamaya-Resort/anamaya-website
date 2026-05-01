@@ -19,6 +19,8 @@ import PersonCardBlock from "./PersonCardBlock";
 import RawHtmlBlock from "./RawHtmlBlock";
 import TwoColumnBlock from "./TwoColumnBlock";
 import DetailsRatesDynamicBlock from "./DetailsRatesDynamicBlock";
+import UiTopBlock from "./UiTopBlock";
+import UiSideMenuRightBlock from "./UiSideMenuRightBlock";
 
 /** Renders a single block-usage by dispatching on type. Null if unknown. */
 export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
@@ -48,6 +50,9 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "raw_html":       return <RawHtmlBlock content={content} />;
     case "two_column":     return <TwoColumnBlock content={content} />;
     case "details_rates_dynamic": return <DetailsRatesDynamicBlock content={content} />;
+    case "ui_top":            return <UiTopBlock content={content} />;
+    case "ui_side_menu_right": return <UiSideMenuRightBlock content={content} />;
+    case "ui_agent":          return null;
     default: {
       console.warn(`[blocks] unknown block type: ${usage.block.type_slug}`);
       return null;

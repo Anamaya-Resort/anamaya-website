@@ -7,6 +7,7 @@ import BlockCard from "./BlockCard";
 export const dynamic = "force-dynamic";
 
 type Category =
+  | "ui"
   | "video"
   | "image"
   | "2-column"
@@ -17,6 +18,7 @@ type Category =
   | "table";
 
 const ALL_CATEGORIES: Category[] = [
+  "ui",
   "video",
   "image",
   "2-column",
@@ -47,9 +49,13 @@ const BLOCK_CATEGORIES: Record<string, Category[]> = {
   feature_list: ["grid"],
   checklist: ["grid", "rich-text"],
   two_column: ["2-column"],
+  ui_top: ["ui"],
+  ui_side_menu_right: ["ui"],
+  ui_agent: ["ui"],
 };
 
 const CATEGORY_COLORS: Record<Category, string> = {
+  ui: "bg-zinc-200 text-zinc-900 ring-zinc-300 hover:bg-zinc-300",
   video: "bg-rose-100 text-rose-800 ring-rose-200 hover:bg-rose-200",
   image: "bg-amber-100 text-amber-800 ring-amber-200 hover:bg-amber-200",
   "2-column": "bg-violet-100 text-violet-800 ring-violet-200 hover:bg-violet-200",
@@ -61,6 +67,7 @@ const CATEGORY_COLORS: Record<Category, string> = {
 };
 
 const CATEGORY_COLORS_ACTIVE: Record<Category, string> = {
+  ui: "bg-anamaya-charcoal text-white ring-black hover:bg-black",
   video: "bg-rose-600 text-white ring-rose-700 hover:bg-rose-700",
   image: "bg-amber-600 text-white ring-amber-700 hover:bg-amber-700",
   "2-column": "bg-violet-600 text-white ring-violet-700 hover:bg-violet-700",
@@ -110,10 +117,29 @@ export default async function BlocksIndex({
       .order("name");
     return (fb.data ?? []).map((b) => ({ ...b, slug: `${b.type_slug}_?` }));
   }
-  const [{ data: types }, blocks] = await Promise.all([
-    sb.from("block_types").select("slug, name, description").order("name"),
-    fetchBlocks(),
-  ]);
+  // Defensive: 0025 added is_overlay/is_active/sort_order. On older
+  // databases those columns are missing — fall back to the legacy shape
+  // and synthesize default values so the page still renders.
+  async function fetchTypes() {
+    const withOverlay = await sb
+      .from("block_types")
+      .select("slug, name, description, is_overlay, is_active, sort_order")
+      .order("sort_order")
+      .order("name");
+    if (!withOverlay.error) {
+      return (withOverlay.data ?? []).filter(
+        (t) => (t as { is_active?: boolean }).is_active !== false,
+      );
+    }
+    const fb = await sb.from("block_types").select("slug, name, description").order("name");
+    return (fb.data ?? []).map((t) => ({
+      ...t,
+      is_overlay: false,
+      is_active: true,
+      sort_order: 100,
+    }));
+  }
+  const [types, blocks] = await Promise.all([fetchTypes(), fetchBlocks()]);
 
   const byType = new Map<string, (typeof blocks)[number][]>();
   for (const b of blocks) {
@@ -122,7 +148,7 @@ export default async function BlocksIndex({
     byType.set(b.type_slug, arr);
   }
 
-  const visibleTypes = (types ?? []).filter((t) => {
+  const visibleTypes = types.filter((t) => {
     if (!selectedTag) return true;
     return (BLOCK_CATEGORIES[t.slug] ?? []).includes(selectedTag);
   });

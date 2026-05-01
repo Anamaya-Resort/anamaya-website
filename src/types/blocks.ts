@@ -577,6 +577,66 @@ export type DetailsRatesDynamicContent = BlockCta & SectionFrame & {
   pricing_note?: string;
 };
 
+/**
+ * Overlay mixin — applied per-instance to any block type whose
+ * `block_types.is_overlay = true`. Lives in blocks.content JSONB so
+ * one template can carry two variants of the same overlay type with
+ * different anchors / triggers.
+ *
+ * - overlay_z       — stacking order (the bigger the value, the higher).
+ *                     Top bar defaults to 40; side menu drawer to 50.
+ * - overlay_anchor  — viewport edge the overlay is pinned to. "fullscreen"
+ *                     stretches edge-to-edge (e.g. modal or curtain).
+ * - overlay_trigger — when the overlay is visible:
+ *                     - "always":    always rendered (top bars, agent bubble)
+ *                     - "on-menu":   visible after the user opens the side menu
+ *                     - "on-scroll": visible after the page scrolls past a threshold
+ */
+export type OverlayAnchor = "top" | "right" | "bottom" | "left" | "fullscreen";
+export type OverlayTrigger = "always" | "on-menu" | "on-scroll";
+export type OverlayMixin = {
+  overlay_z?: number;
+  overlay_anchor?: OverlayAnchor;
+  overlay_trigger?: OverlayTrigger;
+};
+
+/**
+ * Top-bar UI overlay. Replaces the hard-coded Header.tsx — same
+ * structural fields (logo, CTA, menu button) so the rendered output
+ * is identical to the legacy hard-coded version.
+ */
+export type UiTopContent = OverlayMixin & {
+  logo_dark_url?: string;       // logo for normal (light bg) mode
+  logo_light_url?: string;      // logo for over-video (dark bg) mode
+  logo_width?: number;
+  logo_height?: number;
+  cta_label?: string;
+  cta_href?: string;
+  menu_label?: string;
+  /** When true, the bar uses transparent dark styling while the page is
+   *  scrolled to the top of a hero video and the page declares overVideo. */
+  lightmode_when_over_video?: boolean;
+};
+
+/**
+ * Right-anchored slide-out menu. Replaces SideMenu.tsx. When
+ * `use_nav_data` is true the renderer sources items from
+ * `@/data/nav` (today's behaviour). Future variants may carry an
+ * inline `items[]` array; for now keep the data file as the source.
+ */
+export type UiSideMenuRightContent = OverlayMixin & {
+  width_max_px?: number;        // drawer width cap (default 384)
+  cta_label?: string;
+  cta_href?: string;
+  use_nav_data?: boolean;       // pull items from data/nav.ts
+};
+
+/** AI assistant bubble — placeholder, editor + renderer arrive later. */
+export type UiAgentContent = OverlayMixin & {
+  bubble_label?: string;
+  bg_color?: string;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -597,7 +657,10 @@ export type BlockTypeSlug =
   | "person_card"
   | "raw_html"
   | "two_column"
-  | "details_rates_dynamic";
+  | "details_rates_dynamic"
+  | "ui_top"
+  | "ui_side_menu_right"
+  | "ui_agent";
 
 export type BlockRecord = {
   id: string;

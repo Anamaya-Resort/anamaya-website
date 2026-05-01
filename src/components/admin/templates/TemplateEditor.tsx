@@ -16,6 +16,14 @@ type Row = {
   sort_order: number;
   aspect_ratio: number;
   native_height: number;
+  /** When true, the row's block_type has is_overlay = true. The row gets
+   *  a left gutter showing per-instance overlay metadata, and overlay
+   *  rows are sorted to the top of the list to mirror their fixed-position
+   *  rendering on the live site. */
+  is_overlay: boolean;
+  overlay_z: number | null;
+  overlay_anchor: string | null;
+  overlay_trigger: string | null;
   block: { id: string; slug: string; name: string; type_slug: string };
 };
 type BlockOption = {
@@ -226,6 +234,33 @@ function TemplateRow({
     // position: relative on the row so the absolute-positioned controls
     // can anchor their right gutter to the preview's right edge.
     <section className="relative">
+      {/* Left gutter — only rendered for overlay rows. Shows the per-instance
+          overlay structural fields (anchor / z / trigger) as read-only
+          badges; future iterations may make these inline-editable. */}
+      {row.is_overlay && (
+        <aside
+          className="absolute z-10 w-32 rounded-l-md bg-anamaya-charcoal/90 p-2 text-[10px] font-medium text-white"
+          style={{ right: "100%", top: 0, marginRight: 8 }}
+        >
+          <div className="mb-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/60">
+            Overlay
+          </div>
+          <div className="space-y-0.5">
+            <div>
+              <span className="text-white/60">anchor: </span>
+              <span className="font-mono">{row.overlay_anchor ?? "—"}</span>
+            </div>
+            <div>
+              <span className="text-white/60">z: </span>
+              <span className="font-mono">{row.overlay_z ?? "—"}</span>
+            </div>
+            <div>
+              <span className="text-white/60">trigger: </span>
+              <span className="font-mono">{row.overlay_trigger ?? "—"}</span>
+            </div>
+          </div>
+        </aside>
+      )}
       {/* Preview takes the full admin-content width. overflow-hidden so
           the scaled-down native-size iframe is clipped to the wrapper. */}
       <div
