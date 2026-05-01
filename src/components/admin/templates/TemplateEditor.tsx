@@ -283,22 +283,31 @@ function TemplateRow({
 
   return (
     // position: relative on the row so the absolute-positioned controls
-    // can anchor their right gutter to the preview's right edge.
+    // can anchor their gutters to the preview's edges.
     <section className="relative">
-      {/* Left gutter — only rendered for overlay rows. Inline editor for
-          the three overlay structural fields (anchor / trigger / z) on
-          the block's master content. Saves propagate to every template
-          that uses this block, matching the rest of the block-edit
-          pipeline. */}
-      {row.is_overlay && (
-        <OverlayGutter
-          blockId={row.block.id}
-          anchor={(row.overlay_anchor as OverlayAnchor | null) ?? null}
-          trigger={(row.overlay_trigger as OverlayTrigger | null) ?? null}
-          z={row.overlay_z}
-          pending={pending}
-        />
-      )}
+      {/* Dark left-side panel — single consolidated info + actions
+          panel for every row. Replaces what used to be split between
+          a right-gutter info panel and a left-gutter overlay panel.
+          Overlay rows get an extra "Overlay" subsection at the bottom
+          with anchor/trigger/z controls. */}
+      <LeftInfoPanel
+        blockId={row.block.id}
+        blockName={row.block.name}
+        blockSlug={row.block.slug}
+        blockType={row.block.type_slug}
+        isLocked={row.is_locked}
+        isOverlay={row.is_overlay}
+        overlayAnchor={(row.overlay_anchor as OverlayAnchor | null) ?? null}
+        overlayTrigger={(row.overlay_trigger as OverlayTrigger | null) ?? null}
+        overlayZ={row.overlay_z}
+        isFirst={isFirst}
+        isLast={isLast}
+        pending={pending}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onRemove={onRemove}
+        onToggleLock={onToggleLock}
+      />
       {/* Preview takes the full admin-content width. overflow-hidden so
           the scaled-down native-size iframe is clipped to the wrapper. */}
       <div
@@ -371,98 +380,56 @@ function TemplateRow({
         </button>
       )}
 
-      {/* Info panel — further right, beyond the eye column. Compact and
-          self-contained. Doesn't stretch to the row's height. */}
-      <aside
-        className="absolute w-48 bg-white p-2.5 text-[11px] ring-1 ring-zinc-200"
-        style={{ left: "100%", top: 0, marginLeft: ICON_BTN_SIZE + 8 }}
-      >
-        <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
-          {row.block.type_slug}
-        </div>
-        <div className="truncate font-semibold text-anamaya-charcoal">
-          {row.block.name}
-        </div>
-        <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
-          [#{row.block.slug}]
-        </code>
-        <button
-          type="button"
-          onClick={onToggleLock}
-          disabled={pending}
-          title={
-            row.is_locked
-              ? "Locked — same content on every page using this template. Click to allow per-page customization."
-              : "Unlocked — pages can supply per-page content for this slot. Click to lock."
-          }
-          className={`mt-1.5 flex w-full items-center justify-center gap-1 rounded px-2 py-1 text-[9px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 ${
-            row.is_locked
-              ? "bg-anamaya-charcoal text-white hover:bg-black"
-              : "border border-anamaya-olive-dark bg-white text-anamaya-olive-dark hover:bg-anamaya-olive-dark/10"
-          }`}
-        >
-          {row.is_locked ? <LockClosedIcon /> : <LockOpenIcon />}
-          {row.is_locked ? "Locked" : "Per-page"}
-        </button>
-        <div className="mt-1.5 flex items-center gap-1">
-          <Link
-            href={`/admin/blocks/${row.block.id}`}
-            target="_blank"
-            className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
-          >
-            Edit ↗
-          </Link>
-          <button
-            type="button"
-            onClick={onMoveUp}
-            disabled={isFirst || pending}
-            className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
-            title="Move up"
-          >
-            ↑
-          </button>
-          <button
-            type="button"
-            onClick={onMoveDown}
-            disabled={isLast || pending}
-            className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
-            title="Move down"
-          >
-            ↓
-          </button>
-        </div>
-        <button
-          type="button"
-          onClick={onRemove}
-          disabled={pending}
-          className="mt-1 w-full rounded border border-red-300 bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 disabled:opacity-50"
-        >
-          Remove
-        </button>
-      </aside>
     </section>
   );
 }
 
 /**
- * Inline editor for the three overlay structural fields. Lives in the
- * left gutter of overlay rows in the template builder. Each control
- * commits its change immediately (no save button) — it's a single
- * server-action call per field, kept fast by the targeted JSONB merge
- * in updateBlockOverlayFields.
+ * Single dark panel in the left gutter of every row — identity +
+ * actions for every block, plus an Overlay subsection (anchor /
+ * trigger / z inline editor) for rows whose block_type has
+ * is_overlay = true.
+ *
+ * Replaces the previous split layout (right-gutter info panel +
+ * left-gutter overlay panel). Keeps the optimistic-update commit
+ * flow for the overlay fields: each select fires updateBlockOverlayFields
+ * immediately and useOptimistic updates the rendered value without
+ * waiting on the round trip.
  */
-function OverlayGutter({
+function LeftInfoPanel({
   blockId,
-  anchor,
-  trigger,
-  z,
+  blockName,
+  blockSlug,
+  blockType,
+  isLocked,
+  isOverlay,
+  overlayAnchor: anchor,
+  overlayTrigger: trigger,
+  overlayZ: z,
+  isFirst,
+  isLast,
   pending: parentPending,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+  onToggleLock,
 }: {
   blockId: string;
-  anchor: OverlayAnchor | null;
-  trigger: OverlayTrigger | null;
-  z: number | null;
+  blockName: string;
+  blockSlug: string;
+  blockType: string;
+  isLocked: boolean;
+  isOverlay: boolean;
+  overlayAnchor: OverlayAnchor | null;
+  overlayTrigger: OverlayTrigger | null;
+  overlayZ: number | null;
+  isFirst: boolean;
+  isLast: boolean;
   pending: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+  onToggleLock: () => void;
 }) {
   const router = useRouter();
   const [busy, startTransition] = useTransition();
@@ -492,79 +459,147 @@ function OverlayGutter({
 
   return (
     <aside
-      className="absolute z-10 w-36 rounded-l-md bg-anamaya-charcoal/90 p-2 text-[10px] font-medium text-white"
+      className="absolute z-10 w-44 rounded-l-md bg-anamaya-charcoal/90 p-2.5 text-[11px] text-white"
       style={{ right: "100%", top: 0, marginRight: 8 }}
     >
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/60">
-          Overlay
-        </span>
-        {busy && (
-          <span className="text-[8px] italic text-white/50" aria-live="polite">
-            saving…
-          </span>
-        )}
+      {/* Identity */}
+      <div className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/60">
+        {blockType}
       </div>
-      <label className="block">
-        <span className="block text-[8px] uppercase tracking-wider text-white/50">
-          anchor
-        </span>
-        <select
-          disabled={disabled}
-          value={optAnchor ?? ""}
-          onChange={(e) => commit({ overlay_anchor: e.target.value as OverlayAnchor })}
-          className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
+      <div className="mt-0.5 truncate font-semibold">{blockName}</div>
+      <code className="mt-1 block truncate rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-white/80">
+        [#{blockSlug}]
+      </code>
+
+      {/* Lock toggle (full-width) */}
+      <button
+        type="button"
+        onClick={onToggleLock}
+        disabled={parentPending}
+        title={
+          isLocked
+            ? "Locked — same content on every page using this template. Click to allow per-page customization."
+            : "Unlocked — pages can supply per-page content for this slot. Click to lock."
+        }
+        className={`mt-2 flex w-full items-center justify-center gap-1 rounded px-2 py-1 text-[9px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 ${
+          isLocked
+            ? "bg-white/15 text-white hover:bg-white/25"
+            : "bg-anamaya-olive-dark text-white hover:opacity-90"
+        }`}
+      >
+        {isLocked ? <LockClosedIcon /> : <LockOpenIcon />}
+        {isLocked ? "Locked" : "Per-page"}
+      </button>
+
+      {/* Edit + move row */}
+      <div className="mt-1.5 flex items-center gap-1">
+        <Link
+          href={`/admin/blocks/${blockId}`}
+          target="_blank"
+          className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
         >
-          {!optAnchor && <option value="">—</option>}
-          {ANCHORS.map((a) => (
-            <option key={a} value={a} className="text-anamaya-charcoal">
-              {a}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="mt-1 block">
-        <span className="block text-[8px] uppercase tracking-wider text-white/50">
-          trigger
-        </span>
-        <select
-          disabled={disabled}
-          value={optTrigger ?? ""}
-          onChange={(e) => commit({ overlay_trigger: e.target.value as OverlayTrigger })}
-          className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
+          Edit ↗
+        </Link>
+        <button
+          type="button"
+          onClick={onMoveUp}
+          disabled={isFirst || parentPending}
+          className="rounded border border-white/20 bg-white/10 px-1.5 py-1 text-[9px] text-white hover:bg-white/20 disabled:opacity-40"
+          title="Move up"
         >
-          {!optTrigger && <option value="">—</option>}
-          {TRIGGERS.map((t) => (
-            <option key={t} value={t} className="text-anamaya-charcoal">
-              {t}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="mt-1 block">
-        <span className="block text-[8px] uppercase tracking-wider text-white/50">
-          z-index
-        </span>
-        {/* Uncontrolled — keyed on the prop so prop changes reset the
-            initial value. onBlur fires the save with the typed value if
-            it differs from the server's. Avoids both the "controlled
-            partial typing" problem and the "useEffect to sync prop into
-            state" anti-pattern. */}
-        <input
-          key={`z-${z ?? "null"}`}
-          type="number"
-          disabled={disabled}
-          defaultValue={z ?? ""}
-          onBlur={(e) => {
-            const raw = e.currentTarget.value;
-            if (raw === "") return;
-            const next = Number(raw);
-            if (!Number.isFinite(next) || next === z) return;
-            commit({ overlay_z: next });
-          }}
-          className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
-        />
-      </label>
+          ↑
+        </button>
+        <button
+          type="button"
+          onClick={onMoveDown}
+          disabled={isLast || parentPending}
+          className="rounded border border-white/20 bg-white/10 px-1.5 py-1 text-[9px] text-white hover:bg-white/20 disabled:opacity-40"
+          title="Move down"
+        >
+          ↓
+        </button>
+      </div>
+
+      {/* Remove */}
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={parentPending}
+        className="mt-1 w-full rounded border border-red-300/40 bg-red-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-red-200 hover:bg-red-500/20 disabled:opacity-50"
+      >
+        Remove
+      </button>
+
+      {/* Overlay subsection — only when this block is an overlay type */}
+      {isOverlay && (
+        <div className="mt-3 border-t border-white/10 pt-2">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/60">
+              Overlay
+            </span>
+            {busy && (
+              <span className="text-[8px] italic text-white/50" aria-live="polite">
+                saving…
+              </span>
+            )}
+          </div>
+          <label className="block">
+            <span className="block text-[8px] uppercase tracking-wider text-white/50">
+              anchor
+            </span>
+            <select
+              disabled={disabled}
+              value={optAnchor ?? ""}
+              onChange={(e) => commit({ overlay_anchor: e.target.value as OverlayAnchor })}
+              className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
+            >
+              {!optAnchor && <option value="">—</option>}
+              {ANCHORS.map((a) => (
+                <option key={a} value={a} className="text-anamaya-charcoal">
+                  {a}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="mt-1 block">
+            <span className="block text-[8px] uppercase tracking-wider text-white/50">
+              trigger
+            </span>
+            <select
+              disabled={disabled}
+              value={optTrigger ?? ""}
+              onChange={(e) => commit({ overlay_trigger: e.target.value as OverlayTrigger })}
+              className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
+            >
+              {!optTrigger && <option value="">—</option>}
+              {TRIGGERS.map((t) => (
+                <option key={t} value={t} className="text-anamaya-charcoal">
+                  {t}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="mt-1 block">
+            <span className="block text-[8px] uppercase tracking-wider text-white/50">
+              z-index
+            </span>
+            <input
+              key={`z-${z ?? "null"}`}
+              type="number"
+              disabled={disabled}
+              defaultValue={z ?? ""}
+              onBlur={(e) => {
+                const raw = e.currentTarget.value;
+                if (raw === "") return;
+                const next = Number(raw);
+                if (!Number.isFinite(next) || next === z) return;
+                commit({ overlay_z: next });
+              }}
+              className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
+            />
+          </label>
+        </div>
+      )}
     </aside>
   );
 }
