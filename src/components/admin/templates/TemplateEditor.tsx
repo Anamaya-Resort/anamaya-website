@@ -9,6 +9,7 @@ import {
   removeBlockFromVariant,
   moveBlockInVariant,
   updateBlockOverlayFields,
+  setBlockLocked,
 } from "@/app/admin/(default)/templates/actions";
 
 type OverlayAnchor = "top" | "right" | "bottom" | "left" | "fullscreen";
@@ -27,6 +28,9 @@ type Row = {
    *  rows are sorted to the top of the list to mirror their fixed-position
    *  rendering on the live site. */
   is_overlay: boolean;
+  /** Locked = pages using this template render the master block content.
+   *  Unlocked = pages can supply per-page content via page_block_overrides. */
+  is_locked: boolean;
   overlay_z: number | null;
   overlay_anchor: string | null;
   overlay_trigger: string | null;
@@ -112,6 +116,12 @@ export default function TemplateEditor({
       refresh();
     });
   }
+  function handleToggleLock(rowId: string, nextLocked: boolean) {
+    startTransition(async () => {
+      await setBlockLocked(rowId, nextLocked);
+      refresh();
+    });
+  }
 
   return (
     <div>
@@ -141,6 +151,7 @@ export default function TemplateEditor({
             onMoveUp={() => handleMove(row.id, -1)}
             onMoveDown={() => handleMove(row.id, 1)}
             onInsertAfter={() => setInserterAt({ beforeRowId: row.id })}
+            onToggleLock={() => handleToggleLock(row.id, !row.is_locked)}
           />
         ))}
       </div>
@@ -195,6 +206,7 @@ function TemplateRow({
   onMoveUp,
   onMoveDown,
   onInsertAfter,
+  onToggleLock,
 }: {
   row: Row;
   isFirst: boolean;
@@ -207,6 +219,7 @@ function TemplateRow({
   onMoveUp: () => void;
   onMoveDown: () => void;
   onInsertAfter: () => void;
+  onToggleLock: () => void;
 }) {
   // Each iframe starts at the server-estimated native_height, but rich
   // text and any block whose rendered height differs from the estimate
@@ -341,6 +354,24 @@ function TemplateRow({
         <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
           [#{row.block.slug}]
         </code>
+        <button
+          type="button"
+          onClick={onToggleLock}
+          disabled={pending}
+          title={
+            row.is_locked
+              ? "Locked — same content on every page using this template. Click to allow per-page customization."
+              : "Unlocked — pages can supply per-page content for this slot. Click to lock."
+          }
+          className={`mt-1.5 flex w-full items-center justify-center gap-1 rounded px-2 py-1 text-[9px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 ${
+            row.is_locked
+              ? "bg-anamaya-charcoal text-white hover:bg-black"
+              : "border border-anamaya-olive-dark bg-white text-anamaya-olive-dark hover:bg-anamaya-olive-dark/10"
+          }`}
+        >
+          {row.is_locked ? <LockClosedIcon /> : <LockOpenIcon />}
+          {row.is_locked ? "Locked" : "Per-page"}
+        </button>
         <div className="mt-1.5 flex items-center gap-1">
           <Link
             href={`/admin/blocks/${row.block.id}`}
@@ -519,6 +550,22 @@ function EyeOffIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
       <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+function LockClosedIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="1.5" />
+      <path d="M8 11V7a4 4 0 1 1 8 0v4" />
+    </svg>
+  );
+}
+function LockOpenIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="1.5" />
+      <path d="M8 11V7a4 4 0 0 1 7-2" />
     </svg>
   );
 }

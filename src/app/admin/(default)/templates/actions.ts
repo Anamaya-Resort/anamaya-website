@@ -270,6 +270,42 @@ export async function updateBlockOverlayFields(
   revalidatePath("/", "layout");
 }
 
+/**
+ * Toggle the lock state of a single block within a template variant.
+ *
+ * Locked  = the master block content always renders (template-shared).
+ * Unlocked = pages using this template can supply per-page content via
+ * page_block_overrides; if no override exists, the master still renders.
+ *
+ * Toggling does NOT touch existing override rows — flipping a slot
+ * locked → unlocked → locked preserves any authored per-page values
+ * (they're just ignored while the slot is locked).
+ */
+export async function setBlockLocked(
+  rowId: string,
+  locked: boolean,
+): Promise<void> {
+  const sb = supabaseServer();
+  const { data: row, error: rErr } = await sb
+    .from("page_template_variant_blocks")
+    .select("page_template_variant_id")
+    .eq("id", rowId)
+    .maybeSingle();
+  if (rErr) throw new Error(rErr.message);
+  if (!row) throw new Error("Variant block row not found");
+
+  const { error: uErr } = await sb
+    .from("page_template_variant_blocks")
+    .update({ is_locked: locked })
+    .eq("id", rowId);
+  if (uErr) throw new Error(uErr.message);
+
+  await bumpAndRevalidate(row.page_template_variant_id);
+  // The lock state affects every page using this template, so blow
+  // away the public layout cache.
+  revalidatePath("/", "layout");
+}
+
 async function bumpAndRevalidate(variantId: string) {
   const sb = supabaseServer();
   const { data } = await sb

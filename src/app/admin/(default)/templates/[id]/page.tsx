@@ -78,13 +78,41 @@ export default async function EditTemplate({
   // Blocks inside the default variant, in order. We also pull `content`
   // so the page can compute a per-block iframe height that matches the
   // block's natural rendered size (no empty space below).
-  const { data: rows } = defaultVariant
-    ? await sb
+  // Defensive: if 0028 hasn't been applied yet, is_locked is missing —
+  // fall back to the legacy shape with everything locked.
+  type RawRow = {
+    id: string;
+    sort_order: number;
+    is_locked?: boolean;
+    block: {
+      id: string;
+      slug: string;
+      name: string;
+      type_slug: string;
+      content: Record<string, unknown> | null;
+    } | null;
+  };
+  let rows: RawRow[] = [];
+  if (defaultVariant) {
+    const withLock = await sb
+      .from("page_template_variant_blocks")
+      .select("id, sort_order, is_locked, block:blocks(id, slug, name, type_slug, content)")
+      .eq("page_template_variant_id", defaultVariant.id)
+      .order("sort_order");
+    if (!withLock.error) {
+      rows = (withLock.data ?? []) as unknown as RawRow[];
+    } else {
+      const fb = await sb
         .from("page_template_variant_blocks")
         .select("id, sort_order, block:blocks(id, slug, name, type_slug, content)")
         .eq("page_template_variant_id", defaultVariant.id)
-        .order("sort_order")
-    : { data: [] };
+        .order("sort_order");
+      rows = ((fb.data ?? []) as unknown as RawRow[]).map((r) => ({
+        ...r,
+        is_locked: true,
+      }));
+    }
+  }
 
   // All blocks — used by the inserter modal to let the editor pick one.
   const { data: allBlocks } = await sb
@@ -125,7 +153,7 @@ export default async function EditTemplate({
         templateId={template.id}
         variant={defaultVariant}
         referenceWidth={REF_W}
-        rows={(rows ?? [])
+        rows={rows
           // Guard against rows whose block row is missing/stale. Accessing
           // block.type_slug on a null would 500 the whole page.
           .filter((r) => r.block != null)
@@ -146,6 +174,7 @@ export default async function EditTemplate({
               native_height: nativeH,
               aspect_ratio: REF_W / nativeH,
               is_overlay: isOverlay,
+              is_locked: r.is_locked !== false,
               overlay_z: typeof c.overlay_z === "number" ? c.overlay_z : null,
               overlay_anchor: typeof c.overlay_anchor === "string" ? (c.overlay_anchor as string) : null,
               overlay_trigger: typeof c.overlay_trigger === "string" ? (c.overlay_trigger as string) : null,

@@ -6,6 +6,7 @@ import {
   RedirectType,
 } from "next/navigation";
 import ProseHtml from "@/components/ProseHtml";
+import TemplateRenderer from "@/components/templates/TemplateRenderer";
 import { resolveContentPath, bumpRedirectHit } from "@/lib/website-builder/resolver";
 import { getAllSettings } from "@/lib/website-builder/settings";
 
@@ -78,6 +79,19 @@ export default async function CatchAllPage({
   }
 
   const r = resolution.row;
+
+  // When the row has a CMS template assigned, render via the template
+  // pipeline (with per-page overrides). The HTML body fallback only
+  // kicks in when no template is set — for migrated WP pages that
+  // haven't yet been converted to the new framework.
+  if (r.cms_template_id) {
+    return (
+      <TemplateRenderer
+        templateId={r.cms_template_id}
+        pageId={r.id}
+      />
+    );
+  }
 
   return (
     <article className="bg-white">
