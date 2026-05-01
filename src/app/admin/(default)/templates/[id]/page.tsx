@@ -115,20 +115,95 @@ export default async function EditTemplate({
   }
 
   // All blocks — used by the inserter modal to let the editor pick one.
+  // Explicit high limit so even a large library can't be silently truncated
+  // by supabase-js's default 1000-row range.
   const { data: allBlocks } = await sb
     .from("blocks")
     .select("id, slug, name, type_slug, snapshot_url")
-    .order("type_slug")
-    .order("name");
+    .order("name")
+    .limit(2000);
 
-  // Lookup table: type_slug → is_overlay. Defensive: older databases
-  // without 0025 won't have the column; default everything to false.
-  const { data: typesRaw } = await sb
+  // Block-type metadata: name + ordering + overlay flag in one fetch. Used
+  // for the inserter modal's section headers and the row-gutter overlay
+  // styling. Defensive: pre-0025 databases lack the new columns — fall
+  // back to slug-only and synthesize defaults.
+  type BlockTypeMeta = {
+    slug: string;
+    name: string;
+    is_overlay: boolean;
+    is_active: boolean;
+    sort_order: number;
+  };
+  let blockTypes: BlockTypeMeta[] = [];
+  const fullTypes = await sb
     .from("block_types")
-    .select("slug, is_overlay");
+    .select("slug, name, description, is_overlay, is_active, sort_order");
+  if (!fullTypes.error) {
+    blockTypes = (fullTypes.data ?? [])
+      .filter((t) => (t as { is_active?: boolean }).is_active !== false)
+      .map((t) => ({
+        slug: t.slug as string,
+        name: (t as { name?: string }).name ?? (t.slug as string),
+        is_overlay: Boolean((t as { is_overlay?: boolean }).is_overlay),
+        is_active: (t as { is_active?: boolean }).is_active !== false,
+        sort_order:
+          typeof (t as { sort_order?: number }).sort_order === "number"
+            ? ((t as { sort_order?: number }).sort_order as number)
+            : 100,
+      }));
+  } else {
+    const fb = await sb.from("block_types").select("slug, name");
+    blockTypes = (fb.data ?? []).map((t) => ({
+      slug: t.slug as string,
+      name: (t as { name?: string }).name ?? (t.slug as string),
+      is_overlay: false,
+      is_active: true,
+      sort_order: 100,
+    }));
+  }
   const overlayBySlug = new Map<string, boolean>(
-    (typesRaw ?? []).map((t) => [t.slug as string, Boolean((t as { is_overlay?: boolean }).is_overlay)]),
+    blockTypes.map((t) => [t.slug, t.is_overlay]),
   );
+
+  // Group all available blocks by type, in block_types.sort_order order
+  // (so UI overlays land at the top, matching the /admin/blocks index).
+  // Within each group, sort blocks alphabetically by name.
+  type BlockOpt = {
+    id: string;
+    slug: string;
+    name: string;
+    type_slug: string;
+    snapshot_url: string | null;
+  };
+  const blocksOpts = (allBlocks ?? []) as BlockOpt[];
+  const blockGroups = blockTypes
+    .map((t) => ({
+      type_slug: t.slug,
+      type_name: t.name,
+      is_overlay: t.is_overlay,
+      blocks: blocksOpts
+        .filter((b) => b.type_slug === t.slug)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    .filter((g) => g.blocks.length > 0)
+    .sort((a, b) => {
+      const ai = blockTypes.find((t) => t.slug === a.type_slug)?.sort_order ?? 100;
+      const bi = blockTypes.find((t) => t.slug === b.type_slug)?.sort_order ?? 100;
+      return ai - bi;
+    });
+  // Surface any "orphan" blocks whose type_slug has no matching block_type
+  // row, so nothing can ever silently disappear from the picker.
+  const knownTypeSlugs = new Set(blockTypes.map((t) => t.slug));
+  const orphans = blocksOpts.filter((b) => !knownTypeSlugs.has(b.type_slug));
+  const orphanGroups = Array.from(new Set(orphans.map((b) => b.type_slug))).map(
+    (slug) => ({
+      type_slug: slug,
+      type_name: `${slug} (unregistered)`,
+      is_overlay: false,
+      blocks: orphans.filter((b) => b.type_slug === slug),
+    }),
+  );
+  const fullBlockGroups = [...blockGroups, ...orphanGroups];
 
   return (
     <div>
@@ -193,13 +268,8 @@ export default async function EditTemplate({
             if (a.is_overlay !== b.is_overlay) return a.is_overlay ? -1 : 1;
             return a.sort_order - b.sort_order;
           })}
-        allBlocks={(allBlocks ?? []) as Array<{
-          id: string;
-          slug: string;
-          name: string;
-          type_slug: string;
-          snapshot_url: string | null;
-        }>}
+        allBlocks={blocksOpts}
+        blockGroups={fullBlockGroups}
       />
     </div>
   );

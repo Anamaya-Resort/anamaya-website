@@ -44,6 +44,13 @@ type BlockOption = {
   snapshot_url: string | null;
 };
 
+type BlockGroup = {
+  type_slug: string;
+  type_name: string;
+  is_overlay: boolean;
+  blocks: BlockOption[];
+};
+
 const ICON_BTN_SIZE = 26;
 
 export default function TemplateEditor({
@@ -51,12 +58,17 @@ export default function TemplateEditor({
   variant,
   rows,
   allBlocks,
+  blockGroups,
   referenceWidth,
 }: {
   templateId: string;
   variant: Variant;
   rows: Row[];
   allBlocks: BlockOption[];
+  /** Block options grouped by block_type, sorted by block_types.sort_order
+   *  so UI overlays sit at the top. Each group keeps the type's display
+   *  name for the picker section header. */
+  blockGroups: BlockGroup[];
   referenceWidth: number;
 }) {
   const router = useRouter();
@@ -169,6 +181,7 @@ export default function TemplateEditor({
       {inserterAt != null && (
         <BlockPickerModal
           allBlocks={allBlocks}
+          blockGroups={blockGroups}
           onPick={(blockId) => {
             if (inserterAt.afterAll) handleAppend(blockId);
             else if (inserterAt.beforeRowId) handleInsertAfter(inserterAt.beforeRowId, blockId);
@@ -580,24 +593,31 @@ function PlusIcon() {
 
 function BlockPickerModal({
   allBlocks,
+  blockGroups,
   onPick,
   onClose,
 }: {
   allBlocks: BlockOption[];
+  blockGroups: BlockGroup[];
   onPick: (blockId: string) => void;
   onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return allBlocks;
+  const q = query.trim().toLowerCase();
+
+  // When searching, show a flat list (across all types). When not
+  // searching, show grouped sections so the user can scan by category.
+  const flatHits: BlockOption[] = useMemo(() => {
+    if (!q) return [];
     return allBlocks.filter(
       (b) =>
         b.name.toLowerCase().includes(q) ||
         b.slug.toLowerCase().includes(q) ||
         b.type_slug.toLowerCase().includes(q),
     );
-  }, [allBlocks, query]);
+  }, [allBlocks, q]);
+
+  const totalCount = allBlocks.length;
 
   return (
     <div
@@ -609,7 +629,13 @@ function BlockPickerModal({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-          <h3 className="text-sm font-semibold text-anamaya-charcoal">Pick a block</h3>
+          <div>
+            <h3 className="text-sm font-semibold text-anamaya-charcoal">Pick a block</h3>
+            <p className="mt-0.5 text-[11px] text-anamaya-charcoal/60">
+              {totalCount} block{totalCount === 1 ? "" : "s"} across{" "}
+              {blockGroups.length} type{blockGroups.length === 1 ? "" : "s"}
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="rounded border border-zinc-300 px-2 py-1 text-[10px] uppercase tracking-wider text-anamaya-charcoal/70 hover:bg-zinc-50"
@@ -626,47 +652,108 @@ function BlockPickerModal({
             className="w-full rounded-md border border-zinc-300 px-3 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
           />
         </div>
-        <ul className="max-h-[60vh] divide-y divide-zinc-100 overflow-y-auto">
-          {filtered.length === 0 && (
-            <li className="px-4 py-6 text-center text-sm italic text-anamaya-charcoal/60">
-              No blocks match.
-            </li>
+
+        <div className="max-h-[60vh] overflow-y-auto">
+          {q ? (
+            <FlatList items={flatHits} onPick={onPick} />
+          ) : blockGroups.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm italic text-anamaya-charcoal/60">
+              No blocks exist yet. Create one at{" "}
+              <span className="font-mono">/admin/blocks</span>.
+            </p>
+          ) : (
+            blockGroups.map((g) => (
+              <section key={g.type_slug}>
+                <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-1.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-anamaya-charcoal/80">
+                    {g.type_name}
+                    {g.is_overlay && (
+                      <span className="ml-2 rounded bg-anamaya-charcoal px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-white">
+                        overlay
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-mono text-[10px] text-anamaya-charcoal/50">
+                    {g.type_slug} · {g.blocks.length}
+                  </span>
+                </header>
+                <ul className="divide-y divide-zinc-100">
+                  {g.blocks.map((b) => (
+                    <BlockRow key={b.id} block={b} onPick={onPick} />
+                  ))}
+                </ul>
+              </section>
+            ))
           )}
-          {filtered.map((b) => (
-            <li key={b.id}>
-              <button
-                type="button"
-                onClick={() => onPick(b.id)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-zinc-50"
-              >
-                <div className="h-10 w-20 flex-shrink-0 overflow-hidden rounded bg-zinc-100">
-                  {b.snapshot_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={b.snapshot_url}
-                      alt=""
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-[9px] italic text-anamaya-charcoal/40">
-                      No preview
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-anamaya-charcoal">{b.name}</div>
-                  <div className="mt-0.5 flex items-center gap-2 text-[11px] text-anamaya-charcoal/60">
-                    <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono">
-                      [#{b.slug}]
-                    </span>
-                    <span className="italic">{b.type_slug}</span>
-                  </div>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
+        </div>
       </div>
     </div>
+  );
+}
+
+function FlatList({
+  items,
+  onPick,
+}: {
+  items: BlockOption[];
+  onPick: (id: string) => void;
+}) {
+  if (items.length === 0) {
+    return (
+      <p className="px-4 py-6 text-center text-sm italic text-anamaya-charcoal/60">
+        No blocks match.
+      </p>
+    );
+  }
+  return (
+    <ul className="divide-y divide-zinc-100">
+      {items.map((b) => (
+        <BlockRow key={b.id} block={b} onPick={onPick} />
+      ))}
+    </ul>
+  );
+}
+
+function BlockRow({
+  block,
+  onPick,
+}: {
+  block: BlockOption;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onPick(block.id)}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-zinc-50"
+      >
+        <div className="h-10 w-20 flex-shrink-0 overflow-hidden rounded bg-zinc-100">
+          {block.snapshot_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={block.snapshot_url}
+              alt=""
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-[9px] italic text-anamaya-charcoal/40">
+              No preview
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-anamaya-charcoal">
+            {block.name}
+          </div>
+          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-anamaya-charcoal/60">
+            <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono">
+              [#{block.slug}]
+            </span>
+            <span className="italic">{block.type_slug}</span>
+          </div>
+        </div>
+      </button>
+    </li>
   );
 }
