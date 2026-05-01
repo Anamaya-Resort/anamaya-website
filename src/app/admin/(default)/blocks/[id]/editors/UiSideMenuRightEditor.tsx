@@ -5,8 +5,8 @@ import BlockEditorChrome, {
   type BlockEditorState,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import type { OrgBranding } from "@/config/brand-tokens";
+import { OverlayFields } from "@/components/admin/blocks/OverlayFields";
 import type { UiSideMenuRightContent } from "@/types/blocks";
-import { OverlayFields } from "./UiTopEditor";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -85,7 +85,6 @@ function Form({ state }: { state: BlockEditorState<UiSideMenuRightContent> }) {
             onChange={(e) => patch({ use_nav_data: e.target.checked })}
           />
           Source nav items from <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px]">data/nav.ts</code>
-          {" "}(uncheck once an inline items array is supported)
         </span>
       </label>
     </div>

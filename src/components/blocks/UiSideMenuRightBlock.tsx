@@ -27,11 +27,19 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
   const ctaHref = c.cta_href ?? "/rg-calendar/";
 
   const chrome = useChromeOptional();
-  const open = trigger === "always" ? true : chrome?.menuOpen ?? false;
+  // When mounted outside a ChromeProvider (admin LivePreview, isolated
+  // /block-preview iframes) treat the drawer as open so the editor can
+  // see what they're editing — otherwise an "on-menu" drawer would sit
+  // closed behind the checkerboard and look empty.
+  const open = trigger === "always" ? true : chrome ? chrome.menuOpen : true;
   const close = () => chrome?.setMenuOpen(false);
   const user = chrome?.user ?? null;
 
   useEffect(() => {
+    // Only lock body scroll + bind Escape on the real site. In admin
+    // preview (no chrome) the drawer is "open" purely for visual
+    // editing — we mustn't freeze the surrounding admin page.
+    if (!chrome) return;
     if (!open || trigger === "always") return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -44,7 +52,7 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
       window.removeEventListener("keydown", onKey);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, trigger]);
+  }, [open, trigger, chrome]);
 
   return (
     <div

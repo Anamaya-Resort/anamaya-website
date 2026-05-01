@@ -5,8 +5,8 @@ import BlockEditorChrome, {
   type BlockEditorState,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import type { OrgBranding } from "@/config/brand-tokens";
+import { OverlayFields } from "@/components/admin/blocks/OverlayFields";
 import type { UiAgentContent } from "@/types/blocks";
-import { OverlayFields } from "./UiTopEditor";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
