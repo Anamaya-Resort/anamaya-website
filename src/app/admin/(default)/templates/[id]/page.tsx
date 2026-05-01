@@ -209,7 +209,18 @@ export default async function EditTemplate({
   const livePreviewUrl = `/preview/template/${template.id}`;
 
   return (
-    <div>
+    // Break out of the admin column's max-w-6xl so the block previews
+    // can use ~80vw of the viewport — much closer to how the live site
+    // looks. The right gutter (the empty 10vw between the previews and
+    // the viewport edge) is where the per-row info panels sit, so wider
+    // previews don't push them off-screen. Left gutter mirrors the
+    // right's width and currently stays empty (room for future
+    // per-row controls — e.g. inline-edit overlays for non-overlay
+    // blocks).
+    <div
+      className="mx-[calc(50%-50vw)] w-screen"
+      style={{ paddingLeft: "10vw", paddingRight: "10vw" }}
+    >
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link href="/admin/templates" className="text-xs uppercase tracking-wider text-anamaya-charcoal/60 hover:text-anamaya-charcoal">
