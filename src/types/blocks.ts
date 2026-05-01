@@ -618,17 +618,25 @@ export type UiTopContent = OverlayMixin & {
   lightmode_when_over_video?: boolean;
 };
 
+/** A single nav row inside a side menu. Recursive children let one item
+ *  expand into a sub-list (e.g. "Yoga Retreats" → [Rates, Types, FAQs]). */
+export type UiNavItem = {
+  label: string;
+  href?: string;
+  children?: UiNavItem[];
+};
+
 /**
- * Right-anchored slide-out menu. Replaces SideMenu.tsx. When
- * `use_nav_data` is true the renderer sources items from
- * `@/data/nav` (today's behaviour). Future variants may carry an
- * inline `items[]` array; for now keep the data file as the source.
+ * Right-anchored slide-out menu. Replaces SideMenu.tsx. Items live in
+ * the block content so they're editable via the block editor; for
+ * backwards compatibility, when `items` is empty the renderer falls
+ * back to the legacy SIDE_MENU constant in `data/nav.ts`.
  */
 export type UiSideMenuRightContent = OverlayMixin & {
   width_max_px?: number;        // drawer width cap (default 384)
   cta_label?: string;
   cta_href?: string;
-  use_nav_data?: boolean;       // pull items from data/nav.ts
+  items?: UiNavItem[];
 };
 
 /**

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { UiSideMenuRightContent } from "@/types/blocks";
-import { SIDE_MENU, type NavItem } from "@/data/nav";
+import type { UiSideMenuRightContent, UiNavItem } from "@/types/blocks";
+import { SIDE_MENU } from "@/data/nav";
 import { getSSOLoginUrl } from "@/config/sso";
 import { useChromeOptional } from "@/contexts/ChromeContext";
 import UserAvatar from "../UserAvatar";
@@ -15,8 +15,9 @@ import UserAvatar from "../UserAvatar";
  * "always" the drawer ignores the chrome state and stays open — useful
  * for previewing the open state in the block editor.
  *
- * Today nav items are sourced from `data/nav.ts` (`use_nav_data: true`).
- * Future variants may carry an inline items array; out of scope here.
+ * Items come from content.items. For backward compatibility (and to
+ * keep an existing site rendering even if the block has been wiped) we
+ * fall back to the legacy SIDE_MENU constant when items is empty.
  */
 export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuRightContent }) {
   const c = content ?? {};
@@ -25,6 +26,7 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
   const widthMaxPx = c.width_max_px ?? 384;
   const ctaLabel = c.cta_label ?? "BOOK YOUR STAY";
   const ctaHref = c.cta_href ?? "/rg-calendar/";
+  const items: UiNavItem[] = c.items?.length ? c.items : SIDE_MENU;
 
   const chrome = useChromeOptional();
   // When mounted outside a ChromeProvider (admin LivePreview, isolated
@@ -134,7 +136,7 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
           )}
 
           <ul className="space-y-1">
-            {SIDE_MENU.map((item) => (
+            {items.map((item) => (
               <MenuItem key={item.label} item={item} onNavigate={close} />
             ))}
           </ul>
@@ -152,7 +154,7 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
   );
 }
 
-function MenuItem({ item, onNavigate }: { item: NavItem; onNavigate: () => void }) {
+function MenuItem({ item, onNavigate }: { item: UiNavItem; onNavigate: () => void }) {
   const [expanded, setExpanded] = useState(false);
   if (!item.children?.length) {
     return (
