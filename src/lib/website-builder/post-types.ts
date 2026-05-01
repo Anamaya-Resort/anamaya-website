@@ -33,6 +33,22 @@ export type PostTypeConfig = {
 
 export const POST_TYPES: PostTypeConfig[] = [
   {
+    // Listed first so it sits at the top of the admin sidebar.
+    // Typically only one homepage is live at a time, but the post
+    // type exists so additional homepage variants can be authored
+    // alongside the active one (a future split-testing module will
+    // pick which one is served at /).
+    slug: "homepages",
+    postType: "homepage",
+    label: "Homepage",
+    pluralLabel: "Homepages",
+    templateSlug: "home",
+    hierarchical: false,
+    columns: ["title", "date"],
+    taxonomies: [],
+    icon: "Home",
+  },
+  {
     slug: "pages",
     postType: "page",
     label: "Page",

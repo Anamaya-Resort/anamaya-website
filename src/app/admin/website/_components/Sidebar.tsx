@@ -14,6 +14,7 @@ import {
   ChefHat,
   Newspaper,
   Quote,
+  Home,
   Image as ImageIcon,
   ArrowRightLeft,
   Settings,
@@ -31,6 +32,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   ChefHat,
   Newspaper,
   Quote,
+  Home,
 };
 
 const TAXONOMY_LABELS: Record<string, string> = {
