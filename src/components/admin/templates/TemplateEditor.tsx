@@ -11,6 +11,7 @@ import {
   updateBlockOverlayFields,
   setBlockLocked,
 } from "@/app/admin/(default)/templates/actions";
+import LivePreviewButton from "./LivePreviewButton";
 
 type OverlayAnchor = "top" | "right" | "bottom" | "left" | "fullscreen";
 type OverlayTrigger = "always" | "on-menu" | "on-scroll";
@@ -60,6 +61,7 @@ export default function TemplateEditor({
   allBlocks,
   blockGroups,
   referenceWidth,
+  livePreviewUrl,
 }: {
   templateId: string;
   variant: Variant;
@@ -70,6 +72,10 @@ export default function TemplateEditor({
    *  name for the picker section header. */
   blockGroups: BlockGroup[];
   referenceWidth: number;
+  /** Public preview URL for this template — rendered in the right
+   *  gutter alongside the "+ Add block to end" button so editors can
+   *  open the preview without scrolling back up to the header. */
+  livePreviewUrl?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -168,7 +174,7 @@ export default function TemplateEditor({
         ))}
       </div>
 
-      <div className="mt-4">
+      <div className="relative mt-4">
         <button
           type="button"
           onClick={() => setInserterAt({ afterAll: true })}
@@ -176,6 +182,19 @@ export default function TemplateEditor({
         >
           {rows.length === 0 ? "+ Add first block" : "+ Add block to end"}
         </button>
+        {livePreviewUrl && (
+          <div
+            className="absolute"
+            style={{
+              left: "100%",
+              marginLeft: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+          >
+            <LivePreviewButton href={livePreviewUrl} />
+          </div>
+        )}
       </div>
 
       {inserterAt != null && (
