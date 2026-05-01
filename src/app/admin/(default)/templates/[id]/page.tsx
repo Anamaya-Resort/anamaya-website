@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase-server";
 import TemplateEditor from "@/components/admin/templates/TemplateEditor";
+import LivePreviewButton from "@/components/admin/templates/LivePreviewButton";
 
 export const dynamic = "force-dynamic";
 
@@ -205,6 +206,8 @@ export default async function EditTemplate({
   );
   const fullBlockGroups = [...blockGroups, ...orphanGroups];
 
+  const livePreviewUrl = `/preview/template/${template.id}`;
+
   return (
     <div>
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -222,6 +225,7 @@ export default async function EditTemplate({
             </span>
           )}
         </div>
+        <LivePreviewButton href={livePreviewUrl} />
       </header>
 
       <TemplateEditor
@@ -271,6 +275,10 @@ export default async function EditTemplate({
         allBlocks={blocksOpts}
         blockGroups={fullBlockGroups}
       />
+
+      <footer className="mt-8 flex justify-end">
+        <LivePreviewButton href={livePreviewUrl} />
+      </footer>
     </div>
   );
 }
