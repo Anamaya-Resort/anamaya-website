@@ -224,6 +224,52 @@ export async function moveBlockInVariant(rowId: string, delta: -1 | 1): Promise<
   await bumpAndRevalidate(row.page_template_variant_id);
 }
 
+/**
+ * Patch the three overlay structural fields (anchor / trigger / z) on
+ * a block's content. Used by the template-builder gutter for inline
+ * editing — it's a targeted JSONB merge so we don't have to round-trip
+ * the entire block content (and trigger BlockEditorChrome's snapshot
+ * capture, which is owned by the dedicated block-editor page).
+ *
+ * Mutation scope is the master block — ALL templates that use this
+ * block see the change. That matches how every other block edit
+ * already works; per-template overrides go through block_usages.
+ */
+export async function updateBlockOverlayFields(
+  blockId: string,
+  patch: {
+    overlay_anchor?: "top" | "right" | "bottom" | "left" | "fullscreen";
+    overlay_trigger?: "always" | "on-menu" | "on-scroll";
+    overlay_z?: number;
+  },
+): Promise<void> {
+  const sb = supabaseServer();
+  const { data: row, error: rErr } = await sb
+    .from("blocks")
+    .select("content")
+    .eq("id", blockId)
+    .maybeSingle();
+  if (rErr) throw new Error(rErr.message);
+  if (!row) throw new Error("Block not found");
+
+  const current = (row.content ?? {}) as Record<string, unknown>;
+  const next: Record<string, unknown> = { ...current };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) continue;
+    next[k] = v;
+  }
+
+  const { error: uErr } = await sb.from("blocks").update({ content: next }).eq("id", blockId);
+  if (uErr) throw new Error(uErr.message);
+
+  // Chrome blocks render on every public page via the site_chrome
+  // template — invalidate the whole site layout so visitors get the
+  // new value on the next request.
+  revalidatePath("/admin/templates", "layout");
+  revalidatePath("/admin/blocks");
+  revalidatePath("/", "layout");
+}
+
 async function bumpAndRevalidate(variantId: string) {
   const sb = supabaseServer();
   const { data } = await sb

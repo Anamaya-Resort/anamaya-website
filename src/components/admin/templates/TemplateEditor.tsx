@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +8,13 @@ import {
   insertBlockBefore,
   removeBlockFromVariant,
   moveBlockInVariant,
+  updateBlockOverlayFields,
 } from "@/app/admin/(default)/templates/actions";
+
+type OverlayAnchor = "top" | "right" | "bottom" | "left" | "fullscreen";
+type OverlayTrigger = "always" | "on-menu" | "on-scroll";
+const ANCHORS: OverlayAnchor[] = ["top", "right", "bottom", "left", "fullscreen"];
+const TRIGGERS: OverlayTrigger[] = ["always", "on-menu", "on-scroll"];
 
 type Variant = { id: string; slug: string; name: string; is_default: boolean } | null;
 type Row = {
@@ -234,32 +240,19 @@ function TemplateRow({
     // position: relative on the row so the absolute-positioned controls
     // can anchor their right gutter to the preview's right edge.
     <section className="relative">
-      {/* Left gutter — only rendered for overlay rows. Shows the per-instance
-          overlay structural fields (anchor / z / trigger) as read-only
-          badges; future iterations may make these inline-editable. */}
+      {/* Left gutter — only rendered for overlay rows. Inline editor for
+          the three overlay structural fields (anchor / trigger / z) on
+          the block's master content. Saves propagate to every template
+          that uses this block, matching the rest of the block-edit
+          pipeline. */}
       {row.is_overlay && (
-        <aside
-          className="absolute z-10 w-32 rounded-l-md bg-anamaya-charcoal/90 p-2 text-[10px] font-medium text-white"
-          style={{ right: "100%", top: 0, marginRight: 8 }}
-        >
-          <div className="mb-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/60">
-            Overlay
-          </div>
-          <div className="space-y-0.5">
-            <div>
-              <span className="text-white/60">anchor: </span>
-              <span className="font-mono">{row.overlay_anchor ?? "—"}</span>
-            </div>
-            <div>
-              <span className="text-white/60">z: </span>
-              <span className="font-mono">{row.overlay_z ?? "—"}</span>
-            </div>
-            <div>
-              <span className="text-white/60">trigger: </span>
-              <span className="font-mono">{row.overlay_trigger ?? "—"}</span>
-            </div>
-          </div>
-        </aside>
+        <OverlayGutter
+          blockId={row.block.id}
+          anchor={(row.overlay_anchor as OverlayAnchor | null) ?? null}
+          trigger={(row.overlay_trigger as OverlayTrigger | null) ?? null}
+          z={row.overlay_z}
+          pending={pending}
+        />
       )}
       {/* Preview takes the full admin-content width. overflow-hidden so
           the scaled-down native-size iframe is clipped to the wrapper. */}
@@ -385,6 +378,131 @@ function TemplateRow({
         </button>
       </aside>
     </section>
+  );
+}
+
+/**
+ * Inline editor for the three overlay structural fields. Lives in the
+ * left gutter of overlay rows in the template builder. Each control
+ * commits its change immediately (no save button) — it's a single
+ * server-action call per field, kept fast by the targeted JSONB merge
+ * in updateBlockOverlayFields.
+ */
+function OverlayGutter({
+  blockId,
+  anchor,
+  trigger,
+  z,
+  pending: parentPending,
+}: {
+  blockId: string;
+  anchor: OverlayAnchor | null;
+  trigger: OverlayTrigger | null;
+  z: number | null;
+  pending: boolean;
+}) {
+  const router = useRouter();
+  const [busy, startTransition] = useTransition();
+  // Optimistic mirrors of the server values. useOptimistic accepts the
+  // prop as the canonical state and lets the UI show a pending change
+  // for the duration of the transition; React resets to the prop value
+  // automatically once the action settles + router refreshes.
+  const [optAnchor, setOptAnchor] = useOptimistic<OverlayAnchor | null, OverlayAnchor>(
+    anchor,
+    (_, next) => next,
+  );
+  const [optTrigger, setOptTrigger] = useOptimistic<OverlayTrigger | null, OverlayTrigger>(
+    trigger,
+    (_, next) => next,
+  );
+
+  const disabled = busy || parentPending;
+
+  function commit(patch: { overlay_anchor?: OverlayAnchor; overlay_trigger?: OverlayTrigger; overlay_z?: number }) {
+    startTransition(async () => {
+      if (patch.overlay_anchor) setOptAnchor(patch.overlay_anchor);
+      if (patch.overlay_trigger) setOptTrigger(patch.overlay_trigger);
+      await updateBlockOverlayFields(blockId, patch);
+      router.refresh();
+    });
+  }
+
+  return (
+    <aside
+      className="absolute z-10 w-36 rounded-l-md bg-anamaya-charcoal/90 p-2 text-[10px] font-medium text-white"
+      style={{ right: "100%", top: 0, marginRight: 8 }}
+    >
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/60">
+          Overlay
+        </span>
+        {busy && (
+          <span className="text-[8px] italic text-white/50" aria-live="polite">
+            saving…
+          </span>
+        )}
+      </div>
+      <label className="block">
+        <span className="block text-[8px] uppercase tracking-wider text-white/50">
+          anchor
+        </span>
+        <select
+          disabled={disabled}
+          value={optAnchor ?? ""}
+          onChange={(e) => commit({ overlay_anchor: e.target.value as OverlayAnchor })}
+          className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
+        >
+          {!optAnchor && <option value="">—</option>}
+          {ANCHORS.map((a) => (
+            <option key={a} value={a} className="text-anamaya-charcoal">
+              {a}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="mt-1 block">
+        <span className="block text-[8px] uppercase tracking-wider text-white/50">
+          trigger
+        </span>
+        <select
+          disabled={disabled}
+          value={optTrigger ?? ""}
+          onChange={(e) => commit({ overlay_trigger: e.target.value as OverlayTrigger })}
+          className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
+        >
+          {!optTrigger && <option value="">—</option>}
+          {TRIGGERS.map((t) => (
+            <option key={t} value={t} className="text-anamaya-charcoal">
+              {t}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="mt-1 block">
+        <span className="block text-[8px] uppercase tracking-wider text-white/50">
+          z-index
+        </span>
+        {/* Uncontrolled — keyed on the prop so prop changes reset the
+            initial value. onBlur fires the save with the typed value if
+            it differs from the server's. Avoids both the "controlled
+            partial typing" problem and the "useEffect to sync prop into
+            state" anti-pattern. */}
+        <input
+          key={`z-${z ?? "null"}`}
+          type="number"
+          disabled={disabled}
+          defaultValue={z ?? ""}
+          onBlur={(e) => {
+            const raw = e.currentTarget.value;
+            if (raw === "") return;
+            const next = Number(raw);
+            if (!Number.isFinite(next) || next === z) return;
+            commit({ overlay_z: next });
+          }}
+          className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 font-mono text-[10px] text-white outline-none ring-1 ring-white/20 focus:ring-anamaya-mint disabled:opacity-50"
+        />
+      </label>
+    </aside>
   );
 }
 
