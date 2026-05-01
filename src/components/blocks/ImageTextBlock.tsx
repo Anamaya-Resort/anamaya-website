@@ -1,6 +1,6 @@
 import type { ImageTextContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
-import { flipTransform } from "@/components/admin/blocks/ImageTransformFieldset";
+import { flipTransform } from "@/lib/flip-transform";
 import CtaButton from "./shared/CtaButton";
 
 /** Two-column: image on one side, free HTML on the other. */

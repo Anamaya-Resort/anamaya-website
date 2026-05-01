@@ -141,10 +141,9 @@ export default function ImageTransformFieldset({
  * Compose a CSS transform string from flip flags. Centralised so
  * renderers stay consistent.
  */
-export function flipTransform(flipX?: boolean, flipY?: boolean): string | undefined {
-  if (!flipX && !flipY) return undefined;
-  const parts: string[] = [];
-  if (flipX) parts.push("scaleX(-1)");
-  if (flipY) parts.push("scaleY(-1)");
-  return parts.join(" ");
-}
+// Re-export so existing client-side editors can keep their import path.
+// The implementation lives in @/lib/flip-transform — outside any
+// "use client" module so server components (TemplateRenderer's block
+// renderers) can use it too without tripping the Next 16 client-ref
+// rule.
+export { flipTransform } from "@/lib/flip-transform";

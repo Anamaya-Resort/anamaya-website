@@ -1,6 +1,6 @@
 import type { ImageOverlayContent, ImageOverlayLine } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
-import { flipTransform } from "@/components/admin/blocks/ImageTransformFieldset";
+import { flipTransform } from "@/lib/flip-transform";
 import CtaButton from "./shared/CtaButton";
 
 /** Full-width image with up to 3 lines of independently-styled text on top. */
