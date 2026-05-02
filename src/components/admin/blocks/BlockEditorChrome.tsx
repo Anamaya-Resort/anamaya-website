@@ -198,6 +198,7 @@ export default function BlockEditorChrome<T>({
         typeName={typeName}
         variants={variants}
         isOverlay={isOverlay}
+        blockSlug={slug}
       />
 
       <form

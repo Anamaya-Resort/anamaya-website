@@ -30,47 +30,64 @@ export async function captureAndUploadBlockSnapshot(
 ): Promise<{ ok: boolean; reason?: string }> {
   try {
     console.log("[snapshot] capturing", blockId);
+    // If the live preview is an iframe (used for async/server-only
+    // blocks like featured_retreats), the iframe content is what we
+    // actually want to snapshot — the wrapper has no real markup.
+    // Same-origin /block-preview lets us reach into contentDocument.
+    const iframe = node.querySelector("iframe") as HTMLIFrameElement | null;
+    if (iframe?.contentDocument?.body) {
+      const inner = iframe.contentDocument.body;
+      await waitForImagesLoaded(inner);
+      return await captureAndUpload(blockId, inner);
+    }
     await waitForImagesLoaded(node);
     console.log("[snapshot] images ready");
-    const canvas = await toCanvas(node, {
-      pixelRatio: 1,
-      cacheBust: false,
-      backgroundColor: "#ffffff",
-      filter: (n) => {
-        const el = n as HTMLElement;
-        const tag = el.tagName;
-        if (tag === "IFRAME" || tag === "VIDEO") return false;
-        if (el.dataset?.snapshotSkip === "true") return false;
-        return true;
-      },
-      // Strip the off-screen positioning the editor puts on its snapshot
-      // source (position: fixed; left: -10000px). Without this the clone
-      // ends up outside the SVG viewport and capture comes back blank.
-      style: {
-        position: "static",
-        transform: "none",
-        margin: "0",
-        left: "0",
-        top: "0",
-        right: "auto",
-        bottom: "auto",
-        inset: "auto",
-      },
-    });
-    const blob: Blob | null = await new Promise((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.85),
-    );
-    console.log("[snapshot] jpeg size:", blob?.size ?? "null");
-    if (!blob) return { ok: false, reason: "canvas.toBlob returned null" };
-    const fd = new FormData();
-    fd.append("file", new File([blob], `snap-${blockId}.jpg`, { type: "image/jpeg" }));
-    await uploadBlockSnapshot(blockId, fd);
-    console.log("[snapshot] upload ok");
-    return { ok: true };
+    return await captureAndUpload(blockId, node);
   } catch (e) {
     console.error("[snapshot] failed:", e);
     return { ok: false, reason: e instanceof Error ? e.message : String(e) };
   }
+}
+
+async function captureAndUpload(
+  blockId: string,
+  node: HTMLElement,
+): Promise<{ ok: boolean; reason?: string }> {
+  const canvas = await toCanvas(node, {
+    pixelRatio: 1,
+    cacheBust: false,
+    backgroundColor: "#ffffff",
+    filter: (n) => {
+      const el = n as HTMLElement;
+      const tag = el.tagName;
+      if (tag === "IFRAME" || tag === "VIDEO") return false;
+      if (el.dataset?.snapshotSkip === "true") return false;
+      return true;
+    },
+    // Strip the off-screen positioning the editor puts on its snapshot
+    // source (position: fixed; left: -10000px). Without this the clone
+    // ends up outside the SVG viewport and capture comes back blank.
+    style: {
+      position: "static",
+      transform: "none",
+      margin: "0",
+      left: "0",
+      top: "0",
+      right: "auto",
+      bottom: "auto",
+      inset: "auto",
+    },
+  });
+  const blob: Blob | null = await new Promise((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.85),
+  );
+  console.log("[snapshot] jpeg size:", blob?.size ?? "null");
+  if (!blob) return { ok: false, reason: "canvas.toBlob returned null" };
+  const fd = new FormData();
+  fd.append("file", new File([blob], `snap-${blockId}.jpg`, { type: "image/jpeg" }));
+  await uploadBlockSnapshot(blockId, fd);
+  console.log("[snapshot] upload ok");
+  return { ok: true };
 }
 
 async function waitForImagesLoaded(node: HTMLElement): Promise<void> {

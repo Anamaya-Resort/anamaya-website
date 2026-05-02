@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import type { BlockTypeSlug } from "@/types/blocks";
 import PressBarBlock from "@/components/blocks/PressBarBlock";
 import RichTextBlock from "@/components/blocks/RichTextBlock";
@@ -62,7 +62,18 @@ type Props = {
    * blocks whose block_type has is_overlay = true.
    */
   isOverlay?: boolean;
+  /**
+   * Block slug — used by async blocks (e.g. featured_retreats) that
+   * can't render inline in this client tree. The preview renders an
+   * iframe to /block-preview/{slug} so the server-rendered output is
+   * visible, and the snapshot helper grabs it from the iframe.
+   */
+  blockSlug?: string;
 };
+
+/** Block types that have an async/server-only renderer and therefore
+ *  preview via the /block-preview iframe instead of inline rendering. */
+const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set(["featured_retreats"]);
 
 // 15px checkerboard via two stacked linear-gradients. No image asset.
 const OVERLAY_CANVAS_BG: React.CSSProperties = {
@@ -83,9 +94,12 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
     typeName,
     variants,
     isOverlay,
+    blockSlug,
   },
   ref,
 ) {
+  const useIframe = IFRAME_PREVIEW_TYPES.has(typeSlug) && !!blockSlug;
+
   return (
     <section className="mb-8">
       <header className="mb-2">
@@ -99,7 +113,9 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
           rendered block without the negative-margin offset. */}
       <div style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
         <div ref={ref}>
-          {isOverlay ? (
+          {useIframe ? (
+            <IframePreview slug={blockSlug as string} />
+          ) : isOverlay ? (
             // Overlay canvas: checkerboard backdrop + transformed wrapper
             // so the rendered block's `position: fixed` is contained
             // within this frame instead of pinning to the page viewport.
@@ -135,6 +151,36 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
     </section>
   );
 });
+
+/** Iframe preview for async server-only block types. The iframe is
+ *  remounted when the slug changes (key), and grows to match its
+ *  document height via a postMessage from BlockPreviewMeasurer inside
+ *  /block-preview. Caveat: shows the SAVED state, so unsaved draft
+ *  edits aren't reflected until the user clicks Save and the iframe
+ *  reloads. */
+function IframePreview({ slug }: { slug: string }) {
+  const [height, setHeight] = useState(800);
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      const data = e.data as { type?: string; height?: number } | null;
+      if (!data || data.type !== "block-preview-height") return;
+      if (typeof data.height === "number" && data.height > 0) {
+        setHeight(Math.round(data.height));
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+  return (
+    <iframe
+      key={slug}
+      src={`/block-preview/${slug}`}
+      title={`Preview of ${slug}`}
+      className="block w-full border-0"
+      style={{ height }}
+    />
+  );
+}
 
 export default LivePreview;
 
