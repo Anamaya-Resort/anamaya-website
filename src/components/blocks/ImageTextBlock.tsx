@@ -77,6 +77,7 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
   const textCell = (
     <div className="px-8 py-6">
       <div
+        className="prose-anamaya prose-anamaya-block"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: content?.html ?? "" }}
       />

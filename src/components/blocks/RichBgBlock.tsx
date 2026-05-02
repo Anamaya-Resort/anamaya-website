@@ -41,6 +41,7 @@ export default function RichBgBlock({ content }: { content: RichBgContent }) {
       <DecorationOverlay frame={content} />
       <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
         <div
+          className="prose-anamaya prose-anamaya-block"
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: content?.html ?? "" }}
         />

@@ -42,6 +42,15 @@ body {
   max-width: 72ch;
   margin-inline: auto;
 }
+/* Variant for prose used inside a block whose surrounding component
+   already controls width (e.g. RichBgBlock's content_width_px or
+   ImageTextBlock's column). Drops the centered narrow column so the
+   prose flows to the parent's edges. All typography rules (h-sizes,
+   links, lists, blockquote) still apply via the .prose-anamaya class. */
+.prose-anamaya-block {
+  max-width: none;
+  margin-inline: 0;
+}
 .prose-anamaya > *:first-child { margin-top: 0; }
 .prose-anamaya > *:last-child  { margin-bottom: 0; }
 

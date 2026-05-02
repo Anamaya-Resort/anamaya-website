@@ -52,7 +52,7 @@ export default async function DetailsRatesDynamicBlock({
             )}
             {content?.html_left && (
               <div
-                className="prose max-w-none [&_p]:my-3 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1"
+                className="prose-anamaya prose-anamaya-block"
                 // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: content.html_left }}
               />
