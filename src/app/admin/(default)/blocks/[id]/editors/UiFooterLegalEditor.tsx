@@ -20,7 +20,7 @@ function normalize(c: UiFooterLegalContent | null | undefined): UiFooterLegalCon
     body_html: c?.body_html ?? "",
     align: c?.align ?? "center",
     padding_y_px: c?.padding_y_px ?? 16,
-    font_size_px: c?.font_size_px ?? 12,
+    font_size_px: c?.font_size_px ?? 13,
   };
 }
 
@@ -104,9 +104,9 @@ function Form({ state }: { state: BlockEditorState<UiFooterLegalContent> }) {
             <input
               type="number"
               className={inputCls}
-              value={draft.font_size_px ?? 12}
+              value={draft.font_size_px ?? 13}
               onChange={(e) =>
-                patch({ font_size_px: Number(e.target.value) || 12 })
+                patch({ font_size_px: Number(e.target.value) || 13 })
               }
             />
           </label>

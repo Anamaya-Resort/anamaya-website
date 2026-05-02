@@ -88,7 +88,7 @@ function FooterGroupView({
   if (group.kind === "links") {
     return (
       <Section heading={group.heading} headingColor={headingColor}>
-        <ul className="space-y-1.5 text-sm">
+        <ul className="space-y-1.5 text-[15px]">
           {group.items.map((item, i) => (
             <li key={`${item.label}-${i}`}>
               <Link
@@ -161,7 +161,7 @@ function Section({
     <div className="mb-8 last:mb-0">
       {heading && (
         <h3
-          className="text-base font-semibold tracking-wide"
+          className="text-[17px] font-semibold tracking-wide"
           style={{ color: headingColor }}
         >
           {heading}
