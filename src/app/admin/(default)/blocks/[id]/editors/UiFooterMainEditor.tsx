@@ -6,6 +6,7 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import type { OrgBranding } from "@/config/brand-tokens";
+import { coerceFooterMainContent } from "@/lib/footer-content";
 import type {
   FooterColumn,
   FooterColumnGroup,
@@ -19,14 +20,10 @@ const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
 
 function normalize(c: UiFooterMainContent | null | undefined): UiFooterMainContent {
-  return {
-    bg_color: c?.bg_color ?? "",
-    bg_opacity: c?.bg_opacity ?? 100,
-    heading_color: c?.heading_color ?? "",
-    link_color: c?.link_color ?? "",
-    text_color: c?.text_color ?? "",
-    columns: c?.columns ?? [],
-  };
+  // coerceFooterMainContent migrates legacy shape (flat columns +
+  // social_* + newsletter_* fields) into the current nested shape so a
+  // pre-0031 row doesn't crash the editor on first open.
+  return coerceFooterMainContent(c);
 }
 
 export default function UiFooterMainEditor(props: {
@@ -184,7 +181,7 @@ function Form({ state }: { state: BlockEditorState<UiFooterMainContent> }) {
                   </button>
                 </div>
                 <ColumnGroupsEditor
-                  groups={col.groups}
+                  groups={col.groups ?? []}
                   onChange={(groups) => setCol(idx, { groups })}
                 />
               </li>

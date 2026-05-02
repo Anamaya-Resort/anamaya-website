@@ -1,10 +1,7 @@
 import Link from "next/link";
-import type {
-  FooterColumn,
-  FooterColumnGroup,
-  UiFooterMainContent,
-} from "@/types/blocks";
+import type { FooterColumnGroup, UiFooterMainContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import { coerceFooterMainContent } from "@/lib/footer-content";
 import { SOCIAL_ICON_MAP } from "../SocialIcons";
 import SereenlyForm from "../SereenlyForm";
 
@@ -39,7 +36,9 @@ function applyAlpha(color: string, alpha: number): string {
  *   Col 4: Newsletter
  */
 export default function UiFooterMainBlock({ content }: { content: UiFooterMainContent }) {
-  const c = content ?? {};
+  // Coerce so legacy shape (flat columns + social_* + newsletter_*)
+  // doesn't crash this renderer before 0031 has been applied.
+  const c = coerceFooterMainContent(content);
   const bgRaw = resolveBrandColor(c.bg_color) ?? DEFAULT_BG_HEX;
   const bgOpacity = (c.bg_opacity ?? 100) / 100;
   const bg = applyAlpha(bgRaw, bgOpacity);
@@ -47,7 +46,7 @@ export default function UiFooterMainBlock({ content }: { content: UiFooterMainCo
   const linkColor = resolveBrandColor(c.link_color) ?? DEFAULT_LINK;
   const textColor = resolveBrandColor(c.text_color) ?? DEFAULT_TEXT;
 
-  const columns: FooterColumn[] = c.columns ?? [];
+  const columns = c.columns ?? [];
   const colCount = Math.min(4, Math.max(1, columns.length || 1));
   const lgGridCols =
     colCount === 4 ? "lg:grid-cols-4"
@@ -61,7 +60,7 @@ export default function UiFooterMainBlock({ content }: { content: UiFooterMainCo
         <div className={`grid grid-cols-1 gap-10 sm:grid-cols-2 ${lgGridCols}`}>
           {columns.map((col, i) => (
             <div key={i}>
-              {col.groups.map((g, j) => (
+              {(col.groups ?? []).map((g, j) => (
                 <FooterGroupView
                   key={j}
                   group={g}
