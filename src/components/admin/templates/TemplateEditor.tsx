@@ -285,29 +285,30 @@ function TemplateRow({
     // position: relative on the row so the absolute-positioned controls
     // can anchor their gutters to the preview's edges.
     <section className="relative">
-      {/* Dark left-side panel — single consolidated info + actions
-          panel for every row. Replaces what used to be split between
-          a right-gutter info panel and a left-gutter overlay panel.
-          Overlay rows get an extra "Overlay" subsection at the bottom
-          with anchor/trigger/z controls. */}
-      <LeftInfoPanel
-        blockId={row.block.id}
-        blockName={row.block.name}
-        blockSlug={row.block.slug}
-        blockType={row.block.type_slug}
-        isLocked={row.is_locked}
-        isOverlay={row.is_overlay}
-        overlayAnchor={(row.overlay_anchor as OverlayAnchor | null) ?? null}
-        overlayTrigger={(row.overlay_trigger as OverlayTrigger | null) ?? null}
-        overlayZ={row.overlay_z}
-        isFirst={isFirst}
-        isLast={isLast}
-        pending={pending}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-        onRemove={onRemove}
-        onToggleLock={onToggleLock}
-      />
+      {/* Overlay (UI) blocks: dark consolidated panel in the LEFT gutter.
+          The overlay subsection (anchor/trigger/z) is part of this same
+          panel since it's per-instance metadata that belongs alongside
+          the block's other actions. */}
+      {row.is_overlay && (
+        <LeftInfoPanel
+          blockId={row.block.id}
+          blockName={row.block.name}
+          blockSlug={row.block.slug}
+          blockType={row.block.type_slug}
+          isLocked={row.is_locked}
+          isOverlay
+          overlayAnchor={(row.overlay_anchor as OverlayAnchor | null) ?? null}
+          overlayTrigger={(row.overlay_trigger as OverlayTrigger | null) ?? null}
+          overlayZ={row.overlay_z}
+          isFirst={isFirst}
+          isLast={isLast}
+          pending={pending}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+          onRemove={onRemove}
+          onToggleLock={onToggleLock}
+        />
+      )}
       {/* Preview takes the full admin-content width. overflow-hidden so
           the scaled-down native-size iframe is clipped to the wrapper. */}
       <div
@@ -380,6 +381,78 @@ function TemplateRow({
         </button>
       )}
 
+      {/* Normal (non-overlay) blocks: white info panel in the RIGHT gutter,
+          past the eye column. Overlay blocks render their info in the
+          dark left panel above instead. */}
+      {!row.is_overlay && (
+        <aside
+          className="absolute w-48 bg-white p-2.5 text-[11px] ring-1 ring-zinc-200"
+          style={{ left: "100%", top: 0, marginLeft: ICON_BTN_SIZE + 8 }}
+        >
+          <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
+            {row.block.type_slug}
+          </div>
+          <div className="truncate font-semibold text-anamaya-charcoal">
+            {row.block.name}
+          </div>
+          <code className="mt-1 block truncate rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-anamaya-charcoal/80">
+            [#{row.block.slug}]
+          </code>
+          <button
+            type="button"
+            onClick={onToggleLock}
+            disabled={pending}
+            title={
+              row.is_locked
+                ? "Locked — same content on every page using this template. Click to allow per-page customization."
+                : "Unlocked — pages can supply per-page content for this slot. Click to lock."
+            }
+            className={`mt-1.5 flex w-full items-center justify-center gap-1 rounded px-2 py-1 text-[9px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 ${
+              row.is_locked
+                ? "bg-anamaya-charcoal text-white hover:bg-black"
+                : "border border-anamaya-olive-dark bg-white text-anamaya-olive-dark hover:bg-anamaya-olive-dark/10"
+            }`}
+          >
+            {row.is_locked ? <LockClosedIcon /> : <LockOpenIcon />}
+            {row.is_locked ? "Locked" : "Per-page"}
+          </button>
+          <div className="mt-1.5 flex items-center gap-1">
+            <Link
+              href={`/admin/blocks/${row.block.id}`}
+              target="_blank"
+              className="flex-1 rounded bg-anamaya-green px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+            >
+              Edit ↗
+            </Link>
+            <button
+              type="button"
+              onClick={onMoveUp}
+              disabled={isFirst || pending}
+              className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
+              title="Move up"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              onClick={onMoveDown}
+              disabled={isLast || pending}
+              className="rounded border border-zinc-300 bg-white px-1.5 py-1 text-[9px] hover:bg-zinc-50 disabled:opacity-40"
+              title="Move down"
+            >
+              ↓
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={pending}
+            className="mt-1 w-full rounded border border-red-300 bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            Remove
+          </button>
+        </aside>
+      )}
     </section>
   );
 }
