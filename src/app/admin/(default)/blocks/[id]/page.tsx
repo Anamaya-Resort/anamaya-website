@@ -32,6 +32,7 @@ import UiSideMenuRightEditor from "./editors/UiSideMenuRightEditor";
 import UiAgentEditor from "./editors/UiAgentEditor";
 import UiFooterMainEditor from "./editors/UiFooterMainEditor";
 import UiFooterLegalEditor from "./editors/UiFooterLegalEditor";
+import FeaturedRetreatsEditor from "./editors/FeaturedRetreatsEditor";
 import { getBrandTokens } from "@/lib/brand-tokens";
 
 export const dynamic = "force-dynamic";
@@ -346,6 +347,18 @@ export default async function EditBlock({
       )}
       {block.type_slug === "ui_footer_legal" && (
         <UiFooterLegalEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "featured_retreats" && (
+        <FeaturedRetreatsEditor
           blockId={id}
           name={block.name}
           slug={block.slug}

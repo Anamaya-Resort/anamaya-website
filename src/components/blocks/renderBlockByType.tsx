@@ -24,6 +24,7 @@ import UiSideMenuRightBlock from "./UiSideMenuRightBlock";
 import UiAgentBlock from "./UiAgentBlock";
 import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
+import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 
 /**
  * Renders a block from its type slug and resolved content. The single
@@ -67,6 +68,7 @@ export default function renderBlockByType(
     case "ui_agent":              return <UiAgentBlock content={content} />;
     case "ui_footer_main":        return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":       return <UiFooterLegalBlock content={content} />;
+    case "featured_retreats":     return <FeaturedRetreatsBlock content={content} />;
     default:                      return null;
   }
 }

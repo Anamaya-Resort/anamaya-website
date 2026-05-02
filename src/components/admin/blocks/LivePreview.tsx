@@ -164,6 +164,16 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "ui_agent":          return <UiAgentBlock content={content} />;
     case "ui_footer_main":    return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
+    // FeaturedRetreatsBlock is async (fetches AO data). LivePreview is
+    // a client component, so we render a placeholder here; the real
+    // component renders fine in the public TemplateRenderer + admin
+    // /block-preview iframe (both server-rendered).
+    case "featured_retreats":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-xs italic text-anamaya-charcoal/60">
+          Featured Retreats — preview at the page&rsquo;s public URL
+        </div>
+      );
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">

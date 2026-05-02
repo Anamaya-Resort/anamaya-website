@@ -678,6 +678,31 @@ export type UiSideMenuRightContent = OverlayMixin & {
   decoration_bottom_height_px?: number;  // default 80
 };
 
+/**
+ * Featured Retreats — auto-populated grid of retreats marked
+ * `is_featured = true` in AnamayaOS. Each card links to that retreat's
+ * page on the website (URL pattern `url_pattern` with `{slug}` token
+ * replaced by AO's `website_slug`). The block has no per-instance
+ * retreat data — the retreats list IS the AO data; the editor only
+ * controls headings, the CTA label, and styling.
+ */
+export type FeaturedRetreatsContent = {
+  heading?: string;             // section heading; default "Featured Retreats"
+  subheading?: string;          // optional sub-text under the heading
+  max_count?: number;           // max cards to show; default 5
+  register_label?: string;      // CTA button label; default "Register Now"
+  /** Pattern for the per-retreat URL. `{slug}` is replaced with AO's
+   *  website_slug; if a retreat has no website_slug the registration_link
+   *  (or external_link) is used instead. Default `/retreats/{slug}/`. */
+  url_pattern?: string;
+  bg_color?: string;
+  text_color?: string;
+  heading_color?: string;
+  card_bg_color?: string;       // each card's background; default white-ish
+  padding_y_px?: number;        // section vertical padding; default 64
+  container_width_px?: number;  // max-width of inner content; default 1200
+};
+
 /** A single label+href pair used by both link and social groups. */
 export type FooterLinkItem = { label: string; href: string };
 
@@ -779,7 +804,8 @@ export type BlockTypeSlug =
   | "ui_side_menu_right"
   | "ui_agent"
   | "ui_footer_main"
-  | "ui_footer_legal";
+  | "ui_footer_legal"
+  | "featured_retreats";
 
 export type BlockRecord = {
   id: string;
