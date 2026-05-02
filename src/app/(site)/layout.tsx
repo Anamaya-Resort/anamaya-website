@@ -1,5 +1,4 @@
 import AppShell from "@/components/AppShell";
-import TemplateRenderer from "@/components/templates/TemplateRenderer";
 import { getSessionUser } from "@/lib/session";
 
 // Wraps all public marketing pages with Header + Footer + SideMenu.
@@ -13,20 +12,14 @@ export default async function SiteLayout({
   // so chrome overlays can show sign-in / name+avatar via ChromeContext.
   const user = await getSessionUser();
 
-  // Site chrome overlays (top bar + side menu + agent) come from the
-  // site_chrome template and live in the AppShell's chrome slot —
-  // overlays sit fixed-position on top of content, so they belong to
-  // every page automatically.
-  //
-  // The footer is NOT a global slot. Each page template owns its own
-  // footer by including the ui_footer_main / ui_footer_legal blocks
-  // directly. site_footer remains as a canonical default the editor
-  // can copy blocks from, but isn't auto-rendered here.
-  const chrome = <TemplateRenderer templateSlug="site_chrome" />;
-
+  // Nothing is rendered here globally any more. Every chrome element —
+  // top bar, side menu, agent overlay, footer — is a regular block
+  // that lives inside whatever page_template the page is using. The
+  // site_chrome and site_footer templates still exist as canonical
+  // defaults the editor can copy blocks from.
   return (
     <div className="flex min-h-screen flex-col">
-      <AppShell user={user} chrome={chrome}>{children}</AppShell>
+      <AppShell user={user}>{children}</AppShell>
     </div>
   );
 }
