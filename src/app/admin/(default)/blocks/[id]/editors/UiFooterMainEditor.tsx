@@ -493,9 +493,17 @@ function SocialLinksEditor({
   return (
     <div className="space-y-1">
       {links.map((s, idx) => (
-        <div key={idx} className="flex items-center gap-1.5">
+        // grid layout so the URL input always gets the row's remaining
+        // space — a flex row was collapsing it to near-zero inside narrow
+        // column cards. Network select is fixed-width small (1/3-ish of
+        // a typical card row), URL takes the rest.
+        <div
+          key={idx}
+          className="grid items-center gap-1.5"
+          style={{ gridTemplateColumns: "84px 1fr auto" }}
+        >
           <select
-            className={`${inputCls} w-32 text-xs`}
+            className={`${inputCls} text-xs`}
             value={s.label}
             onChange={(e) => update(idx, { ...s, label: e.target.value })}
           >
@@ -506,7 +514,7 @@ function SocialLinksEditor({
             <option value="Instagram">Instagram</option>
           </select>
           <input
-            className={`${inputCls} flex-1 text-xs`}
+            className={`${inputCls} min-w-0 text-xs`}
             value={s.href}
             onChange={(e) => update(idx, { ...s, href: e.target.value })}
             placeholder="https://..."
