@@ -9,7 +9,10 @@ import { resolveBrandColor } from "@/config/brand-tokens";
 import { useChromeOptional } from "@/contexts/ChromeContext";
 import UserAvatar from "../UserAvatar";
 
-const DEFAULT_BG_HEX = "#1a1a1a"; // matches the legacy bg-anamaya-charcoal
+// Matches `--color-anamaya-charcoal` in globals.css — the legacy
+// SideMenu used `bg-anamaya-charcoal/90`, so the visible fallback
+// has always been this colour at 90% opacity, NOT a darker grey.
+const DEFAULT_BG_HEX = "#444444";
 
 /** Convert a "#rrggbb" or "#rgb" hex to an `rgba(r,g,b,a)` string with the
  *  given 0–1 alpha. Falls back to the input string when it isn't a valid
@@ -47,6 +50,7 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
   const widthMaxPx = c.width_max_px ?? 384;
   const ctaLabel = c.cta_label ?? "BOOK YOUR STAY";
   const ctaHref = c.cta_href ?? "/rg-calendar/";
+  const titleText = c.title_text ?? "Menu";
   const items: UiNavItem[] = c.items?.length ? c.items : SIDE_MENU;
 
   // Background — brand token (or hex) + 0–100 opacity. Empty bg_color
@@ -129,7 +133,17 @@ export default function UiSideMenuRightBlock({ content }: { content: UiSideMenuR
         style={{ maxWidth: widthMaxPx, backgroundColor: bgRgba }}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
-          <span className="text-lg font-semibold tracking-wide">Menu</span>
+          <span
+            className={`tracking-wide ${headlineFontClass}`}
+            style={{
+              ...headlineStyle,
+              // Title is a header element; bump its size relative to the
+              // headline rows. Falls back to 18px if no headline_size set.
+              fontSize: (c.headline_size_px ?? 14) + 4,
+            }}
+          >
+            {titleText}
+          </span>
           {trigger !== "always" && (
             <button
               type="button"

@@ -648,11 +648,14 @@ export type UiSideMenuRightContent = OverlayMixin & {
   cta_href?: string;
   items?: UiNavItem[];
 
+  // Drawer header
+  title_text?: string;          // text shown at top of drawer (default "Menu")
+
   // Background
   bg_color?: string;            // brand token key or hex; '' = default charcoal
   bg_opacity?: number;          // 0–100; default 90
 
-  // Headline typography (top-level rows)
+  // Headline typography (drawer title + top-level rows)
   headline_font?: "body" | "heading";
   headline_size_px?: number;
   headline_color?: string;

@@ -23,6 +23,7 @@ function normalize(c: UiSideMenuRightContent | null | undefined): UiSideMenuRigh
     width_max_px: c?.width_max_px ?? 384,
     cta_label: c?.cta_label ?? "BOOK YOUR STAY",
     cta_href: c?.cta_href ?? "/rg-calendar/",
+    title_text: c?.title_text ?? "Menu",
     items: c?.items ?? [],
     bg_color: c?.bg_color ?? "",
     bg_opacity: c?.bg_opacity ?? 90,
@@ -73,6 +74,19 @@ function Form({ state }: { state: BlockEditorState<UiSideMenuRightContent> }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <OverlayFields draft={draft} patch={patch} />
 
+        <label className="block">
+          <span className={labelCls}>Drawer title</span>
+          <input
+            className={inputCls}
+            value={draft.title_text ?? ""}
+            onChange={(e) => patch({ title_text: e.target.value })}
+            placeholder="Menu"
+          />
+          <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+            Header text at the top of the drawer. Styled with the
+            Headlines typography below.
+          </p>
+        </label>
         <label className="block">
           <span className={labelCls}>Drawer width (px)</span>
           <input
