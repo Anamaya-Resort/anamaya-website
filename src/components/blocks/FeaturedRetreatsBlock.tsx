@@ -196,9 +196,31 @@ function retreatHref(r: AoRetreat, pattern: string): string {
   return r.registration_link || r.external_link || "#";
 }
 
-/** Pull the main image, preferring feature_image_url, then images[0]. */
+/**
+ * Pull the main image. Tries in order:
+ *   - feature_image_url (top-level)
+ *   - images.large.url   (AO stores per-size variants under named keys)
+ *   - images.full.url
+ *   - images.medium.url
+ *   - images.thumbnail.url
+ *   - images[0]          (legacy array shape, just in case)
+ */
 function pickImage(r: AoRetreat): string | null {
   if (r.feature_image_url) return r.feature_image_url;
+
+  // Object shape: { full|large|medium|thumbnail: { url, ... } }
+  if (r.images && typeof r.images === "object" && !Array.isArray(r.images)) {
+    const sized = r.images as Record<string, unknown>;
+    for (const key of ["large", "full", "medium", "thumbnail"]) {
+      const entry = sized[key];
+      if (entry && typeof entry === "object" && "url" in entry) {
+        const url = (entry as { url?: unknown }).url;
+        if (typeof url === "string" && url) return url;
+      }
+    }
+  }
+
+  // Legacy array shape: ["url", ...] or [{url}, ...]
   if (Array.isArray(r.images) && r.images.length > 0) {
     const first = r.images[0];
     if (typeof first === "string") return first;
