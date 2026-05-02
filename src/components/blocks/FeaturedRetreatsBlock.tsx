@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { FeaturedRetreatsContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
-import { aoSupabaseOrNull } from "@/lib/ao-supabase";
+import { aoSupabaseAdminOrNull } from "@/lib/ao-supabase";
 import { decodeEntities } from "@/lib/website-builder/decode";
 
 type AoRetreat = {
@@ -161,7 +161,12 @@ export default async function FeaturedRetreatsBlock({
 }
 
 async function fetchFeaturedRetreats(maxCount: number): Promise<AoRetreat[]> {
-  const ao = aoSupabaseOrNull();
+  // Service-role on AO. Anon hits AO's RLS and sees zero retreats;
+  // we use service role here because the query is already locked down
+  // to `is_public = true AND is_active = true`, so even bypassing RLS
+  // we only return data that's intended for the public site. Server-
+  // only — the key never reaches the browser.
+  const ao = aoSupabaseAdminOrNull();
   if (!ao) return [];
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await ao

@@ -49,3 +49,17 @@ export function aoSupabaseAdmin(): SupabaseClient {
   cachedAdmin = createClient(url, key, { auth: { persistSession: false } });
   return cachedAdmin;
 }
+
+/**
+ * Same as aoSupabaseAdmin() but returns null instead of throwing when
+ * env vars aren't set. Use from server components that should degrade
+ * gracefully rather than crash the page when AO is unavailable.
+ */
+export function aoSupabaseAdminOrNull(): SupabaseClient | null {
+  if (cachedAdmin) return cachedAdmin;
+  const url = process.env.AO_SUPABASE_URL;
+  const key = process.env.AO_SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  cachedAdmin = createClient(url, key, { auth: { persistSession: false } });
+  return cachedAdmin;
+}
