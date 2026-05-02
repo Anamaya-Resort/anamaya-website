@@ -508,7 +508,10 @@ function SocialLinksEditor({
             onChange={(e) => update(idx, { ...s, label: e.target.value })}
           >
             <option value="Facebook">Facebook</option>
-            <option value="Twitter">Twitter</option>
+            {/* Keeps the data key "Twitter" so existing rows + the
+                SOCIAL_ICON_MAP lookup keep working — the label just
+                shows X / Twitter to match the icon that renders. */}
+            <option value="Twitter">X / Twitter</option>
             <option value="YouTube">YouTube</option>
             <option value="Pinterest">Pinterest</option>
             <option value="Instagram">Instagram</option>
