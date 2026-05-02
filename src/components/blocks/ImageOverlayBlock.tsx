@@ -37,8 +37,11 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
               src={content.image_url}
               alt={altText}
               aria-hidden={altText ? undefined : "true"}
+              // Default to "cover" so image-overlay blocks fill the
+              // section bleed-to-bleed unless an editor explicitly opts
+              // into letterboxing via image_fit: "contain".
               className={
-                content?.image_fit === "cover" ? "object-cover" : "object-contain"
+                content?.image_fit === "contain" ? "object-contain" : "object-cover"
               }
               style={
                 fitsInside

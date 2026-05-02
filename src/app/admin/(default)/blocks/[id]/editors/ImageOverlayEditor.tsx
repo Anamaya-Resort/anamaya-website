@@ -37,7 +37,7 @@ function normalize(c: ImageOverlayContent | null | undefined): ImageOverlayConte
     ...(c ?? {}),
     image_url: c?.image_url ?? "",
     image_alt: c?.image_alt ?? "",
-    image_fit: c?.image_fit ?? "contain",
+    image_fit: c?.image_fit ?? "cover",
     image_scale_pct: c?.image_scale_pct ?? 100,
     image_flip_x: !!c?.image_flip_x,
     image_flip_y: !!c?.image_flip_y,
