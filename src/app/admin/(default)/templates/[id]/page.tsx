@@ -293,13 +293,6 @@ export default async function EditTemplate({
                 type_slug: block.type_slug,
               },
             };
-          })
-          // Overlays first (matches their fixed-position rendering order
-          // — they sit on top of regular blocks at runtime). Within each
-          // group preserve the variant's sort_order.
-          .sort((a, b) => {
-            if (a.is_overlay !== b.is_overlay) return a.is_overlay ? -1 : 1;
-            return a.sort_order - b.sort_order;
           })}
         allBlocks={blocksOpts}
         blockGroups={fullBlockGroups}
