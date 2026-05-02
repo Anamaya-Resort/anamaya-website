@@ -133,14 +133,15 @@ function FooterGroupView({
     if (!group.form_id) return null;
     return (
       <Section heading={group.heading} headingColor={headingColor}>
-        <div className="rounded-sm bg-white">
-          <SereenlyForm
-            formId={group.form_id}
-            title={group.form_name ?? "Newsletter Footer"}
-            formName={group.form_name ?? "Newsletter Footer"}
-            initialHeight={group.form_height ?? 380}
-          />
-        </div>
+        {/* No background wrapper — the Sereenly iframe sits transparent
+            on the footer's dark fill so only the form's own white input
+            fields are visible, matching the original site. */}
+        <SereenlyForm
+          formId={group.form_id}
+          title={group.form_name ?? "Newsletter Footer"}
+          formName={group.form_name ?? "Newsletter Footer"}
+          initialHeight={group.form_height ?? 380}
+        />
       </Section>
     );
   }
