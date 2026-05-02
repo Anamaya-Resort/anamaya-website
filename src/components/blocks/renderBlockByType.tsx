@@ -22,6 +22,8 @@ import DetailsRatesDynamicBlock from "./DetailsRatesDynamicBlock";
 import UiTopBlock from "./UiTopBlock";
 import UiSideMenuRightBlock from "./UiSideMenuRightBlock";
 import UiAgentBlock from "./UiAgentBlock";
+import UiFooterMainBlock from "./UiFooterMainBlock";
+import UiFooterLegalBlock from "./UiFooterLegalBlock";
 
 /**
  * Renders a block from its type slug and resolved content. The single
@@ -63,6 +65,8 @@ export default function renderBlockByType(
     case "ui_top":                return <UiTopBlock content={content} />;
     case "ui_side_menu_right":    return <UiSideMenuRightBlock content={content} />;
     case "ui_agent":              return <UiAgentBlock content={content} />;
+    case "ui_footer_main":        return <UiFooterMainBlock content={content} />;
+    case "ui_footer_legal":       return <UiFooterLegalBlock content={content} />;
     default:                      return null;
   }
 }

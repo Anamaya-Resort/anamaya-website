@@ -13,15 +13,17 @@ export default async function SiteLayout({
   // so chrome overlays can show sign-in / name+avatar via ChromeContext.
   const user = await getSessionUser();
 
-  // Site-chrome overlays (top bar + side menu) come from the
-  // `site_chrome` template. Rendering them server-side here means the
-  // markup ships in the SSR response and can be edited per-template
-  // without touching layout code.
+  // Site chrome (top bar + side menu + agent overlays) and the site
+  // footer (main + legal strip) are both driven by their own
+  // page_templates. Rendering them server-side here means the markup
+  // ships in the SSR response and can be edited per-template without
+  // touching layout code.
   const chrome = <TemplateRenderer templateSlug="site_chrome" />;
+  const footer = <TemplateRenderer templateSlug="site_footer" />;
 
   return (
     <div className="flex min-h-screen flex-col">
-      <AppShell user={user} chrome={chrome}>{children}</AppShell>
+      <AppShell user={user} chrome={chrome} footer={footer}>{children}</AppShell>
     </div>
   );
 }

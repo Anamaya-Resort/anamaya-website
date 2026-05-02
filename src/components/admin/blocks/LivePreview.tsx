@@ -23,6 +23,8 @@ import RawHtmlBlock from "@/components/blocks/RawHtmlBlock";
 import UiTopBlock from "@/components/blocks/UiTopBlock";
 import UiSideMenuRightBlock from "@/components/blocks/UiSideMenuRightBlock";
 import UiAgentBlock from "@/components/blocks/UiAgentBlock";
+import UiFooterMainBlock from "@/components/blocks/UiFooterMainBlock";
+import UiFooterLegalBlock from "@/components/blocks/UiFooterLegalBlock";
 import VariantCarousel from "./VariantCarousel";
 
 /**
@@ -160,6 +162,8 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "ui_top":            return <UiTopBlock content={content} />;
     case "ui_side_menu_right": return <UiSideMenuRightBlock content={content} />;
     case "ui_agent":          return <UiAgentBlock content={content} />;
+    case "ui_footer_main":    return <UiFooterMainBlock content={content} />;
+    case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">

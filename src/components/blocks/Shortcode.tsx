@@ -21,6 +21,8 @@ import RawHtmlBlock from "./RawHtmlBlock";
 import UiTopBlock from "./UiTopBlock";
 import UiSideMenuRightBlock from "./UiSideMenuRightBlock";
 import UiAgentBlock from "./UiAgentBlock";
+import UiFooterMainBlock from "./UiFooterMainBlock";
+import UiFooterLegalBlock from "./UiFooterLegalBlock";
 
 /**
  * Server component that renders the block identified by `slug` (matched
@@ -73,6 +75,8 @@ export default async function Shortcode({ slug }: { slug: string }) {
     case "ui_top":            return <UiTopBlock content={content} />;
     case "ui_side_menu_right": return <UiSideMenuRightBlock content={content} />;
     case "ui_agent":          return <UiAgentBlock content={content} />;
+    case "ui_footer_main":    return <UiFooterMainBlock content={content} />;
+    case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     default:               return null;
   }
 }

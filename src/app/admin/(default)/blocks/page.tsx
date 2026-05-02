@@ -52,6 +52,8 @@ const BLOCK_CATEGORIES: Record<string, Category[]> = {
   ui_top: ["ui"],
   ui_side_menu_right: ["ui"],
   ui_agent: ["ui"],
+  ui_footer_main: ["ui"],
+  ui_footer_legal: ["ui"],
 };
 
 const CATEGORY_COLORS: Record<Category, string> = {

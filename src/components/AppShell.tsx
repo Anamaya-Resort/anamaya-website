@@ -3,7 +3,6 @@
 import { type ReactNode } from "react";
 import { HeaderProvider, useHeader } from "@/contexts/HeaderContext";
 import { ChromeProvider } from "@/contexts/ChromeContext";
-import Footer from "./Footer";
 import type { SSOUser } from "@/types/sso";
 
 type Props = {
@@ -16,15 +15,22 @@ type Props = {
    * `chrome={null}` (e.g. landing pages with no top bar).
    */
   chrome?: ReactNode;
+  /**
+   * Site footer rendered below {children}. Driven by the
+   * `site_footer` page_template (main + legal strip blocks). Pages
+   * can opt out by passing `footer={null}` (e.g. minimal landing
+   * pages with no footer).
+   */
+  footer?: ReactNode;
 };
 
-export default function AppShell({ children, user, chrome }: Props) {
+export default function AppShell({ children, user, chrome, footer }: Props) {
   return (
     <HeaderProvider>
       <ChromeProvider user={user ?? null}>
         {chrome}
         <MainWithOffset hasTopBar={chrome != null}>{children}</MainWithOffset>
-        <Footer />
+        {footer}
       </ChromeProvider>
     </HeaderProvider>
   );

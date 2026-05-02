@@ -678,6 +678,51 @@ export type UiSideMenuRightContent = OverlayMixin & {
   decoration_bottom_height_px?: number;  // default 80
 };
 
+/** A column of links inside the main footer block. */
+export type FooterColumn = {
+  heading: string;
+  items: Array<{ label: string; href: string }>;
+};
+
+/**
+ * Main site footer — dark, multi-column block with link groups, social
+ * icons, and an embedded newsletter form. Lives in the `site_footer`
+ * page_template so edits propagate to every public page. NOT an overlay
+ * — it sits in normal document flow at the bottom of the page.
+ */
+export type UiFooterMainContent = {
+  bg_color?: string;             // brand token or hex; default '#444444'
+  bg_opacity?: number;           // 0–100; default 100
+  heading_color?: string;        // default '#8F993E' (anamaya-olive)
+  link_color?: string;           // default '#b8d3cf' (anamaya-mint)
+  text_color?: string;           // body text color
+  /** Up to 4 link columns. Renderer auto-grids however many the editor sets. */
+  columns?: FooterColumn[];
+  /** Social section heading (e.g. "On social"). Empty string hides it. */
+  social_heading?: string;
+  social_links?: Array<{ label: string; href: string }>;
+  /** Newsletter section. Empty form_id hides the widget. */
+  newsletter_heading?: string;
+  newsletter_form_id?: string;   // Sereenly form id
+  newsletter_form_name?: string; // analytics label
+  newsletter_form_height?: number;
+};
+
+/**
+ * Light "legal" footer strip — copyright + Terms / Privacy / credit.
+ * Renders below the main footer. Body is editable rich-text HTML; the
+ * literal "{year}" token is replaced with the current year at render
+ * time so editors don't have to bump the date manually.
+ */
+export type UiFooterLegalContent = {
+  bg_color?: string;             // default '#fbfbfb' (cream)
+  text_color?: string;           // default '#444444'
+  body_html?: string;            // rich-text; supports {year} token
+  align?: "left" | "center" | "right";
+  padding_y_px?: number;
+  font_size_px?: number;
+};
+
 /**
  * AI assistant bubble. Wraps the existing VisitorAgent component —
  * runtime visibility still gates on /api/ai/agent-config (per-tenant
@@ -714,7 +759,9 @@ export type BlockTypeSlug =
   | "details_rates_dynamic"
   | "ui_top"
   | "ui_side_menu_right"
-  | "ui_agent";
+  | "ui_agent"
+  | "ui_footer_main"
+  | "ui_footer_legal";
 
 export type BlockRecord = {
   id: string;
