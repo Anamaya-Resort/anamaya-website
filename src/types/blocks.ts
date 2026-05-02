@@ -678,10 +678,34 @@ export type UiSideMenuRightContent = OverlayMixin & {
   decoration_bottom_height_px?: number;  // default 80
 };
 
-/** A column of links inside the main footer block. */
-export type FooterColumn = {
+/** A single label+href pair used by both link and social groups. */
+export type FooterLinkItem = { label: string; href: string };
+
+/** Vertically-stacked groups can appear inside a single footer column. */
+export type FooterLinkGroup = {
+  kind: "links";
   heading: string;
-  items: Array<{ label: string; href: string }>;
+  items: FooterLinkItem[];
+};
+export type FooterSocialGroup = {
+  kind: "social";
+  heading: string;
+  links: FooterLinkItem[];
+};
+export type FooterNewsletterGroup = {
+  kind: "newsletter";
+  heading: string;
+  form_id: string;          // Sereenly form id
+  form_name?: string;       // analytics label
+  form_height?: number;     // initial iframe height (px)
+};
+export type FooterColumnGroup = FooterLinkGroup | FooterSocialGroup | FooterNewsletterGroup;
+
+/** A footer column holds one or more groups stacked vertically.
+ *  Matches the legacy layout where (e.g.) "Travel" and "Cookbook" share
+ *  one visual column. */
+export type FooterColumn = {
+  groups: FooterColumnGroup[];
 };
 
 /**
@@ -689,6 +713,9 @@ export type FooterColumn = {
  * icons, and an embedded newsletter form. Lives in the `site_footer`
  * page_template so edits propagate to every public page. NOT an overlay
  * — it sits in normal document flow at the bottom of the page.
+ *
+ * Layout is one CSS grid row of N columns (mobile stacks). Inside each
+ * column, groups render top-to-bottom in the order saved.
  */
 export type UiFooterMainContent = {
   bg_color?: string;             // brand token or hex; default '#444444'
@@ -696,16 +723,7 @@ export type UiFooterMainContent = {
   heading_color?: string;        // default '#8F993E' (anamaya-olive)
   link_color?: string;           // default '#b8d3cf' (anamaya-mint)
   text_color?: string;           // body text color
-  /** Up to 4 link columns. Renderer auto-grids however many the editor sets. */
   columns?: FooterColumn[];
-  /** Social section heading (e.g. "On social"). Empty string hides it. */
-  social_heading?: string;
-  social_links?: Array<{ label: string; href: string }>;
-  /** Newsletter section. Empty form_id hides the widget. */
-  newsletter_heading?: string;
-  newsletter_form_id?: string;   // Sereenly form id
-  newsletter_form_name?: string; // analytics label
-  newsletter_form_height?: number;
 };
 
 /**

@@ -1,5 +1,9 @@
 import Link from "next/link";
-import type { UiFooterMainContent } from "@/types/blocks";
+import type {
+  FooterColumn,
+  FooterColumnGroup,
+  UiFooterMainContent,
+} from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import { SOCIAL_ICON_MAP } from "../SocialIcons";
 import SereenlyForm from "../SereenlyForm";
@@ -24,11 +28,15 @@ function applyAlpha(color: string, alpha: number): string {
 }
 
 /**
- * Block-typed port of the legacy Footer.tsx dark section. Renders a
- * grid of link columns + an optional social-icons cluster + an embedded
- * newsletter form. Every label, link, color, and form id is editable
- * via the block editor. Sits in normal document flow at the bottom of
- * every page (rendered by AppShell from the `site_footer` template).
+ * Block-typed port of the legacy Footer.tsx dark section. Renders the
+ * editor-defined columns left-to-right, with each column's groups
+ * stacked vertically inside it. Group kinds: "links" (heading + list),
+ * "social" (heading + icon row), "newsletter" (heading + Sereenly
+ * form). Stacking matches the legacy v2 layout exactly:
+ *   Col 1: Experience
+ *   Col 2: Travel + Cookbook
+ *   Col 3: Company + Social
+ *   Col 4: Newsletter
  */
 export default function UiFooterMainBlock({ content }: { content: UiFooterMainContent }) {
   const c = content ?? {};
@@ -39,118 +47,127 @@ export default function UiFooterMainBlock({ content }: { content: UiFooterMainCo
   const linkColor = resolveBrandColor(c.link_color) ?? DEFAULT_LINK;
   const textColor = resolveBrandColor(c.text_color) ?? DEFAULT_TEXT;
 
-  const columns = c.columns ?? [];
-  const socialLinks = c.social_links ?? [];
-  const socialHeading = c.social_heading ?? "";
-  const newsletterFormId = c.newsletter_form_id ?? "";
-  const newsletterHeading = c.newsletter_heading ?? "";
-
-  const totalCols = Math.max(
-    1,
-    columns.length + (socialLinks.length > 0 ? 1 : 0) + (newsletterFormId ? 1 : 0),
-  );
-  const gridCols =
-    totalCols >= 4 ? "lg:grid-cols-4"
-    : totalCols === 3 ? "lg:grid-cols-3"
-    : totalCols === 2 ? "lg:grid-cols-2"
+  const columns: FooterColumn[] = c.columns ?? [];
+  const colCount = Math.min(4, Math.max(1, columns.length || 1));
+  const lgGridCols =
+    colCount === 4 ? "lg:grid-cols-4"
+    : colCount === 3 ? "lg:grid-cols-3"
+    : colCount === 2 ? "lg:grid-cols-2"
     : "lg:grid-cols-1";
 
   return (
     <footer style={{ backgroundColor: bg, color: textColor }}>
       <div className="mx-auto max-w-7xl px-6 pt-16 pb-6 lg:px-8">
-        <div className={`grid grid-cols-1 gap-10 sm:grid-cols-2 ${gridCols}`}>
+        <div className={`grid grid-cols-1 gap-10 sm:grid-cols-2 ${lgGridCols}`}>
           {columns.map((col, i) => (
-            <FooterColumnView
-              key={`${col.heading}-${i}`}
-              heading={col.heading}
-              headingColor={headingColor}
-              linkColor={linkColor}
-            >
-              <ul className="space-y-1.5 text-sm">
-                {col.items.map((item, j) => (
-                  <li key={`${item.label}-${j}`}>
-                    <Link
-                      href={item.href || "#"}
-                      style={{ color: linkColor }}
-                      className="transition-colors hover:text-white"
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </FooterColumnView>
-          ))}
-
-          {socialLinks.length > 0 && (
-            <FooterColumnView
-              heading={socialHeading || "On social"}
-              headingColor={headingColor}
-              linkColor={linkColor}
-            >
-              <ul className="flex flex-wrap gap-2">
-                {socialLinks.map((s) => {
-                  const Icon = SOCIAL_ICON_MAP[s.label];
-                  return (
-                    <li key={s.label}>
-                      <Link
-                        href={s.href}
-                        aria-label={s.label}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: linkColor }}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white hover:text-anamaya-charcoal"
-                      >
-                        {Icon ? <Icon className="h-4 w-4" /> : s.label.slice(0, 2)}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </FooterColumnView>
-          )}
-
-          {newsletterFormId && (
-            <FooterColumnView
-              heading={newsletterHeading || "Receive our newsletter"}
-              headingColor={headingColor}
-              linkColor={linkColor}
-            >
-              <div className="rounded-sm bg-white">
-                <SereenlyForm
-                  formId={newsletterFormId}
-                  title={c.newsletter_form_name ?? "Newsletter Footer"}
-                  formName={c.newsletter_form_name ?? "Newsletter Footer"}
-                  initialHeight={c.newsletter_form_height ?? 380}
+            <div key={i}>
+              {col.groups.map((g, j) => (
+                <FooterGroupView
+                  key={j}
+                  group={g}
+                  headingColor={headingColor}
+                  linkColor={linkColor}
                 />
-              </div>
-            </FooterColumnView>
-          )}
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </footer>
   );
 }
 
-function FooterColumnView({
+function FooterGroupView({
+  group,
+  headingColor,
+  linkColor,
+}: {
+  group: FooterColumnGroup;
+  headingColor: string;
+  linkColor: string;
+}) {
+  if (group.kind === "links") {
+    return (
+      <Section heading={group.heading} headingColor={headingColor}>
+        <ul className="space-y-1.5 text-sm">
+          {group.items.map((item, i) => (
+            <li key={`${item.label}-${i}`}>
+              <Link
+                href={item.href || "#"}
+                style={{ color: linkColor }}
+                className="transition-colors hover:text-white"
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    );
+  }
+  if (group.kind === "social") {
+    return (
+      <Section heading={group.heading} headingColor={headingColor}>
+        <ul className="flex flex-wrap gap-2">
+          {group.links.map((s) => {
+            const Icon = SOCIAL_ICON_MAP[s.label];
+            return (
+              <li key={s.label}>
+                <Link
+                  href={s.href}
+                  aria-label={s.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: linkColor }}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white hover:text-anamaya-charcoal"
+                >
+                  {Icon ? <Icon className="h-4 w-4" /> : s.label.slice(0, 2)}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </Section>
+    );
+  }
+  if (group.kind === "newsletter") {
+    if (!group.form_id) return null;
+    return (
+      <Section heading={group.heading} headingColor={headingColor}>
+        <div className="rounded-sm bg-white">
+          <SereenlyForm
+            formId={group.form_id}
+            title={group.form_name ?? "Newsletter Footer"}
+            formName={group.form_name ?? "Newsletter Footer"}
+            initialHeight={group.form_height ?? 380}
+          />
+        </div>
+      </Section>
+    );
+  }
+  return null;
+}
+
+function Section({
   heading,
   headingColor,
   children,
 }: {
   heading: string;
   headingColor: string;
-  linkColor: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="mb-8 last:mb-0">
-      <h3
-        className="text-base font-semibold tracking-wide"
-        style={{ color: headingColor }}
-      >
-        {heading}
-      </h3>
-      <div className="mt-2 mb-4 h-px w-full bg-white/15" />
+      {heading && (
+        <h3
+          className="text-base font-semibold tracking-wide"
+          style={{ color: headingColor }}
+        >
+          {heading}
+        </h3>
+      )}
+      {heading && <div className="mt-2 mb-4 h-px w-full bg-white/15" />}
       {children}
     </div>
   );
