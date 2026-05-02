@@ -45,32 +45,5 @@ export default async function TemplatePreviewPage({
     .maybeSingle();
   if (!template) notFound();
 
-  return (
-    <>
-      <div
-        className="sticky top-20 z-30 mx-4 mt-4 rounded-md border border-anamaya-charcoal/15 bg-anamaya-cream/95 px-4 py-2 text-[12px] text-anamaya-charcoal shadow-sm backdrop-blur-sm"
-        role="note"
-      >
-        <span className="font-semibold uppercase tracking-wider text-anamaya-green-dark">
-          Live preview
-        </span>
-        <span className="mx-2 text-anamaya-charcoal/40">·</span>
-        <span>
-          Template <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[11px]">{template.slug}</code>{" "}
-          ({template.name})
-          {variant && (
-            <>
-              {" "}
-              · variant <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[11px]">{variant}</code>
-            </>
-          )}
-        </span>
-        <span className="mx-2 text-anamaya-charcoal/40">·</span>
-        <span className="italic text-anamaya-charcoal/60">
-          Excluded from search engines. Share this URL with anyone.
-        </span>
-      </div>
-      <TemplateRenderer templateId={template.id} variantSlug={variant} />
-    </>
-  );
+  return <TemplateRenderer templateId={template.id} variantSlug={variant} />;
 }
