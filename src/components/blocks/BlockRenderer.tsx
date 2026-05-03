@@ -26,6 +26,7 @@ import UiAgentBlock from "./UiAgentBlock";
 import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
+import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 
 /** Renders a single block-usage by dispatching on type. Null if unknown. */
 export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
@@ -62,6 +63,7 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "ui_footer_main":    return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "featured_retreats": return <FeaturedRetreatsBlock content={content} />;
+    case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     default: {
       console.warn(`[blocks] unknown block type: ${usage.block.type_slug}`);
       return null;

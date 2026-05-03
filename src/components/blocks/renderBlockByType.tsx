@@ -26,6 +26,7 @@ import UiAgentBlock from "./UiAgentBlock";
 import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
+import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 
 /**
  * Renders a block from its type slug and resolved content. The single
@@ -71,6 +72,7 @@ export default function renderBlockByType(
     case "ui_footer_main":        return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":       return <UiFooterLegalBlock content={content} />;
     case "featured_retreats":     return <FeaturedRetreatsBlock content={content} />;
+    case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     default:                      return null;
   }
 }

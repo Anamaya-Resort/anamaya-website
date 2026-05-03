@@ -56,6 +56,7 @@ const BLOCK_CATEGORIES: Record<string, Category[]> = {
   ui_footer_main: ["ui"],
   ui_footer_legal: ["ui"],
   featured_retreats: ["grid", "image"],
+  small_form_over_image: ["signup", "image"],
 };
 
 const CATEGORY_COLORS: Record<Category, string> = {

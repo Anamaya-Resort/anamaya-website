@@ -24,6 +24,7 @@ import UiAgentBlock from "./UiAgentBlock";
 import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
+import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import TwoColumnBlock from "./TwoColumnBlock";
 import ThreeColumnBlock from "./ThreeColumnBlock";
 import DetailsRatesDynamicBlock from "./DetailsRatesDynamicBlock";
@@ -82,6 +83,7 @@ export default async function Shortcode({ slug }: { slug: string }) {
     case "ui_footer_main":    return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "featured_retreats": return <FeaturedRetreatsBlock content={content} />;
+    case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "two_column":     return <TwoColumnBlock content={content} />;
     case "three_column":   return <ThreeColumnBlock content={content} />;
     case "details_rates_dynamic": return <DetailsRatesDynamicBlock content={content} />;

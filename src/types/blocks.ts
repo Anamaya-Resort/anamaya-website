@@ -100,6 +100,94 @@ export type CtaBannerContent = {
   cta?: { label: string; href: string };
 };
 
+/** CSS mix-blend-mode values supported across image-bearing blocks. */
+export type BlockBlendMode =
+  | "normal"
+  | "multiply"
+  | "screen"
+  | "overlay"
+  | "darken"
+  | "lighten"
+  | "color-dodge"
+  | "color-burn"
+  | "hard-light"
+  | "soft-light"
+  | "difference"
+  | "exclusion"
+  | "hue"
+  | "saturation"
+  | "color"
+  | "luminosity";
+
+export type CardSizeUnit = "pct" | "px";
+
+/**
+ * Small Form Over Image — full-width banner with an embedded Sereenly
+ * form sitting on a centred (or aligned) "card" rectangle. Used for
+ * email-capture sections that need more than just the email field
+ * (first/last name + phone + email).
+ *
+ * Layered structure:
+ *
+ *   Banner section (full width × banner_height_px)
+ *     ├─ Background colour
+ *     ├─ Optional background image (opacity + mix-blend-mode)
+ *     └─ Card (positioned by horizontal_align + vertical_align)
+ *          ├─ Card background colour (always 100 % opaque)
+ *          ├─ Optional card background image (opacity + blend mode
+ *          │   that paints OVER the card colour, not the banner)
+ *          ├─ Heading
+ *          ├─ Subheading
+ *          └─ Sereenly form (form_id)
+ *
+ * Card size accepts either % of the banner or fixed px per axis,
+ * so editors can mix "card is 480 px wide × 70 % tall" if they want.
+ */
+export type SmallFormOverImageContent = {
+  // Banner (outer)
+  banner_height_px?: number;
+  bg_color?: string;
+  bg_image_url?: string;
+  bg_image_alt?: string;
+  bg_image_opacity?: number;          // 0–100
+  bg_image_blend_mode?: BlockBlendMode;
+
+  // Card (inner rectangle) — size + alignment
+  card_width_value?: number;
+  card_width_unit?: CardSizeUnit;
+  card_height_value?: number;
+  card_height_unit?: CardSizeUnit;
+  card_horizontal_align?: "left" | "center" | "right";
+  card_vertical_align?: "top" | "center" | "bottom";
+  card_corner_radius_px?: number;
+  card_padding_px?: number;
+
+  // Card background
+  card_bg_color?: string;
+  card_bg_image_url?: string;
+  card_bg_image_alt?: string;
+  card_bg_image_opacity?: number;     // 0–100
+  card_bg_image_blend_mode?: BlockBlendMode;
+
+  // Card content text
+  heading?: string;
+  heading_font?: "body" | "heading";
+  heading_size_px?: number;
+  heading_color?: string;
+  heading_bold?: boolean;
+  heading_italic?: boolean;
+
+  subheading?: string;
+  subheading_font?: "body" | "heading";
+  subheading_size_px?: number;
+  subheading_color?: string;
+
+  // Form
+  form_id?: string;                   // Sereenly form id
+  form_name?: string;                 // analytics label
+  form_height_px?: number;            // initial iframe height
+};
+
 export type PressBarLogo = {
   name: string;
   src: string;
@@ -920,7 +1008,8 @@ export type BlockTypeSlug =
   | "ui_agent"
   | "ui_footer_main"
   | "ui_footer_legal"
-  | "featured_retreats";
+  | "featured_retreats"
+  | "small_form_over_image";
 
 export type BlockRecord = {
   id: string;
