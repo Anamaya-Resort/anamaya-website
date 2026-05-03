@@ -1,250 +1,326 @@
 "use client";
 
-import { useState } from "react";
-import type { FeatureListContent, FeatureListItem } from "@/types/blocks";
+import BlockEditorChrome, {
+  type BlockEditorVariant,
+  type BlockEditorState,
+} from "@/components/admin/blocks/BlockEditorChrome";
+import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
+import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
+import type { OrgBranding } from "@/config/brand-tokens";
+import type {
+  BlockCta,
+  FeatureListContent,
+  FeatureListItem,
+} from "@/types/blocks";
 
 const inputCls =
-  "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
+  "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
+const labelCls =
+  "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
+const sectionCls = "rounded-md border border-zinc-200 bg-zinc-50 p-4";
+const sectionTitleCls = "mb-3 text-sm font-semibold text-anamaya-charcoal";
 
 const ICON_OPTIONS: NonNullable<FeatureListItem["icon"]>[] = [
-  "check", "star", "heart", "leaf", "sparkle", "dot",
+  "check",
+  "star",
+  "heart",
+  "leaf",
+  "sparkle",
+  "dot",
 ];
 
-export default function FeatureListEditor({
-  content,
-  onSave,
-}: {
+function normalize(c: FeatureListContent | null | undefined): FeatureListContent {
+  return {
+    heading: c?.heading ?? "",
+    intro: c?.intro ?? "",
+    items: c?.items ?? [],
+    layout: c?.layout ?? "grid",
+    columns: c?.columns ?? 3,
+    bg_color: c?.bg_color ?? "",
+    text_color: c?.text_color ?? "",
+    padding_y_px: c?.padding_y_px ?? 64,
+    content_width_px: c?.content_width_px ?? 1200,
+    decoration_url: c?.decoration_url ?? "",
+    decoration_alt: c?.decoration_alt ?? "",
+    decoration_position: c?.decoration_position ?? "bottom-right",
+    decoration_size_px: c?.decoration_size_px ?? 240,
+    decoration_opacity: c?.decoration_opacity ?? 100,
+    decoration_flip_x: c?.decoration_flip_x ?? false,
+    decoration_flip_y: c?.decoration_flip_y ?? false,
+    decoration_offset_x_px: c?.decoration_offset_x_px ?? 0,
+    decoration_offset_y_px: c?.decoration_offset_y_px ?? 0,
+    decoration_show_mobile: c?.decoration_show_mobile ?? false,
+    cta_enabled: c?.cta_enabled ?? false,
+    cta_label: c?.cta_label ?? "",
+    cta_href: c?.cta_href ?? "",
+    cta_bg_color: c?.cta_bg_color ?? "",
+    cta_text_color: c?.cta_text_color ?? "",
+    cta_size_px: c?.cta_size_px ?? 14,
+    cta_font: c?.cta_font ?? "body",
+  };
+}
+
+export default function FeatureListEditor(props: {
+  blockId: string;
+  name: string;
+  slug: string;
   content: FeatureListContent;
-  onSave: (content: unknown) => Promise<void>;
+  onSave: (name: string, slug: string, content: unknown) => Promise<void>;
+  brandTokens: Required<OrgBranding>;
+  variants: BlockEditorVariant[];
+  typeName: string;
 }) {
-  const [state, setState] = useState<FeatureListContent>(content ?? { items: [] });
-  const [saving, setSaving] = useState(false);
-
-  function patchItem(idx: number, patch: Partial<FeatureListItem>) {
-    setState((s) => ({
-      ...s,
-      items: s.items.map((it, i) => (i === idx ? { ...it, ...patch } : it)),
-    }));
-  }
-  function addItem() {
-    setState((s) => ({ ...s, items: [...s.items, { title: "New item" }] }));
-  }
-  function removeItem(idx: number) {
-    setState((s) => ({ ...s, items: s.items.filter((_, i) => i !== idx) }));
-  }
-  function moveItem(idx: number, dir: -1 | 1) {
-    setState((s) => {
-      const arr = [...s.items];
-      const target = idx + dir;
-      if (target < 0 || target >= arr.length) return s;
-      [arr[idx], arr[target]] = [arr[target], arr[idx]];
-      return { ...s, items: arr };
-    });
-  }
-
   return (
-    <form
-      action={async () => {
-        setSaving(true);
-        try {
-          await onSave(state);
-        } finally {
-          setSaving(false);
-        }
-      }}
-      className="grid grid-cols-1 gap-4 rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2"
-    >
-      <Field label="Heading">
-        <input
-          className={inputCls}
-          value={state.heading ?? ""}
-          onChange={(e) => setState((s) => ({ ...s, heading: e.target.value }))}
-        />
-      </Field>
-      <Field label="Layout">
-        <select
-          className={inputCls}
-          value={state.layout ?? "grid"}
-          onChange={(e) =>
-            setState((s) => ({ ...s, layout: e.target.value as FeatureListContent["layout"] }))
-          }
-        >
-          <option value="stack">Stack (vertical list)</option>
-          <option value="grid">Grid (multi-column)</option>
-          <option value="split">Split (alternating image side)</option>
-        </select>
-      </Field>
-      <div className="sm:col-span-2">
-        <Field label="Intro text">
-          <textarea
-            rows={2}
-            className={inputCls}
-            value={state.intro ?? ""}
-            onChange={(e) => setState((s) => ({ ...s, intro: e.target.value }))}
-          />
-        </Field>
-      </div>
-
-      {state.layout === "grid" && (
-        <Field label="Grid columns">
-          <select
-            className={inputCls}
-            value={state.columns ?? 3}
-            onChange={(e) =>
-              setState((s) => ({ ...s, columns: Number(e.target.value) as 2 | 3 | 4 }))
-            }
-          >
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-          </select>
-        </Field>
-      )}
-      <Field label="Background color">
-        <input
-          className={inputCls}
-          value={state.bg_color ?? ""}
-          onChange={(e) => setState((s) => ({ ...s, bg_color: e.target.value }))}
-        />
-      </Field>
-
-      <div className="sm:col-span-2">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-            Items
-          </span>
-          <button
-            type="button"
-            onClick={addItem}
-            className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-zinc-50"
-          >
-            + Add item
-          </button>
-        </div>
-        <ul className="space-y-3">
-          {state.items.map((item, idx) => (
-            <li key={idx} className="rounded border border-zinc-200 p-3">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <input
-                  className={inputCls}
-                  value={item.title}
-                  onChange={(e) => patchItem(idx, { title: e.target.value })}
-                  placeholder="Title"
-                />
-                <input
-                  className={inputCls}
-                  value={item.price ?? ""}
-                  onChange={(e) => patchItem(idx, { price: e.target.value })}
-                  placeholder="Price (optional)"
-                />
-              </div>
-              <textarea
-                rows={2}
-                className={`${inputCls} mt-2`}
-                value={item.description ?? ""}
-                onChange={(e) => patchItem(idx, { description: e.target.value })}
-                placeholder="Description"
-              />
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <select
-                  className={inputCls}
-                  value={item.icon ?? ""}
-                  onChange={(e) =>
-                    patchItem(idx, {
-                      icon: e.target.value
-                        ? (e.target.value as FeatureListItem["icon"])
-                        : undefined,
-                    })
-                  }
-                >
-                  <option value="">No icon</option>
-                  {ICON_OPTIONS.map((k) => (
-                    <option key={k} value={k}>
-                      {k}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  className={inputCls}
-                  value={item.href ?? ""}
-                  onChange={(e) => patchItem(idx, { href: e.target.value })}
-                  placeholder="Link href (optional)"
-                />
-              </div>
-              <div className="mt-2 flex items-center gap-3">
-                <ImageUploadButton
-                  value={item.image_url}
-                  onUploaded={(url) => patchItem(idx, { image_url: url })}
-                  kind="feature-items"
-                  maxWidth={1200}
-                />
-                {item.image_url && (
-                  <img src={item.image_url} alt="" className="h-12 w-12 rounded object-cover" />
-                )}
-                <button
-                  type="button"
-                  onClick={() => moveItem(idx, -1)}
-                  className="ml-auto text-xs text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveItem(idx, 1)}
-                  className="text-xs text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeItem(idx)}
-                  className="text-xs text-red-600 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <Field label="Vertical padding (px)">
-        <input
-          type="number"
-          className={inputCls}
-          value={state.padding_y_px ?? 64}
-          onChange={(e) => setState((s) => ({ ...s, padding_y_px: Number(e.target.value) }))}
-        />
-      </Field>
-
-      <div className="sm:col-span-2">
-        <SectionFrameFieldset
-          frame={state}
-          onChange={(u) => setState((s) => ({ ...s, ...u }))}
-          defaultWidth={1200}
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={saving}
-        className="col-span-full justify-self-start rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark disabled:opacity-50"
-      >
-        {saving ? "Saving…" : "Save"}
-      </button>
-    </form>
+    <BlockEditorChrome<FeatureListContent>
+      {...props}
+      typeSlug="feature_list"
+      normalize={normalize}
+      renderForm={(state) => <Form state={state} />}
+    />
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Form({ state }: { state: BlockEditorState<FeatureListContent> }) {
+  const { draft, patch, brandTokens } = state;
+  const items = draft.items ?? [];
+
+  function patchItem(idx: number, p: Partial<FeatureListItem>) {
+    patch({ items: items.map((it, i) => (i === idx ? { ...it, ...p } : it)) });
+  }
+  function addItem() {
+    patch({ items: [...items, { title: "New item" }] });
+  }
+  function removeItem(idx: number) {
+    patch({ items: items.filter((_, i) => i !== idx) });
+  }
+  function moveItem(idx: number, dir: -1 | 1) {
+    const target = idx + dir;
+    if (target < 0 || target >= items.length) return;
+    const arr = items.slice();
+    [arr[idx], arr[target]] = [arr[target], arr[idx]];
+    patch({ items: arr });
+  }
+
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-        {label}
-      </span>
-      {children}
-    </label>
+    <div className="space-y-6">
+      {/* Heading + intro */}
+      <section className={sectionCls}>
+        <h3 className={sectionTitleCls}>Heading + intro</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className={labelCls}>Heading</span>
+            <input
+              className={inputCls}
+              value={draft.heading ?? ""}
+              onChange={(e) => patch({ heading: e.target.value })}
+            />
+          </label>
+          <label className="block">
+            <span className={labelCls}>Layout</span>
+            <select
+              className={inputCls}
+              value={draft.layout ?? "grid"}
+              onChange={(e) =>
+                patch({ layout: e.target.value as FeatureListContent["layout"] })
+              }
+            >
+              <option value="stack">Stack (vertical list)</option>
+              <option value="grid">Grid (multi-column)</option>
+              <option value="split">Split (alternating image side)</option>
+            </select>
+          </label>
+          <label className="block sm:col-span-2">
+            <span className={labelCls}>Intro text (optional)</span>
+            <textarea
+              rows={2}
+              className={inputCls}
+              value={draft.intro ?? ""}
+              onChange={(e) => patch({ intro: e.target.value })}
+            />
+          </label>
+          {draft.layout === "grid" && (
+            <label className="block">
+              <span className={labelCls}>Grid columns</span>
+              <select
+                className={inputCls}
+                value={draft.columns ?? 3}
+                onChange={(e) =>
+                  patch({ columns: Number(e.target.value) as 2 | 3 | 4 })
+                }
+              >
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+          )}
+          <div>
+            <span className={labelCls}>Background color</span>
+            <BrandColorSelect
+              value={draft.bg_color}
+              onChange={(v) => patch({ bg_color: v })}
+              brandTokens={brandTokens}
+              allowAuto
+            />
+          </div>
+          <div>
+            <span className={labelCls}>Text color</span>
+            <BrandColorSelect
+              value={draft.text_color}
+              onChange={(v) => patch({ text_color: v })}
+              brandTokens={brandTokens}
+              allowAuto
+            />
+          </div>
+          <label className="block">
+            <span className={labelCls}>Vertical padding (px)</span>
+            <input
+              type="number"
+              className={inputCls}
+              value={draft.padding_y_px ?? 64}
+              onChange={(e) =>
+                patch({ padding_y_px: Number(e.target.value) || 64 })
+              }
+            />
+          </label>
+        </div>
+      </section>
+
+      {/* Items */}
+      <section className={sectionCls}>
+        <header className="mb-3 flex items-center justify-between">
+          <h3 className={sectionTitleCls}>Items</h3>
+          <button
+            type="button"
+            onClick={addItem}
+            className="rounded-full bg-anamaya-green px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+          >
+            + Add item
+          </button>
+        </header>
+        {items.length === 0 ? (
+          <p className="rounded border border-dashed border-zinc-300 bg-white p-4 text-center text-xs italic text-anamaya-charcoal/50">
+            No items yet.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {items.map((item, idx) => (
+              <li
+                key={idx}
+                className="rounded-md border border-zinc-200 bg-white p-3"
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input
+                    className={inputCls}
+                    value={item.title}
+                    onChange={(e) => patchItem(idx, { title: e.target.value })}
+                    placeholder="Title"
+                  />
+                  <input
+                    className={inputCls}
+                    value={item.price ?? ""}
+                    onChange={(e) => patchItem(idx, { price: e.target.value })}
+                    placeholder="Price (optional)"
+                  />
+                </div>
+                <textarea
+                  rows={2}
+                  className={`${inputCls} mt-2`}
+                  value={item.description ?? ""}
+                  onChange={(e) =>
+                    patchItem(idx, { description: e.target.value })
+                  }
+                  placeholder="Description (optional)"
+                />
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <select
+                    className={inputCls}
+                    value={item.icon ?? ""}
+                    onChange={(e) =>
+                      patchItem(idx, {
+                        icon: e.target.value
+                          ? (e.target.value as FeatureListItem["icon"])
+                          : undefined,
+                      })
+                    }
+                  >
+                    <option value="">No icon</option>
+                    {ICON_OPTIONS.map((k) => (
+                      <option key={k} value={k}>
+                        {k}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className={inputCls}
+                    value={item.href ?? ""}
+                    onChange={(e) => patchItem(idx, { href: e.target.value })}
+                    placeholder="Link href (optional)"
+                  />
+                </div>
+                <div className="mt-2 flex items-center gap-3">
+                  <ImageUploadButton
+                    value={item.image_url}
+                    onUploaded={(url) => patchItem(idx, { image_url: url })}
+                    kind="feature-items"
+                    maxWidth={1200}
+                  />
+                  {item.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.image_url}
+                      alt=""
+                      className="h-12 w-12 rounded object-cover"
+                    />
+                  )}
+                  <span className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={() => moveItem(idx, -1)}
+                    disabled={idx === 0}
+                    className="rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] hover:bg-zinc-50 disabled:opacity-40"
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveItem(idx, 1)}
+                    disabled={idx === items.length - 1}
+                    className="rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] hover:bg-zinc-50 disabled:opacity-40"
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(idx)}
+                    className="rounded border border-red-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Section frame (decoration) */}
+      <SectionFrameFieldset
+        frame={draft}
+        onChange={(u) => patch(u as Partial<FeatureListContent>)}
+        defaultWidth={1200}
+      />
+
+      {/* CTA */}
+      <CtaFieldset
+        cta={draft as BlockCta}
+        onChange={(u) => patch(u as Partial<FeatureListContent>)}
+        brandTokens={brandTokens}
+      />
+    </div>
   );
 }

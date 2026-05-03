@@ -295,7 +295,16 @@ export default async function EditBlock({
         <PricingTableEditor content={block.content} onSave={saveContent} />
       )}
       {block.type_slug === "feature_list" && (
-        <FeatureListEditor content={block.content} onSave={saveContent} />
+        <FeatureListEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
       )}
       {block.type_slug === "gallery" && (
         <GalleryEditor content={block.content} onSave={saveContent} />
