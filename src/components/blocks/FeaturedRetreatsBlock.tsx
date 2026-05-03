@@ -95,17 +95,17 @@ export default async function FeaturedRetreatsBlock({
               const href = retreatHref(r, urlPattern);
               const title = decodeEntities(r.name ?? "Untitled retreat");
               const dates = formatDateRange(r.start_date, r.end_date);
-              const body = decodeEntities(r.excerpt ?? r.description ?? "");
+              const body = decodeEntities(stripHtml(r.excerpt ?? r.description ?? ""));
               const image = pickImage(r);
               return (
                 <li key={r.id}>
                   <article
-                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:grid-cols-[2fr_3fr]"
+                    className="grid grid-cols-1 gap-4 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:grid-cols-[2fr_3fr]"
                     style={{ backgroundColor: cardBg }}
                   >
                     <Link
                       href={href}
-                      className="group relative block min-h-[220px] overflow-hidden bg-anamaya-charcoal/5"
+                      className="group relative block min-h-[130px] overflow-hidden bg-anamaya-charcoal/5"
                       aria-label={title}
                     >
                       {image ? (
@@ -121,29 +121,29 @@ export default async function FeaturedRetreatsBlock({
                         </div>
                       )}
                     </Link>
-                    <div className="flex min-w-0 flex-col gap-3 p-6">
+                    <div className="flex min-w-0 flex-col gap-1.5 p-4">
                       <Link href={href} className="block">
                         <h3
-                          className="font-heading text-2xl font-semibold leading-tight hover:opacity-80"
+                          className="font-heading text-xl font-semibold leading-tight hover:opacity-80"
                           style={{ color: headingColor }}
                         >
                           {title}
                         </h3>
                       </Link>
                       {dates && (
-                        <div className="text-sm font-semibold tracking-wide opacity-80">
+                        <div className="text-xs font-semibold tracking-wide opacity-80">
                           {dates}
                         </div>
                       )}
                       {body && (
-                        <p className="text-[15px] leading-relaxed opacity-90">
+                        <p className="line-clamp-2 text-[14px] leading-snug opacity-90">
                           {body}
                         </p>
                       )}
-                      <div className="mt-auto flex justify-end pt-2">
+                      <div className="mt-auto flex justify-end pt-1">
                         <Link
                           href={href}
-                          className="inline-block rounded-full bg-anamaya-green px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark"
+                          className="inline-block rounded-full bg-anamaya-green px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark"
                         >
                           {registerLabel}
                         </Link>
@@ -230,6 +230,20 @@ function pickImage(r: AoRetreat): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Remove all HTML tags from a string and collapse whitespace, leaving
+ * plain prose. Used on AO excerpts which can contain `<p>...</p>`,
+ * inline `<a>` tags, etc. — none of which we want to render literally
+ * inside a card. Pair with decodeEntities to turn `&hellip;` etc. into
+ * real characters.
+ */
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
