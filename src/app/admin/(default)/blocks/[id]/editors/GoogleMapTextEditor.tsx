@@ -27,9 +27,9 @@ function normalize(c: GoogleMapTextContent | null | undefined): GoogleMapTextCon
     map_horizontal_align: c?.map_horizontal_align ?? "center",
     bg_color: c?.bg_color ?? "",
 
-    lat: c?.lat ?? 9.6586,            // Anamaya Resort, Montezuma, CR
-    lng: c?.lng ?? -85.0731,
-    zoom: c?.zoom ?? 15,
+    lat: c?.lat ?? 9.651369,           // Anamaya Resort, Montezuma, CR
+    lng: c?.lng ?? -85.0736541,
+    zoom: c?.zoom ?? 16,
     marker_label: c?.marker_label ?? "Anamaya Resort",
     open_label: c?.open_label ?? "Open in Google Maps ↗",
     map_corner_radius_px: c?.map_corner_radius_px ?? 0,
@@ -224,7 +224,7 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               type="number"
               step="any"
               className={inputCls}
-              value={draft.lat ?? 9.6586}
+              value={draft.lat ?? 9.651369}
               onChange={(e) => patch({ lat: Number(e.target.value) })}
             />
           </label>
@@ -234,7 +234,7 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               type="number"
               step="any"
               className={inputCls}
-              value={draft.lng ?? -85.0731}
+              value={draft.lng ?? -85.0736541}
               onChange={(e) => patch({ lng: Number(e.target.value) })}
             />
           </label>
@@ -245,10 +245,10 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               min={0}
               max={21}
               className={inputCls}
-              value={draft.zoom ?? 15}
+              value={draft.zoom ?? 16}
               onChange={(e) =>
                 patch({
-                  zoom: Math.max(0, Math.min(21, Number(e.target.value) || 15)),
+                  zoom: Math.max(0, Math.min(21, Number(e.target.value) || 16)),
                 })
               }
             />
@@ -272,7 +272,7 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
             />
           </label>
           <label className="block sm:col-span-2">
-            <span className={labelCls}>Marker label (optional)</span>
+            <span className={labelCls}>Place name (optional)</span>
             <input
               className={inputCls}
               value={draft.marker_label ?? ""}
@@ -280,7 +280,11 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               placeholder="e.g. Anamaya Resort"
             />
             <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
-              Shown next to the dropped pin and on the &ldquo;Open in Google Maps&rdquo; link.
+              When set, the embed searches for that name on Google Maps
+              (centred at the coords above) so the rendered map shows
+              the place&rsquo;s real card with photos, reviews, and
+              directions. Leave blank to drop a precise pin at the
+              coordinates with no place card.
             </p>
           </label>
           <label className="block sm:col-span-2">
