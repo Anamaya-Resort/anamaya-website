@@ -23,11 +23,23 @@ export default async function BlockPreview({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            html, body { margin: 0; padding: 0; overflow: hidden; }
-            /* Subpixel rounding between the admin wrapper's aspect-ratio
-               and a block's natural content height can cause iframes to
-               show a 1-pixel scroll bar. Hide any scrolling inside the
-               preview iframe — we never want scrollbars in the preview. */
+            /* Reset margins / padding / scrollbars. CRITICAL:
+               override the root layout's "h-full" on <html> and
+               "min-h-full" on <body> — those propagate into this
+               iframe and force body to be at least the iframe's
+               viewport height, so the parent's measurer reads back
+               the iframe's own height (instead of the block's true
+               content height) whenever the content is shorter than
+               the initial estimate. With this override, body
+               collapses to its children's height and the measurer
+               can report a number smaller than the iframe. */
+            html, body {
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+              height: auto !important;
+              min-height: 0 !important;
+            }
             /* The hero's inline \`height: 80vh\` resolves against the
                iframe's viewport and leaves empty space below. Force it
                to fill the iframe exactly. 100vh (not 100%) so it works
