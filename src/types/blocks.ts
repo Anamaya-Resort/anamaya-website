@@ -72,8 +72,31 @@ export type HeroContent = {
 export type CtaBannerContent = {
   heading: string;
   subheading?: string;
+  bg_color?: string;          // brand token or hex; shown when no bg image
+                              // OR behind a translucent / blended image
   bg_image_url?: string;
   image_alt?: string;
+  /** 0–100. Default 100 (fully opaque). Lower values let the bg colour
+   *  show through. Applied to the image layer only. */
+  bg_image_opacity?: number;
+  /** CSS mix-blend-mode for the image layer. Default "normal". */
+  bg_image_blend_mode?:
+    | "normal"
+    | "multiply"
+    | "screen"
+    | "overlay"
+    | "darken"
+    | "lighten"
+    | "color-dodge"
+    | "color-burn"
+    | "hard-light"
+    | "soft-light"
+    | "difference"
+    | "exclusion"
+    | "hue"
+    | "saturation"
+    | "color"
+    | "luminosity";
   cta?: { label: string; href: string };
 };
 

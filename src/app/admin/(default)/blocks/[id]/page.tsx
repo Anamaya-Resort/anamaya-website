@@ -194,7 +194,16 @@ export default async function EditBlock({
         />
       )}
       {block.type_slug === "cta_banner" && (
-        <CtaBannerEditor content={block.content} onSave={saveContent} />
+        <CtaBannerEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
       )}
       {block.type_slug === "rich_bg" && (
         <RichBgEditor
