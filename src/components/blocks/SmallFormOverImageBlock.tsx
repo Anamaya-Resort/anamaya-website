@@ -108,38 +108,48 @@ export default function SmallFormOverImageBlock({
             className="relative flex h-full w-full flex-col overflow-y-auto"
             style={{ padding: cardPadding }}
           >
-            {c.heading && (
-              <h2
-                className={`${headingFont} mb-2 text-center`}
-                style={{
-                  fontSize: c.heading_size_px ?? 32,
-                  color: resolveBrandColor(c.heading_color) ?? undefined,
-                  fontWeight: c.heading_bold ? 700 : 600,
-                  fontStyle: c.heading_italic ? "italic" : "normal",
-                  lineHeight: 1.15,
-                }}
-              >
-                {c.heading}
-              </h2>
-            )}
-            {c.subheading && (
-              <p
-                className={`${subheadingFont} mb-4 text-center`}
-                style={{
-                  fontSize: c.subheading_size_px ?? 16,
-                  color: resolveBrandColor(c.subheading_color) ?? undefined,
-                  lineHeight: 1.5,
-                }}
-              >
-                {c.subheading}
-              </p>
-            )}
-            <SereenlyForm
-              formId={c.form_id || DEFAULT_FORM_ID}
-              title={c.form_name ?? "Newsletter Form"}
-              formName={c.form_name ?? "Newsletter Form"}
-              initialHeight={c.form_height_px ?? 460}
-            />
+            {/*
+              `my-auto` on a single flex-column child absorbs the
+              remaining vertical space equally above and below, which
+              vertically centres the heading + subheading + form
+              regardless of the iframe's eventual height. When the
+              content is taller than the card the auto margins collapse
+              to zero and the parent's overflow-y-auto handles scroll.
+            */}
+            <div className="my-auto w-full">
+              {c.heading && (
+                <h2
+                  className={`${headingFont} mb-2 text-center`}
+                  style={{
+                    fontSize: c.heading_size_px ?? 32,
+                    color: resolveBrandColor(c.heading_color) ?? undefined,
+                    fontWeight: c.heading_bold ? 700 : 600,
+                    fontStyle: c.heading_italic ? "italic" : "normal",
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {c.heading}
+                </h2>
+              )}
+              {c.subheading && (
+                <p
+                  className={`${subheadingFont} mb-4 text-center`}
+                  style={{
+                    fontSize: c.subheading_size_px ?? 16,
+                    color: resolveBrandColor(c.subheading_color) ?? undefined,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {c.subheading}
+                </p>
+              )}
+              <SereenlyForm
+                formId={c.form_id || DEFAULT_FORM_ID}
+                title={c.form_name ?? "Newsletter Form"}
+                formName={c.form_name ?? "Newsletter Form"}
+                initialHeight={c.form_height_px ?? 460}
+              />
+            </div>
           </div>
         </div>
       </div>
