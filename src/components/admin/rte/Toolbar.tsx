@@ -82,6 +82,60 @@ export default function Toolbar({
     editor.chain().focus().setFontSize(`${next}px`).run();
   }
 
+  /**
+   * H1/H2/H3 are block-level in ProseMirror — vanilla
+   * editor.toggleHeading() converts the whole paragraph the selection
+   * sits in, even if only part of it is selected. To match user
+   * intuition ("wrap just this text in a heading"), when the selection
+   * is partial within a single text block we first split the block at
+   * both ends of the selection, then convert only the middle into a
+   * heading. Whole-block / cross-block / empty selections fall through
+   * to the standard toggle so existing behaviour is preserved.
+   */
+  function applyHeading(level: 1 | 2 | 3) {
+    const { state } = editor;
+    const sel = state.selection;
+    const { from, to, empty } = sel;
+
+    if (empty) {
+      editor.chain().focus().toggleHeading({ level }).run();
+      return;
+    }
+
+    const $from = state.doc.resolve(from);
+    const $to = state.doc.resolve(to);
+
+    // Cross-block selection → standard toggle (applies to every touched block).
+    if (!$from.sameParent($to)) {
+      editor.chain().focus().toggleHeading({ level }).run();
+      return;
+    }
+
+    // Same block — toggle outright if the selection covers the whole block,
+    // otherwise split the block into [before][selected][after] and convert
+    // the middle one to a heading.
+    const blockStart = $from.start();
+    const blockEnd = $from.end();
+    if (from <= blockStart && to >= blockEnd) {
+      editor.chain().focus().toggleHeading({ level }).run();
+      return;
+    }
+
+    editor
+      .chain()
+      .focus()
+      // Split at `to` first — positions before `to` stay valid afterwards.
+      .setTextSelection(to)
+      .splitBlock()
+      // Now split at `from`, which leaves the caret at the start of the
+      // newly-split middle block (the bit the user actually selected).
+      .setTextSelection(from)
+      .splitBlock()
+      // Convert that middle block to the requested heading level.
+      .setNode("heading", { level })
+      .run();
+  }
+
   return (
     <div
       className="flex flex-wrap items-center gap-0.5 py-1"
@@ -137,24 +191,24 @@ export default function Toolbar({
       {/* Headings */}
       <button
         type="button"
-        title="Heading 1"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        title="Heading 1 (selected text only when partial)"
+        onClick={() => applyHeading(1)}
         className={btn(editor.isActive("heading", { level: 1 }))}
       >
         <Heading1 size={14} />
       </button>
       <button
         type="button"
-        title="Heading 2"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        title="Heading 2 (selected text only when partial)"
+        onClick={() => applyHeading(2)}
         className={btn(editor.isActive("heading", { level: 2 }))}
       >
         <Heading2 size={14} />
       </button>
       <button
         type="button"
-        title="Heading 3"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        title="Heading 3 (selected text only when partial)"
+        onClick={() => applyHeading(3)}
         className={btn(editor.isActive("heading", { level: 3 }))}
       >
         <Heading3 size={14} />
@@ -243,7 +297,7 @@ export default function Toolbar({
           and list buttons apply per-line instead of to the whole block. */}
       <button
         type="button"
-        title="Split line breaks (<br>) into paragraphs"
+        title="Split ALL line breaks (<br>) in the entire document into paragraphs"
         onClick={() => {
           const html = editor.getHTML();
           if (!/<br\s*\/?>/i.test(html)) return;
