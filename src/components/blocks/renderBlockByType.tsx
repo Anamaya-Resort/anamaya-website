@@ -18,6 +18,7 @@ import GalleryBlock from "./GalleryBlock";
 import PersonCardBlock from "./PersonCardBlock";
 import RawHtmlBlock from "./RawHtmlBlock";
 import TwoColumnBlock from "./TwoColumnBlock";
+import ThreeColumnBlock from "./ThreeColumnBlock";
 import DetailsRatesDynamicBlock from "./DetailsRatesDynamicBlock";
 import UiTopBlock from "./UiTopBlock";
 import UiSideMenuRightBlock from "./UiSideMenuRightBlock";
@@ -62,6 +63,7 @@ export default function renderBlockByType(
     case "person_card":           return <PersonCardBlock content={content} />;
     case "raw_html":              return <RawHtmlBlock content={content} />;
     case "two_column":            return <TwoColumnBlock content={content} />;
+    case "three_column":          return <ThreeColumnBlock content={content} />;
     case "details_rates_dynamic": return <DetailsRatesDynamicBlock content={content} />;
     case "ui_top":                return <UiTopBlock content={content} />;
     case "ui_side_menu_right":    return <UiSideMenuRightBlock content={content} />;

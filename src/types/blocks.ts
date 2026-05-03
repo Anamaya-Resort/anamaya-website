@@ -532,6 +532,77 @@ export type TwoColumnContent = BlockCta & SectionFrame & {
 };
 
 /**
+ * One column of the three_column block. Self-contained — heading,
+ * image, body HTML, optional CTA — with full typography control on
+ * heading + body. Unlike TwoColumnContent (which wraps OTHER block
+ * types per side), three_column owns its column data directly.
+ */
+export type ThreeColumnSide = {
+  heading?: string;
+  heading_font?: "body" | "heading";
+  heading_size_px?: number;
+  heading_color?: string;
+  heading_bold?: boolean;
+  heading_italic?: boolean;
+  /** Centred over the body. Use the editor's image picker. */
+  image_url?: string;
+  image_alt?: string;
+  /** Body HTML — rich text. Inline styles in the HTML preserved. */
+  body_html?: string;
+  body_font?: "body" | "heading";
+  body_size_px?: number;
+  body_color?: string;
+  /** Per-column CTA. Lives under the column so each can differ. */
+  cta?: BlockCta;
+};
+
+/**
+ * Three-column section. Full-bleed background (color + optional image),
+ * a section-level heading, then a 7-track CSS grid:
+ *
+ *   leftGutter | leftCol | leftSpace | middleCol | rightSpace | rightCol | rightGutter
+ *
+ * All seven widths are entered as percentages but normalise via fr
+ * units — if the editor's percentages don't sum to 100, the grid
+ * scales them proportionally (no breakage).
+ */
+export type ThreeColumnContent = {
+  // Section-level
+  heading?: string;
+  heading_font?: "body" | "heading";
+  heading_size_px?: number;
+  heading_color?: string;
+  heading_bold?: boolean;
+  heading_italic?: boolean;
+  heading_align?: "left" | "center" | "right";
+
+  bg_color?: string;
+  bg_image_url?: string;
+  bg_image_fit?: "cover" | "contain" | "tile";
+  bg_image_scale_pct?: number;
+  text_color?: string;
+  padding_y_px?: number;
+
+  // 7-track widths in % (or any number — fr units distribute)
+  left_gutter_pct?: number;
+  left_col_pct?: number;
+  left_space_pct?: number;
+  middle_col_pct?: number;
+  right_space_pct?: number;
+  right_col_pct?: number;
+  right_gutter_pct?: number;
+
+  vertical_align?: "top" | "center" | "bottom";
+  /** Stack vertically on mobile (default true). */
+  mobile_stack?: boolean;
+
+  // The three column payloads
+  left?: ThreeColumnSide;
+  middle?: ThreeColumnSide;
+  right?: ThreeColumnSide;
+};
+
+/**
  * Details + Rates (Dynamic). Two-column section: rich text on the left
  * (typically the standard "Retreat Details" boilerplate), pricing on the
  * right pulled live from AnamayOS so the rate sheet stays in sync with
@@ -807,6 +878,7 @@ export type BlockTypeSlug =
   | "person_card"
   | "raw_html"
   | "two_column"
+  | "three_column"
   | "details_rates_dynamic"
   | "ui_top"
   | "ui_side_menu_right"

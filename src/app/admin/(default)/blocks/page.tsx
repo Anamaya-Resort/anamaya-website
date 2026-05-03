@@ -49,6 +49,7 @@ const BLOCK_CATEGORIES: Record<string, Category[]> = {
   feature_list: ["grid"],
   checklist: ["grid", "rich-text"],
   two_column: ["2-column"],
+  three_column: ["2-column", "image", "rich-text"],
   ui_top: ["ui"],
   ui_side_menu_right: ["ui"],
   ui_agent: ["ui"],

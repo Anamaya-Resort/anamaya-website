@@ -26,6 +26,7 @@ import FeatureListEditor from "./editors/FeatureListEditor";
 import GalleryEditor from "./editors/GalleryEditor";
 import PersonCardEditor from "./editors/PersonCardEditor";
 import TwoColumnEditor from "./editors/TwoColumnEditor";
+import ThreeColumnEditor from "./editors/ThreeColumnEditor";
 import DetailsRatesDynamicEditor from "./editors/DetailsRatesDynamicEditor";
 import UiTopEditor from "./editors/UiTopEditor";
 import UiSideMenuRightEditor from "./editors/UiSideMenuRightEditor";
@@ -293,6 +294,18 @@ export default async function EditBlock({
       )}
       {block.type_slug === "two_column" && (
         <TwoColumnEditor content={block.content} onSave={saveContent} />
+      )}
+      {block.type_slug === "three_column" && (
+        <ThreeColumnEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
       )}
       {block.type_slug === "details_rates_dynamic" && (
         <DetailsRatesDynamicEditor content={block.content} onSave={saveContent} />
