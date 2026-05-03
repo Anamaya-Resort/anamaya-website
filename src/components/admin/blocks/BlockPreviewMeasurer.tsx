@@ -16,9 +16,18 @@ export default function BlockPreviewMeasurer() {
     let lastSent = -1;
 
     function send() {
-      // Use scrollHeight so overflow:hidden on body (we set that) doesn't
-      // clip the measurement.
-      const h = document.documentElement.scrollHeight;
+      // Measure the body element directly — NOT documentElement. The
+      // <html> element's scrollHeight is floored to the iframe's
+      // viewport height, so when a block's content is shorter than
+      // the parent's initial server-side estimate (computeNativeHeight)
+      // the measurer reported the iframe height back unchanged and the
+      // block never got a chance to shrink — leaving empty space below
+      // in the template builder. body.offsetHeight is the body's true
+      // rendered height, independent of viewport; both growing and
+      // shrinking measurements come back accurately. body has
+      // margin:0 padding:0 overflow:hidden via the inline <style> in
+      // /block-preview, so offsetHeight equals content height.
+      const h = document.body?.offsetHeight ?? 0;
       if (h <= 0 || h === lastSent) return;
       lastSent = h;
       try {
