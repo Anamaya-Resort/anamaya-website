@@ -35,7 +35,12 @@ export default function FeatureListBlock({ content }: { content: FeatureListCont
           </p>
         )}
 
-        {layout === "stack" && <StackLayout items={items} />}
+        {layout === "stack" && (
+          <StackLayout
+            items={items}
+            stackColumns={content?.stack_columns ?? 1}
+          />
+        )}
         {layout === "grid" && <GridLayout items={items} columns={content?.columns ?? 3} />}
         {layout === "split" && <SplitLayout items={items} />}
 
@@ -45,12 +50,34 @@ export default function FeatureListBlock({ content }: { content: FeatureListCont
   );
 }
 
-function StackLayout({ items }: { items: FeatureListItem[] }) {
+function StackLayout({
+  items,
+  stackColumns,
+}: {
+  items: FeatureListItem[];
+  stackColumns: 1 | 2;
+}) {
+  if (stackColumns === 2) {
+    // Distribute by item.column (default to column 1 when unset). Mobile
+    // collapses to a single column via the responsive grid class.
+    const col1 = items.filter((it) => (it.column ?? 1) === 1);
+    const col2 = items.filter((it) => it.column === 2);
+    return (
+      <div className="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+        <StackList items={col1} />
+        <StackList items={col2} />
+      </div>
+    );
+  }
+  return <StackList items={items} />;
+}
+
+function StackList({ items }: { items: FeatureListItem[] }) {
   return (
     <ul className="space-y-6">
       {items.map((it, i) => (
         <li key={i} className="flex gap-4">
-          <Icon kind={it.icon} />
+          <Marker item={it} />
           <div className="flex-1">
             <ItemHeader item={it} />
             {it.description && <p className="mt-1 text-sm opacity-80">{it.description}</p>}
@@ -59,6 +86,23 @@ function StackLayout({ items }: { items: FeatureListItem[] }) {
       ))}
     </ul>
   );
+}
+
+/** Renders the per-item bullet. An explicit emoji wins; otherwise falls
+ *  back to the SVG icon set. Both render at the same dimensions so
+ *  alignment with the title baseline matches across markers. */
+function Marker({ item }: { item: FeatureListItem }) {
+  if (item.marker_emoji && item.marker_emoji.trim()) {
+    return (
+      <span
+        aria-hidden="true"
+        className="flex h-7 w-7 shrink-0 items-center justify-center text-lg leading-none"
+      >
+        {item.marker_emoji}
+      </span>
+    );
+  }
+  return <Icon kind={item.icon} />;
 }
 
 function GridLayout({ items, columns }: { items: FeatureListItem[]; columns: number }) {
@@ -76,7 +120,7 @@ function GridLayout({ items, columns }: { items: FeatureListItem[]; columns: num
               className="mb-4 h-40 w-full rounded object-cover"
             />
           ) : (
-            <Icon kind={it.icon} />
+            <Marker item={it} />
           )}
           <ItemHeader item={it} />
           {it.description && <p className="mt-2 text-sm opacity-80">{it.description}</p>}

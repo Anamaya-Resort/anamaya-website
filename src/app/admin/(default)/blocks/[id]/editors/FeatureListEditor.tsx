@@ -38,6 +38,7 @@ function normalize(c: FeatureListContent | null | undefined): FeatureListContent
     items: c?.items ?? [],
     layout: c?.layout ?? "grid",
     columns: c?.columns ?? 3,
+    stack_columns: c?.stack_columns ?? 1,
     bg_color: c?.bg_color ?? "",
     text_color: c?.text_color ?? "",
     padding_y_px: c?.padding_y_px ?? 64,
@@ -156,6 +157,24 @@ function Form({ state }: { state: BlockEditorState<FeatureListContent> }) {
               </select>
             </label>
           )}
+          {draft.layout === "stack" && (
+            <label className="block">
+              <span className={labelCls}>Stack columns</span>
+              <select
+                className={inputCls}
+                value={draft.stack_columns ?? 1}
+                onChange={(e) =>
+                  patch({ stack_columns: Number(e.target.value) as 1 | 2 })
+                }
+              >
+                <option value="1">1 (single column)</option>
+                <option value="2">2 (side-by-side)</option>
+              </select>
+              <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+                When 2, each item below picks which column it lands in.
+              </p>
+            </label>
+          )}
           <div>
             <span className={labelCls}>Background color</span>
             <BrandColorSelect
@@ -235,31 +254,37 @@ function Form({ state }: { state: BlockEditorState<FeatureListContent> }) {
                   placeholder="Description (optional)"
                 />
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  <select
-                    className={inputCls}
-                    value={item.icon ?? ""}
-                    onChange={(e) =>
-                      patchItem(idx, {
-                        icon: e.target.value
-                          ? (e.target.value as FeatureListItem["icon"])
-                          : undefined,
-                      })
-                    }
-                  >
-                    <option value="">No icon</option>
-                    {ICON_OPTIONS.map((k) => (
-                      <option key={k} value={k}>
-                        {k}
-                      </option>
-                    ))}
-                  </select>
+                  <div>
+                    <span className={labelCls}>Marker</span>
+                    <MarkerField
+                      item={item}
+                      onChange={(p) => patchItem(idx, p)}
+                    />
+                  </div>
                   <input
-                    className={inputCls}
+                    className={`${inputCls} self-end`}
                     value={item.href ?? ""}
                     onChange={(e) => patchItem(idx, { href: e.target.value })}
                     placeholder="Link href (optional)"
                   />
                 </div>
+                {(draft.stack_columns ?? 1) === 2 && draft.layout === "stack" && (
+                  <label className="mt-2 block w-32">
+                    <span className={labelCls}>Column</span>
+                    <select
+                      className={inputCls}
+                      value={item.column ?? 1}
+                      onChange={(e) =>
+                        patchItem(idx, {
+                          column: Number(e.target.value) as 1 | 2,
+                        })
+                      }
+                    >
+                      <option value="1">Left</option>
+                      <option value="2">Right</option>
+                    </select>
+                  </label>
+                )}
                 <div className="mt-2 flex items-center gap-3">
                   <ImageUploadButton
                     value={item.image_url}
@@ -321,6 +346,106 @@ function Form({ state }: { state: BlockEditorState<FeatureListContent> }) {
         onChange={(u) => patch(u as Partial<FeatureListContent>)}
         brandTokens={brandTokens}
       />
+    </div>
+  );
+}
+
+const EMOJI_PRESETS: { emoji: string; label: string }[] = [
+  { emoji: "✓", label: "Checkmark" },
+  { emoji: "•", label: "Bullet" },
+  { emoji: "🍃", label: "Leaf" },
+];
+
+/**
+ * Per-item marker control. Three preset buttons (✓ • 🍃) for the most
+ * common list-bullet styles, plus a free-form input where editors can
+ * paste any emoji they want — that emoji becomes the marker on save.
+ *
+ * Empty marker_emoji falls back to the SVG icon set; selecting an
+ * emoji here OVERRIDES the icon. The Icon dropdown is still surfaced
+ * so editors can pick a built-in SVG when an emoji isn't desired.
+ */
+function MarkerField({
+  item,
+  onChange,
+}: {
+  item: FeatureListItem;
+  onChange: (patch: Partial<FeatureListItem>) => void;
+}) {
+  return (
+    <div className="space-y-2 rounded-md border border-zinc-200 bg-white p-2">
+      {/* Preset emoji buttons */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+          Emoji preset:
+        </span>
+        {EMOJI_PRESETS.map((p) => {
+          const active = item.marker_emoji === p.emoji;
+          return (
+            <button
+              key={p.emoji}
+              type="button"
+              title={p.label}
+              onClick={() =>
+                onChange({ marker_emoji: active ? "" : p.emoji })
+              }
+              className={`flex h-7 w-7 items-center justify-center rounded text-base leading-none transition-colors ${
+                active
+                  ? "bg-anamaya-green text-white"
+                  : "border border-zinc-300 hover:bg-zinc-50"
+              }`}
+            >
+              {p.emoji}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => onChange({ marker_emoji: "" })}
+          className="ml-1 rounded border border-zinc-300 bg-white px-2 py-0.5 text-[10px] uppercase tracking-wider text-anamaya-charcoal/60 hover:bg-zinc-50"
+          title="Clear the emoji marker (falls back to the SVG icon below)"
+        >
+          Clear
+        </button>
+      </div>
+
+      {/* Custom emoji paste */}
+      <label className="block">
+        <span className="text-[10px] uppercase tracking-wider text-anamaya-charcoal/60">
+          Or paste any emoji
+        </span>
+        <input
+          className="mt-0.5 w-full rounded border border-zinc-300 px-2 py-1 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+          value={item.marker_emoji ?? ""}
+          onChange={(e) => onChange({ marker_emoji: e.target.value })}
+          placeholder="e.g. ⭐ 🔥 🌊 ✨"
+        />
+      </label>
+
+      {/* SVG icon fallback */}
+      <label className="block">
+        <span className="text-[10px] uppercase tracking-wider text-anamaya-charcoal/60">
+          Or pick an SVG icon (used only when emoji is empty)
+        </span>
+        <select
+          className="mt-0.5 w-full rounded border border-zinc-300 px-2 py-1 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+          value={item.icon ?? ""}
+          onChange={(e) =>
+            onChange({
+              icon: e.target.value
+                ? (e.target.value as FeatureListItem["icon"])
+                : undefined,
+            })
+          }
+        >
+          <option value="">No icon</option>
+          {ICON_OPTIONS.map((k) => (
+            <option key={k} value={k}>
+              {k}
+            </option>
+          ))}
+        </select>
+      </label>
     </div>
   );
 }

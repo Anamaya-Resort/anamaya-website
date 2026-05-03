@@ -579,9 +579,16 @@ export type FeatureListItem = {
   price?: string;
   /** Brand-token key or hex; only meaningful for icon variant. */
   icon?: "check" | "star" | "heart" | "leaf" | "sparkle" | "dot";
+  /** Emoji marker shown to the left of the title. Wins over `icon` when
+   *  set — pick from the preset row in the editor (✓ • 🍃) or paste any
+   *  emoji you like (e.g. ⭐, 🔥, 🌊). Empty falls back to `icon`. */
+  marker_emoji?: string;
   image_url?: string;
   image_alt?: string;
   href?: string;
+  /** Column assignment when the parent FeatureListContent has
+   *  stack_columns = 2. Items default to column 1 if unset. */
+  column?: 1 | 2;
 };
 export type FeatureListContent = BlockCta & SectionFrame & {
   heading?: string;
@@ -590,6 +597,9 @@ export type FeatureListContent = BlockCta & SectionFrame & {
   layout?: "stack" | "grid" | "split";
   /** For "grid" layout: 2-4 columns (default 3). */
   columns?: 2 | 3 | 4;
+  /** For "stack" layout: 1 or 2 side-by-side columns (default 1).
+   *  When 2, each item's `column` field decides which side it lands on. */
+  stack_columns?: 1 | 2;
   bg_color?: string;
   text_color?: string;
   padding_y_px?: number;
