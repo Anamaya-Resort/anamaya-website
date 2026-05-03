@@ -698,7 +698,8 @@ export type FeaturedRetreatsContent = {
   bg_color?: string;
   text_color?: string;
   heading_color?: string;
-  card_bg_color?: string;       // each card's background; default white-ish
+  card_bg_color?: string;       // each card's background; '' = white at 40% (matches other site cards)
+  card_border_color?: string;   // each card's border; '' = anamaya-mint (matches other site cards)
   padding_y_px?: number;        // section vertical padding; default 64
   container_width_px?: number;  // max-width of inner content; default 1200
 };

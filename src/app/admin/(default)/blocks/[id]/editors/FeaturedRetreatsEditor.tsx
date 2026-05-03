@@ -24,6 +24,7 @@ function normalize(c: FeaturedRetreatsContent | null | undefined): FeaturedRetre
     text_color: c?.text_color ?? "",
     heading_color: c?.heading_color ?? "",
     card_bg_color: c?.card_bg_color ?? "",
+    card_border_color: c?.card_border_color ?? "",
     padding_y_px: c?.padding_y_px ?? 64,
     container_width_px: c?.container_width_px ?? 1200,
   };
@@ -150,7 +151,19 @@ function Form({ state }: { state: BlockEditorState<FeaturedRetreatsContent> }) {
               allowAuto
             />
             <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
-              Auto = white.
+              Auto = soft white tint (matches the rest of the site&rsquo;s cards).
+            </p>
+          </div>
+          <div>
+            <span className={labelCls}>Card border</span>
+            <BrandColorSelect
+              value={draft.card_border_color}
+              onChange={(v) => patch({ card_border_color: v })}
+              brandTokens={brandTokens}
+              allowAuto
+            />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              Auto = anamaya-mint (matches the rest of the site&rsquo;s cards).
             </p>
           </div>
           <div>

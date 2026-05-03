@@ -53,7 +53,13 @@ export default async function FeaturedRetreatsBlock({
   const bg = resolveBrandColor(c.bg_color) ?? "transparent";
   const textColor = resolveBrandColor(c.text_color) ?? undefined;
   const headingColor = resolveBrandColor(c.heading_color) ?? undefined;
-  const cardBg = resolveBrandColor(c.card_bg_color) ?? "#ffffff";
+  // Card defaults: white at 40 % opacity + anamaya-mint border, no
+  // shadow — matches the site's flat-card pattern (FeatureListBlock,
+  // QuoteBlock, DetailsRatesDynamicBlock, PricingTableBlock all use
+  // this). When the editor sets a colour, it overrides via inline
+  // style; otherwise the Tailwind class supplies the default.
+  const cardBg = resolveBrandColor(c.card_bg_color);
+  const cardBorder = resolveBrandColor(c.card_border_color);
 
   const retreats = await fetchFeaturedRetreats(maxCount);
 
@@ -115,8 +121,11 @@ export default async function FeaturedRetreatsBlock({
                     gains the freed width.
                   */}
                   <article
-                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:h-[264px] md:grid-cols-[8fr_17fr]"
-                    style={{ backgroundColor: cardBg }}
+                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg border border-anamaya-mint bg-white/40 md:h-[264px] md:grid-cols-[8fr_17fr]"
+                    style={{
+                      ...(cardBg ? { backgroundColor: cardBg } : null),
+                      ...(cardBorder ? { borderColor: cardBorder } : null),
+                    }}
                   >
                     <Link
                       href={href}
