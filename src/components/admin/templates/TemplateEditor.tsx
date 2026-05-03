@@ -82,6 +82,12 @@ export default function TemplateEditor({
   // Per-row wireframe visibility. Toggle with the eye tab. ONLY controls
   // the green outline — the info panel stays visible regardless.
   const [hiddenRows, setHiddenRows] = useState<Set<string>>(() => new Set());
+  // Which row's right-side info panel is currently "raised" above its
+  // neighbours' z-stack. Click any panel to bring it forward — needed
+  // because thin block rows make adjacent info panels overlap, and
+  // without explicit z-index the LATER row's panel always wins so the
+  // upper one becomes inaccessible.
+  const [activeInfoRowId, setActiveInfoRowId] = useState<string | null>(null);
   const [inserterAt, setInserterAt] =
     useState<null | { beforeRowId?: string; afterAll?: boolean }>(null);
 
@@ -164,12 +170,14 @@ export default function TemplateEditor({
             wireframeOn={!hiddenRows.has(row.id)}
             pending={pending}
             referenceWidth={referenceWidth}
+            isInfoActive={activeInfoRowId === row.id}
             onToggleWireframe={() => toggleWireframe(row.id)}
             onRemove={() => handleRemove(row.id)}
             onMoveUp={() => handleMove(row.id, -1)}
             onMoveDown={() => handleMove(row.id, 1)}
             onInsertAfter={() => setInserterAt({ beforeRowId: row.id })}
             onToggleLock={() => handleToggleLock(row.id, !row.is_locked)}
+            onActivateInfo={() => setActiveInfoRowId(row.id)}
           />
         ))}
       </div>
@@ -233,12 +241,14 @@ function TemplateRow({
   wireframeOn,
   pending,
   referenceWidth,
+  isInfoActive,
   onToggleWireframe,
   onRemove,
   onMoveUp,
   onMoveDown,
   onInsertAfter,
   onToggleLock,
+  onActivateInfo,
 }: {
   row: Row;
   isFirst: boolean;
@@ -246,12 +256,17 @@ function TemplateRow({
   wireframeOn: boolean;
   pending: boolean;
   referenceWidth: number;
+  /** Set by the parent when this row's right info panel should sit on
+   *  top of any sibling that overlaps it. Click any info panel to
+   *  activate. */
+  isInfoActive: boolean;
   onToggleWireframe: () => void;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onInsertAfter: () => void;
   onToggleLock: () => void;
+  onActivateInfo: () => void;
 }) {
   // Each iframe starts at the server-estimated native_height, but rich
   // text and any block whose rendered height differs from the estimate
@@ -387,7 +402,20 @@ function TemplateRow({
       {!row.is_overlay && (
         <aside
           className="absolute w-48 bg-white p-2.5 text-[11px] ring-1 ring-zinc-200"
-          style={{ left: "100%", top: 0, marginLeft: ICON_BTN_SIZE + 8 }}
+          // z-index lifts the active panel above any sibling whose
+          // panel happens to overlap it. Default 5 (so we sit above
+          // the row preview), 30 when active. The pointer cursor +
+          // mousedown handler give editors a visible affordance for
+          // bringing a buried panel forward.
+          style={{
+            left: "100%",
+            top: 0,
+            marginLeft: ICON_BTN_SIZE + 8,
+            zIndex: isInfoActive ? 30 : 5,
+            cursor: "pointer",
+          }}
+          title={isInfoActive ? undefined : "Click to bring this panel to the front"}
+          onMouseDown={onActivateInfo}
         >
           <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-anamaya-charcoal/60">
             {row.block.type_slug}
