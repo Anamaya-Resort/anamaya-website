@@ -25,6 +25,8 @@ function normalize(c: FeaturedRetreatsContent | null | undefined): FeaturedRetre
     heading_color: c?.heading_color ?? "",
     card_bg_color: c?.card_bg_color ?? "",
     card_border_color: c?.card_border_color ?? "",
+    card_border_width_px: c?.card_border_width_px ?? 1,
+    card_corner_radius_px: c?.card_corner_radius_px ?? 8,
     padding_y_px: c?.padding_y_px ?? 64,
     container_width_px: c?.container_width_px ?? 1200,
   };
@@ -166,6 +168,48 @@ function Form({ state }: { state: BlockEditorState<FeaturedRetreatsContent> }) {
               Auto = anamaya-mint (matches the rest of the site&rsquo;s cards).
             </p>
           </div>
+          <label className="block">
+            <span className={labelCls}>Border thickness (px)</span>
+            <input
+              type="number"
+              min={0}
+              max={10}
+              className={inputCls}
+              value={draft.card_border_width_px ?? 1}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                patch({
+                  card_border_width_px: Number.isFinite(n)
+                    ? Math.max(0, Math.min(10, n))
+                    : 1,
+                });
+              }}
+            />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              0 disables the border entirely.
+            </p>
+          </label>
+          <label className="block">
+            <span className={labelCls}>Corner radius (px)</span>
+            <input
+              type="number"
+              min={0}
+              max={20}
+              className={inputCls}
+              value={draft.card_corner_radius_px ?? 8}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                patch({
+                  card_corner_radius_px: Number.isFinite(n)
+                    ? Math.max(0, Math.min(20, n))
+                    : 8,
+                });
+              }}
+            />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              0 = squared corners. Default 8 px (rounded-lg).
+            </p>
+          </label>
           <div>
             <span className={labelCls}>Heading color</span>
             <BrandColorSelect

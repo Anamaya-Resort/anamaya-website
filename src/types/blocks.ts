@@ -698,8 +698,10 @@ export type FeaturedRetreatsContent = {
   bg_color?: string;
   text_color?: string;
   heading_color?: string;
-  card_bg_color?: string;       // each card's background; '' = white at 40% (matches other site cards)
-  card_border_color?: string;   // each card's border; '' = anamaya-mint (matches other site cards)
+  card_bg_color?: string;        // each card's background; '' = white at 40 % (matches other site cards)
+  card_border_color?: string;    // each card's border colour; '' = anamaya-mint (matches other site cards)
+  card_border_width_px?: number; // 0 disables the border entirely; default 1
+  card_corner_radius_px?: number;// rounded-corner radius in px; default 8 (= Tailwind rounded-lg)
   padding_y_px?: number;        // section vertical padding; default 64
   container_width_px?: number;  // max-width of inner content; default 1200
 };

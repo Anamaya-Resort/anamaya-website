@@ -60,6 +60,10 @@ export default async function FeaturedRetreatsBlock({
   // style; otherwise the Tailwind class supplies the default.
   const cardBg = resolveBrandColor(c.card_bg_color);
   const cardBorder = resolveBrandColor(c.card_border_color);
+  // Border thickness and corner radius — inline so any value (including
+  // 0) wins over the Tailwind utility classes' defaults.
+  const cardBorderWidth = clamp(c.card_border_width_px ?? 1, 0, 10);
+  const cardRadius = clamp(c.card_corner_radius_px ?? 8, 0, 40);
 
   const retreats = await fetchFeaturedRetreats(maxCount);
 
@@ -121,8 +125,10 @@ export default async function FeaturedRetreatsBlock({
                     gains the freed width.
                   */}
                   <article
-                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg border border-anamaya-mint bg-white/40 md:h-[264px] md:grid-cols-[8fr_17fr]"
+                    className="grid grid-cols-1 gap-6 overflow-hidden border-solid border-anamaya-mint bg-white/40 md:h-[264px] md:grid-cols-[8fr_17fr]"
                     style={{
+                      borderWidth: cardBorderWidth,
+                      borderRadius: cardRadius,
                       ...(cardBg ? { backgroundColor: cardBg } : null),
                       ...(cardBorder ? { borderColor: cardBorder } : null),
                     }}
@@ -254,6 +260,11 @@ function pickImage(r: AoRetreat): string | null {
     }
   }
   return null;
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  if (!Number.isFinite(n)) return lo;
+  return Math.max(lo, Math.min(hi, n));
 }
 
 /**
