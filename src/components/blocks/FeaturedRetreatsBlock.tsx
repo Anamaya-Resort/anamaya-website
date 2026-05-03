@@ -100,19 +100,19 @@ export default async function FeaturedRetreatsBlock({
               return (
                 <li key={r.id}>
                   {/*
-                    Card has a fixed desktop height (220 px = ~20 % taller
+                    Card has a fixed desktop height (264 px = ~20 % taller
                     than the previous 180 px). Both grid columns share
                     that row height, so the image fills its cell with no
                     whitespace below, and the text column is sized to
                     match. line-clamp-2 keeps the excerpt within budget.
                   */}
                   <article
-                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:h-[220px] md:grid-cols-[2fr_3fr]"
+                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:h-[264px] md:grid-cols-[2fr_3fr]"
                     style={{ backgroundColor: cardBg }}
                   >
                     <Link
                       href={href}
-                      className="group relative block h-[220px] overflow-hidden bg-anamaya-charcoal/5 md:h-full"
+                      className="group relative block h-[264px] overflow-hidden bg-anamaya-charcoal/5 md:h-full"
                       aria-label={title}
                     >
                       {image ? (
