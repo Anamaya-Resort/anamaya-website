@@ -99,22 +99,20 @@ export default async function FeaturedRetreatsBlock({
               const image = pickImage(r);
               return (
                 <li key={r.id}>
+                  {/*
+                    Card has a fixed desktop height (220 px = ~20 % taller
+                    than the previous 180 px). Both grid columns share
+                    that row height, so the image fills its cell with no
+                    whitespace below, and the text column is sized to
+                    match. line-clamp-2 keeps the excerpt within budget.
+                  */}
                   <article
-                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:grid-cols-[2fr_3fr]"
+                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:h-[220px] md:grid-cols-[2fr_3fr]"
                     style={{ backgroundColor: cardBg }}
                   >
-                    {/*
-                      Fixed image height (180 px). Without an explicit
-                      height the grid stretches the image column to the
-                      taller text column's height — that's why the image
-                      kept matching the previous size. md:self-start
-                      breaks the column-stretch so the image stays fixed
-                      and the row's overall height is governed by the
-                      text column.
-                    */}
                     <Link
                       href={href}
-                      className="group relative block h-[180px] overflow-hidden bg-anamaya-charcoal/5 md:self-start"
+                      className="group relative block h-[220px] overflow-hidden bg-anamaya-charcoal/5 md:h-full"
                       aria-label={title}
                     >
                       {image ? (
