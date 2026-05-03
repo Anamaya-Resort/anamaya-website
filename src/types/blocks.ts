@@ -308,6 +308,11 @@ export type ImageTextContent = BlockCta & {
   /** Image column width, 25-75. */
   image_width_pct?: number;
   vertical_align?: "top" | "center" | "bottom";
+  /** Horizontal alignment of the image inside its own column. Default
+   *  "center". Useful when the visual centre of the image differs from
+   *  its bounding-box centre — e.g. setting "right" pushes a left-side
+   *  image toward the text column for a more balanced look. */
+  image_horizontal_align?: "left" | "center" | "right";
   bg_color?: string;
 
   // ── Image (fits inside its column, never cropped) ───────────────────

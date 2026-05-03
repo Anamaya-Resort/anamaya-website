@@ -13,6 +13,9 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
   const valign = content?.vertical_align ?? "center";
   const alignItems =
     valign === "top" ? "items-start" : valign === "bottom" ? "items-end" : "items-center";
+  const halign = content?.image_horizontal_align ?? "center";
+  const justifyImage =
+    halign === "left" ? "justify-start" : halign === "right" ? "justify-end" : "justify-center";
 
   // Container dimensions — new model. If container_height_px is set, the
   // section is that tall and padding_y is unused; otherwise fall back to
@@ -35,7 +38,7 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
   const altText = content?.image_alt ?? "";
   const flip = flipTransform(content?.image_flip_x, content?.image_flip_y);
   const imageCell = (
-    <div className="flex h-full w-full items-center justify-center overflow-hidden">
+    <div className={`flex h-full w-full items-center overflow-hidden ${justifyImage}`}>
       {content?.image_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img

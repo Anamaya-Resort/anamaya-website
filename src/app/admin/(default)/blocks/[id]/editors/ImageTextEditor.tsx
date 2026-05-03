@@ -35,6 +35,7 @@ function normalize(c: ImageTextContent | null | undefined): ImageTextContent {
     bg_color: c?.bg_color ?? "brand",
     text_color: c?.text_color ?? "",
     vertical_align: c?.vertical_align ?? "center",
+    image_horizontal_align: c?.image_horizontal_align ?? "center",
   };
 }
 
@@ -125,6 +126,23 @@ export default function ImageTextEditor(props: {
                   <option value="top">Top</option>
                   <option value="center">Center</option>
                   <option value="bottom">Bottom</option>
+                </select>
+              </label>
+              <label className="block w-32">
+                <span className={labelCls}>Horizontal align</span>
+                <select
+                  className={inputCls}
+                  value={draft.image_horizontal_align ?? "center"}
+                  onChange={(e) =>
+                    patch({
+                      image_horizontal_align: e.target
+                        .value as ImageTextContent["image_horizontal_align"],
+                    })
+                  }
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
                 </select>
               </label>
             </div>
