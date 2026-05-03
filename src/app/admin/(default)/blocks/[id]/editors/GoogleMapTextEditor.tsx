@@ -27,9 +27,9 @@ function normalize(c: GoogleMapTextContent | null | undefined): GoogleMapTextCon
     map_horizontal_align: c?.map_horizontal_align ?? "center",
     bg_color: c?.bg_color ?? "",
 
-    lat: c?.lat ?? 9.6483,            // Anamaya Resort, Montezuma, CR
-    lng: c?.lng ?? -85.0696,
-    zoom: c?.zoom ?? 14,
+    lat: c?.lat ?? 9.6586,            // Anamaya Resort, Montezuma, CR
+    lng: c?.lng ?? -85.0731,
+    zoom: c?.zoom ?? 15,
     marker_label: c?.marker_label ?? "Anamaya Resort",
     open_label: c?.open_label ?? "Open in Google Maps ↗",
     map_corner_radius_px: c?.map_corner_radius_px ?? 0,
@@ -224,7 +224,7 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               type="number"
               step="any"
               className={inputCls}
-              value={draft.lat ?? 9.6483}
+              value={draft.lat ?? 9.6586}
               onChange={(e) => patch({ lat: Number(e.target.value) })}
             />
           </label>
@@ -234,7 +234,7 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               type="number"
               step="any"
               className={inputCls}
-              value={draft.lng ?? -85.0696}
+              value={draft.lng ?? -85.0731}
               onChange={(e) => patch({ lng: Number(e.target.value) })}
             />
           </label>
@@ -245,10 +245,10 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               min={0}
               max={21}
               className={inputCls}
-              value={draft.zoom ?? 14}
+              value={draft.zoom ?? 15}
               onChange={(e) =>
                 patch({
-                  zoom: Math.max(0, Math.min(21, Number(e.target.value) || 14)),
+                  zoom: Math.max(0, Math.min(21, Number(e.target.value) || 15)),
                 })
               }
             />

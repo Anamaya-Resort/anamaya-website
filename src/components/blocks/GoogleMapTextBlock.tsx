@@ -2,9 +2,10 @@ import type { GoogleMapTextContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
 
-const DEFAULT_LAT = 9.6483;       // Montezuma, Costa Rica
-const DEFAULT_LNG = -85.0696;
-const DEFAULT_ZOOM = 14;
+// Anamaya Resort & Retreat Center, on the clifftop above Montezuma.
+const DEFAULT_LAT = 9.6586;
+const DEFAULT_LNG = -85.0731;
+const DEFAULT_ZOOM = 15;
 
 /**
  * Two-column section: embedded Google Map on one side, free HTML on
@@ -50,13 +51,18 @@ export default function GoogleMapTextBlock({
   const openLabel = content?.open_label ?? "Open in Google Maps ↗";
   const radius = clamp(content?.map_corner_radius_px ?? 0, 0, 80);
 
-  // Pinned location string — `LABEL@LAT,LNG` shows the label on the
-  // dropped pin; just `LAT,LNG` works without a label too.
-  const q = label
-    ? `${encodeURIComponent(label)}@${lat},${lng}`
-    : `${lat},${lng}`;
-  const embedSrc = `https://maps.google.com/maps?q=${q}&z=${zoom}&output=embed`;
-  const openHref = `https://www.google.com/maps/?q=${lat},${lng}`;
+  // `q=loc:LAT,LNG` drops the pin exactly at the coords — the `loc:`
+  // prefix tells Maps "this is a coordinate, don't try to search for
+  // it." Without it, `q=LAT,LNG` gets interpreted as a search query
+  // and Google often snaps the marker to the nearest named feature,
+  // which can be a long way off (e.g. into the ocean).
+  const embedSrc = `https://maps.google.com/maps?q=loc:${lat},${lng}&z=${zoom}&output=embed`;
+  // For the open-in-Maps button: link to the place page at those exact
+  // coordinates with the same zoom. If a label is provided, prefix the
+  // URL path with it so the resulting tab shows the place name.
+  const openHref = label
+    ? `https://www.google.com/maps/place/${encodeURIComponent(label)}/@${lat},${lng},${zoom}z`
+    : `https://www.google.com/maps/place/${lat},${lng}/@${lat},${lng},${zoom}z`;
 
   const gridCols = mapOnLeft
     ? `${mapPct}% ${textPct}%`
