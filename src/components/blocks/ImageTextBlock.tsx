@@ -30,6 +30,7 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
   // CSS-scaled up, so +2% = a true 2% zoom; parent overflow-hidden clips.
   const scalePct = Math.max(10, Math.min(200, content?.image_scale_pct ?? 100));
   const fitsInside = scalePct <= 100;
+  const cornerRadius = Math.max(0, Math.min(80, content?.image_corner_radius_px ?? 0));
 
   const gridCols = imgOnLeft
     ? `${imgPct}% ${textPct}%`
@@ -54,6 +55,7 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
                   height: "auto",
                   objectFit: "contain",
                   transform: flip,
+                  borderRadius: cornerRadius,
                 }
               : {
                   // >100% — natural size then CSS-scaled up so each +2 step
@@ -66,6 +68,7 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
                   transform: [flip, `scale(${scalePct / 100})`]
                     .filter(Boolean)
                     .join(" "),
+                  borderRadius: cornerRadius,
                 }
           }
         />

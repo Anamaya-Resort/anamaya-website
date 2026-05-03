@@ -347,6 +347,9 @@ export type ImageTextContent = BlockCta & {
   image_flip_x?: boolean;
   /** Mirror the image top-to-bottom. */
   image_flip_y?: boolean;
+  /** Corner radius in px applied to the image. 0 = squared, default 0
+   *  (preserves existing blocks that haven't been touched). */
+  image_corner_radius_px?: number;
 
   // ── Text ────────────────────────────────────────────────────────────
   html?: string;

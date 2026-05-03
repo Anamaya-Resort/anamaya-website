@@ -29,6 +29,7 @@ function normalize(c: ImageTextContent | null | undefined): ImageTextContent {
     image_scale_pct: c?.image_scale_pct ?? 100,
     image_flip_x: !!c?.image_flip_x,
     image_flip_y: !!c?.image_flip_y,
+    image_corner_radius_px: c?.image_corner_radius_px ?? 0,
     container_width_px: c?.container_width_px ?? 1400,
     container_height_px: c?.container_height_px ?? 0,
     html: c?.html ?? "",
@@ -167,7 +168,28 @@ export default function ImageTextEditor(props: {
               flipY={draft.image_flip_y}
               onFlipYChange={(v) => patch({ image_flip_y: v })}
             />
-            <span className="block text-[10px] text-anamaya-charcoal/50">
+            <label className="mt-3 block w-40">
+              <span className={labelCls}>Corner radius (px)</span>
+              <input
+                type="number"
+                min={0}
+                max={80}
+                className={inputCls}
+                value={draft.image_corner_radius_px ?? 0}
+                onChange={(e) =>
+                  patch({
+                    image_corner_radius_px: Math.max(
+                      0,
+                      Math.min(80, Number(e.target.value) || 0),
+                    ),
+                  })
+                }
+              />
+              <span className="mt-1 block text-[10px] italic text-anamaya-charcoal/60">
+                0 = squared corners.
+              </span>
+            </label>
+            <span className="mt-2 block text-[10px] text-anamaya-charcoal/50">
               10-100% fits inside the column; above 100% zooms in and may crop.
             </span>
           </section>
