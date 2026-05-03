@@ -4,6 +4,11 @@ import SereenlyForm from "../SereenlyForm";
 
 const DEFAULT_BANNER_BG = "#444444";   // anamaya-charcoal
 const DEFAULT_CARD_BG = "#fbfbfb";     // anamaya-cream
+// anamaya.com's "Newsletter Home Page" form (first/last + phone + email).
+// Used as a render-time fallback when the block content has no form_id
+// set yet, so freshly-created blocks render the form immediately
+// instead of looking broken until the editor pastes in an id.
+const DEFAULT_FORM_ID = "3VbotiuGfLgRUdIpi2ro";
 
 /**
  * Banner with an embedded Sereenly form sitting inside a centred card.
@@ -129,14 +134,12 @@ export default function SmallFormOverImageBlock({
                 {c.subheading}
               </p>
             )}
-            {c.form_id && (
-              <SereenlyForm
-                formId={c.form_id}
-                title={c.form_name ?? "Newsletter Form"}
-                formName={c.form_name ?? "Newsletter Form"}
-                initialHeight={c.form_height_px ?? 460}
-              />
-            )}
+            <SereenlyForm
+              formId={c.form_id || DEFAULT_FORM_ID}
+              title={c.form_name ?? "Newsletter Form"}
+              formName={c.form_name ?? "Newsletter Form"}
+              initialHeight={c.form_height_px ?? 460}
+            />
           </div>
         </div>
       </div>

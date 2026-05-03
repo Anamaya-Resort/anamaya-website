@@ -75,7 +75,10 @@ function normalize(c: SmallFormOverImageContent | null | undefined): SmallFormOv
     subheading_size_px: c?.subheading_size_px ?? 16,
     subheading_color: c?.subheading_color ?? "",
 
-    form_id: c?.form_id ?? "",
+    // Default to anamaya.com's homepage Sereenly form so newly-created
+    // blocks come pre-populated. Editors can override or paste in a
+    // different form id.
+    form_id: c?.form_id ?? "3VbotiuGfLgRUdIpi2ro",
     form_name: c?.form_name ?? "Newsletter Home Page",
     form_height_px: c?.form_height_px ?? 460,
   };
