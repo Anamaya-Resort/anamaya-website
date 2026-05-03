@@ -106,8 +106,16 @@ export default async function FeaturedRetreatsBlock({
                     whitespace below, and the text column is sized to
                     match. line-clamp-2 keeps the excerpt within budget.
                   */}
+                  {/*
+                    Image column narrowed from 2:3 (40 %) to 8:17 (32 %)
+                    — the right edge of the image cell moved ≈ 20 % to
+                    the left. Cell aspect ratio gets closer to the
+                    image's natural 1:1, so object-cover crops less off
+                    the top and bottom; the text column on the right
+                    gains the freed width.
+                  */}
                   <article
-                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:h-[264px] md:grid-cols-[2fr_3fr]"
+                    className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:h-[264px] md:grid-cols-[8fr_17fr]"
                     style={{ backgroundColor: cardBg }}
                   >
                     <Link
