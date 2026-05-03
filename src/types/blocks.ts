@@ -538,13 +538,18 @@ export type TwoColumnContent = BlockCta & SectionFrame & {
  * types per side), three_column owns its column data directly.
  */
 export type ThreeColumnSide = {
+  /** Per-column link URL — both the image and the heading become
+   *  clickable links to this URL. The CTA's href falls back to this
+   *  when its own cta_href is empty, so editors can author one URL
+   *  and have everything in the column point to it. */
+  url?: string;
   heading?: string;
   heading_font?: "body" | "heading";
   heading_size_px?: number;
   heading_color?: string;
   heading_bold?: boolean;
   heading_italic?: boolean;
-  /** Centred over the body. Use the editor's image picker. */
+  /** Image renders ABOVE the heading. Picker is in the editor. */
   image_url?: string;
   image_alt?: string;
   /** Body HTML — rich text. Inline styles in the HTML preserved. */
@@ -582,6 +587,10 @@ export type ThreeColumnContent = {
   bg_image_scale_pct?: number;
   text_color?: string;
   padding_y_px?: number;
+
+  /** Corner radius applied to every column's image (one shared setting,
+   *  not per column). 0 = squared, default 8 px. */
+  image_corner_radius_px?: number;
 
   // 7-track widths in % (or any number — fr units distribute)
   left_gutter_pct?: number;

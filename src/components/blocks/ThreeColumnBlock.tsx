@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ThreeColumnContent, ThreeColumnSide, BlockCta } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
@@ -23,6 +24,8 @@ export default function ThreeColumnBlock({ content }: { content: ThreeColumnCont
   const valign = c.vertical_align ?? "top";
   const alignItems =
     valign === "center" ? "center" : valign === "bottom" ? "end" : "start";
+  // Single shared corner radius for all column images.
+  const imageRadius = clamp(c.image_corner_radius_px ?? 8, 0, 40);
 
   // 7 track widths. Use fr units so any non-100 sum scales proportionally.
   const lg = clamp(c.left_gutter_pct ?? 5, 0, 100);
@@ -95,11 +98,11 @@ export default function ThreeColumnBlock({ content }: { content: ThreeColumnCont
         }
       >
         <Spacer stack={stack} /> {/* left gutter */}
-        <ColumnView side={c.left} stack={stack} />
+        <ColumnView side={c.left} stack={stack} imageRadius={imageRadius} />
         <Spacer stack={stack} /> {/* left space */}
-        <ColumnView side={c.middle} stack={stack} />
+        <ColumnView side={c.middle} stack={stack} imageRadius={imageRadius} />
         <Spacer stack={stack} /> {/* right space */}
-        <ColumnView side={c.right} stack={stack} />
+        <ColumnView side={c.right} stack={stack} imageRadius={imageRadius} />
         <Spacer stack={stack} /> {/* right gutter */}
       </div>
     </section>
@@ -116,35 +119,69 @@ function Spacer({ stack }: { stack: boolean }) {
 function ColumnView({
   side,
   stack,
+  imageRadius,
 }: {
   side: ThreeColumnSide | undefined;
   stack: boolean;
+  imageRadius: number;
 }) {
   const s = side ?? {};
-  return (
-    <div className={`min-w-0 ${stack ? "px-6 mb-8 md:mb-0 md:px-0" : ""}`}>
-      {s.heading && (
-        <h3
-          className={s.heading_font === "body" ? "font-sans" : "font-heading"}
-          style={{
-            fontSize: s.heading_size_px ?? 22,
-            color: resolveBrandColor(s.heading_color) ?? undefined,
-            fontWeight: s.heading_bold ? 700 : 600,
-            fontStyle: s.heading_italic ? "italic" : "normal",
-            marginBottom: 12,
-          }}
-        >
+  const url = s.url ?? "";
+  // The CTA's own href wins; if empty, fall back to the column URL so
+  // editors who only fill in `url` get the CTA pointing at the same
+  // place as the image and heading.
+  const cta: BlockCta = s.cta ?? {};
+  const resolvedCta: BlockCta = {
+    ...cta,
+    cta_href: cta.cta_href || url || undefined,
+  };
+
+  const headingNode = s.heading ? (
+    <h3
+      className={s.heading_font === "body" ? "font-sans" : "font-heading"}
+      style={{
+        fontSize: s.heading_size_px ?? 22,
+        color: resolveBrandColor(s.heading_color) ?? undefined,
+        fontWeight: s.heading_bold ? 700 : 600,
+        fontStyle: s.heading_italic ? "italic" : "normal",
+        marginTop: 12,
+      }}
+    >
+      {url ? (
+        <Link href={url} className="hover:opacity-80">
           {s.heading}
-        </h3>
+        </Link>
+      ) : (
+        s.heading
       )}
-      {s.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
+    </h3>
+  ) : null;
+
+  const imageNode = s.image_url ? (
+    url ? (
+      <Link href={url} className="block overflow-hidden" style={{ borderRadius: imageRadius }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={s.image_url}
           alt={s.image_alt ?? ""}
-          className="mb-4 block w-full"
+          className="block w-full transition-opacity hover:opacity-95"
         />
-      )}
+      </Link>
+    ) : (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={s.image_url}
+        alt={s.image_alt ?? ""}
+        className="block w-full"
+        style={{ borderRadius: imageRadius }}
+      />
+    )
+  ) : null;
+
+  return (
+    <div className={`min-w-0 ${stack ? "px-6 mb-8 md:mb-0 md:px-0" : ""}`}>
+      {imageNode}
+      {headingNode}
       {s.body_html && (
         <div
           className={`prose-anamaya prose-anamaya-block ${
@@ -153,12 +190,13 @@ function ColumnView({
           style={{
             fontSize: s.body_size_px ?? undefined,
             color: resolveBrandColor(s.body_color) ?? undefined,
+            marginTop: 12,
           }}
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: s.body_html }}
         />
       )}
-      {s.cta?.cta_enabled && <CtaButton cta={s.cta as BlockCta} />}
+      {resolvedCta.cta_enabled && <CtaButton cta={resolvedCta} />}
     </div>
   );
 }

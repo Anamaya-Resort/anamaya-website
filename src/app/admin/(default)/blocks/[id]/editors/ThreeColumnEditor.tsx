@@ -19,6 +19,7 @@ const sectionTitleCls = "mb-3 text-sm font-semibold text-anamaya-charcoal";
 
 function normalizeSide(s: ThreeColumnSide | undefined): ThreeColumnSide {
   return {
+    url: s?.url ?? "",
     heading: s?.heading ?? "",
     heading_font: s?.heading_font ?? "heading",
     heading_size_px: s?.heading_size_px ?? 22,
@@ -50,6 +51,7 @@ function normalize(c: ThreeColumnContent | null | undefined): ThreeColumnContent
     bg_image_scale_pct: c?.bg_image_scale_pct ?? 100,
     text_color: c?.text_color ?? "",
     padding_y_px: c?.padding_y_px ?? 64,
+    image_corner_radius_px: c?.image_corner_radius_px ?? 8,
     left_gutter_pct: c?.left_gutter_pct ?? 5,
     left_col_pct: c?.left_col_pct ?? 28,
     left_space_pct: c?.left_space_pct ?? 3,
@@ -290,6 +292,27 @@ function Form({ state }: { state: BlockEditorState<ThreeColumnContent> }) {
               <option value="bottom">Bottom</option>
             </select>
           </label>
+          <label className="block">
+            <span className={labelCls}>Image corner radius (px)</span>
+            <input
+              type="number"
+              min={0}
+              max={40}
+              className={inputCls}
+              value={draft.image_corner_radius_px ?? 8}
+              onChange={(e) =>
+                patch({
+                  image_corner_radius_px: Math.max(
+                    0,
+                    Math.min(40, Number(e.target.value) || 0),
+                  ),
+                })
+              }
+            />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              Applied to every column&rsquo;s image. 0 = squared. Default 8 px.
+            </p>
+          </label>
         </div>
       </section>
 
@@ -382,12 +405,115 @@ function ColumnEditor({
   onChange: (update: Partial<ThreeColumnSide>) => void;
   brandTokens: Required<OrgBranding>;
 }) {
+  // Sub-panels render in the same order they appear on the live site:
+  //   URL → Image → Heading → Body → CTA
+  // CTA href auto-populates from the column URL when a CTA is enabled
+  // and the cta_href is still empty, so editors authoring via "URL only"
+  // get the CTA pointing at the same place automatically.
+  function patchCta(update: Partial<BlockCta>) {
+    const current = (side.cta ?? {}) as BlockCta;
+    const next: BlockCta = { ...current, ...update };
+    if (
+      update.cta_enabled === true &&
+      !next.cta_href &&
+      side.url
+    ) {
+      next.cta_href = side.url;
+    }
+    onChange({ cta: next });
+  }
+
   return (
     <section className={sectionCls}>
       <h3 className={sectionTitleCls}>{title}</h3>
 
-      {/* Heading */}
+      {/* URL — sets the link target for image + heading; CTA falls back
+          to it when cta_href isn't explicitly set. */}
       <div className="rounded-md border border-zinc-200 bg-white p-3">
+        <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+          Column link
+        </h4>
+        <label className="block">
+          <span className={labelCls}>URL</span>
+          <input
+            className={inputCls}
+            value={side.url ?? ""}
+            onChange={(e) => {
+              const next = e.target.value;
+              const prevUrl = side.url ?? "";
+              const cta = (side.cta ?? {}) as BlockCta;
+              // Carry the URL forward into the CTA href whenever the
+              // CTA's href was empty or matched the previous URL value
+              // — so editors who want one shared link don't have to
+              // type it in twice.
+              const ctaShouldFollow =
+                !cta.cta_href || cta.cta_href === prevUrl;
+              const ctaUpdate: Partial<BlockCta> = ctaShouldFollow
+                ? { cta_href: next || undefined }
+                : {};
+              onChange({
+                url: next,
+                cta: { ...cta, ...ctaUpdate },
+              });
+            }}
+            placeholder="https://example.com or /path/"
+          />
+          <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+            Image and heading link here. The CTA below auto-uses this URL
+            when it&rsquo;s empty.
+          </p>
+        </label>
+      </div>
+
+      {/* Image — comes BEFORE heading to match the rendered order. */}
+      <div className="mt-3 rounded-md border border-zinc-200 bg-white p-3">
+        <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+          Image
+        </h4>
+        <div className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-2">
+          <div className="flex h-12 w-32 items-center justify-center overflow-hidden rounded bg-zinc-100">
+            {side.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={side.image_url}
+                alt=""
+                className="max-h-12 max-w-full object-contain"
+              />
+            ) : (
+              <span className="text-[10px] italic text-anamaya-charcoal/40">
+                no image
+              </span>
+            )}
+          </div>
+          <ImageUploadButton
+            value={side.image_url}
+            onUploaded={(u) => onChange({ image_url: u })}
+            kind="three-col"
+            maxWidth={1600}
+          />
+          {side.image_url && (
+            <button
+              type="button"
+              onClick={() => onChange({ image_url: "" })}
+              className="rounded-full border border-red-300 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+        <label className="mt-2 block">
+          <span className={labelCls}>Alt text</span>
+          <input
+            className={inputCls}
+            value={side.image_alt ?? ""}
+            onChange={(e) => onChange({ image_alt: e.target.value })}
+            placeholder="Describe the image for screen readers"
+          />
+        </label>
+      </div>
+
+      {/* Heading — under the image both in the editor and the render. */}
+      <div className="mt-3 rounded-md border border-zinc-200 bg-white p-3">
         <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
           Heading
         </h4>
@@ -454,53 +580,6 @@ function ColumnEditor({
         </div>
       </div>
 
-      {/* Image */}
-      <div className="mt-3 rounded-md border border-zinc-200 bg-white p-3">
-        <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-          Image
-        </h4>
-        <div className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-2">
-          <div className="flex h-12 w-32 items-center justify-center overflow-hidden rounded bg-zinc-100">
-            {side.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={side.image_url}
-                alt=""
-                className="max-h-12 max-w-full object-contain"
-              />
-            ) : (
-              <span className="text-[10px] italic text-anamaya-charcoal/40">
-                no image
-              </span>
-            )}
-          </div>
-          <ImageUploadButton
-            value={side.image_url}
-            onUploaded={(u) => onChange({ image_url: u })}
-            kind="three-col"
-            maxWidth={1600}
-          />
-          {side.image_url && (
-            <button
-              type="button"
-              onClick={() => onChange({ image_url: "" })}
-              className="rounded-full border border-red-300 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
-            >
-              Remove
-            </button>
-          )}
-        </div>
-        <label className="mt-2 block">
-          <span className={labelCls}>Alt text</span>
-          <input
-            className={inputCls}
-            value={side.image_alt ?? ""}
-            onChange={(e) => onChange({ image_alt: e.target.value })}
-            placeholder="Describe the image for screen readers"
-          />
-        </label>
-      </div>
-
       {/* Body */}
       <div className="mt-3 rounded-md border border-zinc-200 bg-white p-3">
         <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
@@ -553,13 +632,11 @@ function ColumnEditor({
         </label>
       </div>
 
-      {/* CTA */}
+      {/* CTA — uses patchCta so enabling auto-fills href from the URL above. */}
       <div className="mt-3">
         <CtaFieldset
           cta={(side.cta ?? {}) as BlockCta}
-          onChange={(update) =>
-            onChange({ cta: { ...(side.cta ?? {}), ...update } })
-          }
+          onChange={patchCta}
           brandTokens={brandTokens}
         />
       </div>
