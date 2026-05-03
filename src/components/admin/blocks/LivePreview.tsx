@@ -27,6 +27,7 @@ import UiFooterMainBlock from "@/components/blocks/UiFooterMainBlock";
 import UiFooterLegalBlock from "@/components/blocks/UiFooterLegalBlock";
 import ThreeColumnBlock from "@/components/blocks/ThreeColumnBlock";
 import SmallFormOverImageBlock from "@/components/blocks/SmallFormOverImageBlock";
+import GoogleMapTextBlock from "@/components/blocks/GoogleMapTextBlock";
 import VariantCarousel from "./VariantCarousel";
 
 /**
@@ -214,6 +215,7 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "three_column":      return <ThreeColumnBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
+    case "google_map_with_text": return <GoogleMapTextBlock content={content} />;
     // FeaturedRetreatsBlock is async (fetches AO data). LivePreview is
     // a client component, so we render a placeholder here; the real
     // component renders fine in the public TemplateRenderer + admin

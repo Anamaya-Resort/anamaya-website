@@ -447,6 +447,46 @@ export type ImageTextContent = BlockCta & {
   padding_y_px?: number;
 };
 
+/**
+ * Google Map with Text — sibling of ImageTextContent, but the
+ * image-side cell is an embedded Google Map iframe instead of an
+ * `<img>`. All the layout controls (container width / height, side
+ * left vs right, column-width %, vertical + horizontal align,
+ * background, text HTML, padding) match ImageText so the two feel
+ * interchangeable as page-builder primitives.
+ *
+ * Map embed uses Google's keyless `output=embed` URL so no API key
+ * is needed. The map remains interactive (zoom + pan); a small
+ * "Open in Google Maps ↗" link sits in the bottom-right corner so
+ * the user can launch the full Google Maps tab in a new window.
+ */
+export type GoogleMapTextContent = BlockCta & {
+  // ── Container (outer section dimensions + column layout) ────────────
+  container_width_px?: number;        // default 1400
+  container_height_px?: number;       // default 0 = auto
+  map_side?: "left" | "right";        // default "left"
+  map_width_pct?: number;             // 25–75; default 40
+  vertical_align?: "top" | "center" | "bottom";
+  bg_color?: string;
+  /** Horizontal alignment of the map inside its column. Default "center". */
+  map_horizontal_align?: "left" | "center" | "right";
+
+  // ── Map ─────────────────────────────────────────────────────────────
+  lat?: number;                       // default 9.6483 (Montezuma, CR)
+  lng?: number;                       // default -85.0696
+  zoom?: number;                      // 0–21; default 14
+  marker_label?: string;              // shown on the embed pin + open link
+  open_label?: string;                // corner-link text; default "Open in Google Maps ↗"
+  map_corner_radius_px?: number;      // default 0
+
+  // ── Text ────────────────────────────────────────────────────────────
+  html?: string;
+  text_color?: string;
+
+  // ── Padding (matches ImageText) ─────────────────────────────────────
+  padding_y_px?: number;              // used when container_height_px = 0
+};
+
 // ─── GENERAL-PURPOSE BLOCKS (used by retreats + other pages) ──────────
 
 /**
@@ -1009,7 +1049,8 @@ export type BlockTypeSlug =
   | "ui_footer_main"
   | "ui_footer_legal"
   | "featured_retreats"
-  | "small_form_over_image";
+  | "small_form_over_image"
+  | "google_map_with_text";
 
 export type BlockRecord = {
   id: string;
