@@ -103,9 +103,18 @@ export default async function FeaturedRetreatsBlock({
                     className="grid grid-cols-1 gap-6 overflow-hidden rounded-lg shadow-sm ring-1 ring-anamaya-charcoal/10 md:grid-cols-[2fr_3fr]"
                     style={{ backgroundColor: cardBg }}
                   >
+                    {/*
+                      Fixed image height (180 px). Without an explicit
+                      height the grid stretches the image column to the
+                      taller text column's height — that's why the image
+                      kept matching the previous size. md:self-start
+                      breaks the column-stretch so the image stays fixed
+                      and the row's overall height is governed by the
+                      text column.
+                    */}
                     <Link
                       href={href}
-                      className="group relative block min-h-[150px] overflow-hidden bg-anamaya-charcoal/5"
+                      className="group relative block h-[180px] overflow-hidden bg-anamaya-charcoal/5 md:self-start"
                       aria-label={title}
                     >
                       {image ? (
