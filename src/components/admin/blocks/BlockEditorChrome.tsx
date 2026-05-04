@@ -165,14 +165,66 @@ export default function BlockEditorChrome<T>({
     setSaving(true);
     try {
       flushSync(() => setPreview(draft));
-      if (previewRef.current) {
-        await captureAndUploadBlockSnapshot(blockId, previewRef.current);
-      }
+      // Snapshot capture moved to AFTER save: see useEffect below that
+      // fires on the post-save `?saved=1` redirect. Capturing before save
+      // was unreliable for iframe-based previews (testimonials,
+      // featured_retreats) because the iframe shows the saved-state DB
+      // content, not the user's just-edited draft — so pre-save snapshots
+      // were always one version stale. Post-save the iframe (and inline
+      // previews) reflect the just-saved data, giving correct snapshots
+      // for every block type.
       await onSave(name, slug, draft);
     } finally {
       setSaving(false);
     }
   }
+
+  // Post-save snapshot capture. Runs once when the page lands at
+  // `?saved=1` after a server-action redirect. Waits for the preview
+  // to be rendered (iframe load if applicable) before snapshotting.
+  const snapshotRef = useRef<{ done: boolean }>({ done: false });
+  const searchParamsForSnapshot = useSearchParams();
+  useEffect(() => {
+    if (snapshotRef.current.done) return;
+    if (searchParamsForSnapshot?.get("saved") !== "1") return;
+    snapshotRef.current.done = true;
+    const node = previewRef.current;
+    if (!node) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const iframe = node.querySelector("iframe") as HTMLIFrameElement | null;
+        if (iframe) {
+          // Wait for the iframe to finish loading the saved-state HTML.
+          if (iframe.contentDocument?.readyState !== "complete") {
+            await new Promise<void>((resolve) => {
+              const onLoad = () => resolve();
+              iframe.addEventListener("load", onLoad, { once: true });
+              window.setTimeout(resolve, 5000);
+            });
+          }
+          // Give the iframe's client-side rendering (carousels, etc.)
+          // a beat to settle before capture.
+          await new Promise((r) => window.setTimeout(r, 800));
+        } else {
+          // Inline preview — short delay for layout/paint.
+          await new Promise((r) => window.setTimeout(r, 250));
+        }
+        if (cancelled) return;
+        const result = await captureAndUploadBlockSnapshot(blockId, node);
+        if (!result.ok) {
+          console.warn("[blocks] post-save snapshot failed:", result.reason);
+        }
+      } catch (err) {
+        console.warn("[blocks] post-save snapshot error:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParamsForSnapshot, blockId]);
 
   return (
     <>

@@ -31,21 +31,39 @@ export async function captureAndUploadBlockSnapshot(
   try {
     console.log("[snapshot] capturing", blockId);
     // If the live preview is an iframe (used for async/server-only
-    // blocks like featured_retreats), the iframe content is what we
-    // actually want to snapshot — the wrapper has no real markup.
-    // Same-origin /block-preview lets us reach into contentDocument.
+    // blocks like featured_retreats and testimonials), the iframe
+    // content is what we actually want to snapshot — the wrapper has
+    // no real markup. Same-origin /block-preview lets us reach into
+    // contentDocument.
     const iframe = node.querySelector("iframe") as HTMLIFrameElement | null;
     if (iframe?.contentDocument?.body) {
       const inner = iframe.contentDocument.body;
-      await waitForImagesLoaded(inner);
+      await Promise.all([
+        waitForImagesLoaded(inner),
+        waitForFonts(iframe.contentDocument),
+      ]);
       return await captureAndUpload(blockId, inner);
     }
-    await waitForImagesLoaded(node);
-    console.log("[snapshot] images ready");
+    await Promise.all([waitForImagesLoaded(node), waitForFonts(document)]);
+    console.log("[snapshot] images + fonts ready");
     return await captureAndUpload(blockId, node);
   } catch (e) {
     console.error("[snapshot] failed:", e);
     return { ok: false, reason: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** Wait for any pending web fonts to finish loading. Without this,
+ *  text in the snapshot can render in the fallback font and look
+ *  wrong against the rest of the UI. */
+async function waitForFonts(doc: Document): Promise<void> {
+  const fonts = (doc as Document & { fonts?: { ready?: Promise<unknown> } }).fonts;
+  if (fonts?.ready) {
+    try {
+      await fonts.ready;
+    } catch {
+      /* font loader not supported — ignore */
+    }
   }
 }
 
@@ -54,8 +72,12 @@ async function captureAndUpload(
   node: HTMLElement,
 ): Promise<{ ok: boolean; reason?: string }> {
   const canvas = await toCanvas(node, {
-    pixelRatio: 1,
-    cacheBust: false,
+    pixelRatio: 1.5,
+    // cacheBust forces fresh GETs for image/font URLs, side-stepping
+    // cases where the browser served a tainted cross-origin response
+    // earlier in the session and the canvas would otherwise come back
+    // blank or trigger a SecurityError on toBlob.
+    cacheBust: true,
     backgroundColor: "#ffffff",
     filter: (n) => {
       const el = n as HTMLElement;
