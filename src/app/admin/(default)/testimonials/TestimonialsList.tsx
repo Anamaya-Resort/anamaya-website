@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { deleteTestimonialFromForm, updateTestimonialFromForm } from "./actions";
 
+export type Category = {
+  slug: string;
+  name: string;
+  excerpt: string | null;
+};
+
 export type ListRow = {
   id: string;
   review_number: number | null;
@@ -16,6 +22,7 @@ export type ListRow = {
   review_text: string;
   published: boolean;
   updated_at: string | null;
+  categories: Category[];
 };
 
 /**
@@ -31,7 +38,7 @@ export default function TestimonialsList({ items }: { items: ListRow[] }) {
 
   // Single source of truth so header + rows stay aligned.
   const cols =
-    "grid grid-cols-[28px_56px_1fr_180px_220px] items-center gap-2";
+    "grid grid-cols-[28px_56px_1.4fr_180px_180px_minmax(220px,1fr)] items-center gap-2";
 
   return (
     <div className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-zinc-200">
@@ -41,6 +48,7 @@ export default function TestimonialsList({ items }: { items: ListRow[] }) {
         <div>Title</div>
         <div>Reviewer</div>
         <div>Date / Trip</div>
+        <div>Categories</div>
       </div>
 
       <div className="divide-y divide-zinc-100">
@@ -78,6 +86,7 @@ export default function TestimonialsList({ items }: { items: ListRow[] }) {
                 <div className="truncate text-xs text-anamaya-charcoal/70">
                   {[t.date_of_stay, t.trip_type].filter(Boolean).join(" · ") || "—"}
                 </div>
+                <CategoryPills categories={t.categories} />
               </div>
 
               {open && <EditPanel t={t} onClose={() => setOpenId(null)} />}
@@ -89,61 +98,89 @@ export default function TestimonialsList({ items }: { items: ListRow[] }) {
   );
 }
 
+function CategoryPills({ categories }: { categories: Category[] }) {
+  if (categories.length === 0) {
+    return <span className="text-xs italic text-anamaya-charcoal/40">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1">
+      {categories.map((c) => (
+        <span
+          key={c.slug}
+          className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-anamaya-charcoal/80 ring-1 ring-zinc-200"
+        >
+          {c.name}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function EditPanel({ t, onClose }: { t: ListRow; onClose: () => void }) {
   return (
     <div className="border-t border-zinc-200 bg-zinc-50 px-6 py-5">
-      <form action={updateTestimonialFromForm} className="grid gap-3 sm:grid-cols-2">
+      <form action={updateTestimonialFromForm} className="space-y-3">
         <input type="hidden" name="id" value={t.id} />
 
-        <Input
-          name="review_number"
-          label="Review #"
-          type="number"
-          defaultValue={t.review_number ?? ""}
-        />
-        <Input
-          name="review_id"
-          label="Review ID"
-          required
-          defaultValue={t.review_id}
-        />
-        <Input
-          name="review_url"
-          label="Review URL"
-          className="sm:col-span-2"
-          defaultValue={t.review_url ?? ""}
-        />
-        <Input
-          name="title"
-          label="Title"
-          className="sm:col-span-2"
-          defaultValue={t.title ?? ""}
-        />
-        <Input
-          name="author"
-          label="Reviewer name"
-          defaultValue={t.author ?? ""}
-        />
-        <Input
-          name="date_of_stay"
-          label="Date of stay"
-          defaultValue={t.date_of_stay ?? ""}
-        />
-        <Input
-          name="trip_type"
-          label="Trip type"
-          defaultValue={t.trip_type ?? ""}
-        />
-        <Input
-          name="rating"
-          label="Rating (1–5)"
-          type="number"
-          min={1}
-          max={5}
-          defaultValue={t.rating ?? 5}
-        />
+        {/* Row 1: review # + review id */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            name="review_number"
+            label="Review #"
+            type="number"
+            defaultValue={t.review_number ?? ""}
+          />
+          <Input
+            name="review_id"
+            label="Review ID"
+            required
+            defaultValue={t.review_id}
+          />
+        </div>
 
-        <div className="sm:col-span-2">
+        {/* Row 2: review URL + title */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            name="review_url"
+            label="Review URL"
+            defaultValue={t.review_url ?? ""}
+          />
+          <Input
+            name="title"
+            label="Title"
+            defaultValue={t.title ?? ""}
+          />
+        </div>
+
+        {/* Row 3: reviewer + date + trip type + rating, all on one row */}
+        <div className="grid gap-3 sm:grid-cols-4">
+          <Input
+            name="author"
+            label="Reviewer name"
+            defaultValue={t.author ?? ""}
+          />
+          <Input
+            name="date_of_stay"
+            label="Date of stay"
+            defaultValue={t.date_of_stay ?? ""}
+          />
+          <Input
+            name="trip_type"
+            label="Trip type"
+            defaultValue={t.trip_type ?? ""}
+          />
+          <Input
+            name="rating"
+            label="Rating (1–5)"
+            type="number"
+            min={1}
+            max={5}
+            defaultValue={t.rating ?? 5}
+          />
+        </div>
+
+        {/* Review text — full width */}
+        <div>
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
             Review text
           </label>
@@ -156,12 +193,12 @@ function EditPanel({ t, onClose }: { t: ListRow; onClose: () => void }) {
           />
         </div>
 
-        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+        <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="published" defaultChecked={t.published} />
           Published (visible on site)
         </label>
 
-        <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="submit"
             className="rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
@@ -180,7 +217,51 @@ function EditPanel({ t, onClose }: { t: ListRow; onClose: () => void }) {
           </div>
         </div>
       </form>
+
+      {/* Separator between editable testimonial fields and the
+          categories+excerpts section below. */}
+      <hr className="my-6 border-zinc-300" />
+
+      <CategoriesSection categories={t.categories} />
     </div>
+  );
+}
+
+function CategoriesSection({ categories }: { categories: Category[] }) {
+  return (
+    <section>
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+        Categories &amp; excerpts ({categories.length})
+      </h3>
+      {categories.length === 0 ? (
+        <p className="text-sm italic text-anamaya-charcoal/50">
+          Not assigned to any category yet. Add it from the Categories page on
+          the testimonials index.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {categories.map((c) => (
+            <li
+              key={c.slug}
+              className="rounded-md border border-zinc-200 bg-white p-3"
+            >
+              <div className="mb-1 text-sm font-semibold text-anamaya-charcoal">
+                {c.name}
+              </div>
+              {c.excerpt ? (
+                <p className="text-sm leading-relaxed text-anamaya-charcoal/80">
+                  &ldquo;{c.excerpt}&rdquo;
+                </p>
+              ) : (
+                <p className="text-xs italic text-anamaya-charcoal/40">
+                  No excerpt — falls back to the full review text on the site.
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

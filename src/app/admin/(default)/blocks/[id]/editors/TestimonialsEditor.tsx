@@ -26,6 +26,7 @@ const BLEND_MODES: BlockBlendMode[] = [
 // 0039). The editor lists them statically; new categories require a
 // SQL migration anyway, so the cost of reflecting them here is minimal.
 const CATEGORY_CHOICES: Array<{ slug: string; label: string }> = [
+  { slug: "best_reviews",   label: "Best Reviews" },
   { slug: "homepage",       label: "Home Page" },
   { slug: "retreats",       label: "Retreats" },
   { slug: "ytt",            label: "Yoga Teacher Trainings" },

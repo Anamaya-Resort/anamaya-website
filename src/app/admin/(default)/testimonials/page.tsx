@@ -8,20 +8,54 @@ export const dynamic = "force-dynamic";
 
 export default async function TestimonialsAdmin() {
   const sb = supabaseServer();
-  const [{ data: testimonials }, { data: sets }, { count: total }] = await Promise.all([
-    sb
-      .from("testimonials")
-      .select(
-        "id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, author, review_text, published, updated_at",
-      )
-      .order("review_number", { ascending: true, nullsFirst: false })
-      .limit(500),
-    sb
-      .from("testimonial_sets")
-      .select("id, slug, name, description")
-      .order("slug"),
-    sb.from("testimonials").select("*", { count: "exact", head: true }),
-  ]);
+  const [{ data: testimonials }, { data: sets }, { count: total }, { data: setItemRows }] =
+    await Promise.all([
+      sb
+        .from("testimonials")
+        .select(
+          "id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, author, review_text, published, updated_at",
+        )
+        .order("review_number", { ascending: true, nullsFirst: false })
+        .limit(500),
+      sb
+        .from("testimonial_sets")
+        .select("id, slug, name, description")
+        .order("slug"),
+      sb.from("testimonials").select("*", { count: "exact", head: true }),
+      sb
+        .from("testimonial_set_items")
+        .select("testimonial_id, excerpt, testimonial_sets(slug, name)"),
+    ]);
+
+  // Build a per-testimonial list of categories + excerpt assignments.
+  type SetEmbed = { slug: string; name: string };
+  type SetItemRow = {
+    testimonial_id: string;
+    excerpt: string | null;
+    testimonial_sets: SetEmbed | SetEmbed[] | null;
+  };
+  const categoriesByTid = new Map<
+    string,
+    Array<{ slug: string; name: string; excerpt: string | null }>
+  >();
+  for (const r of (setItemRows ?? []) as SetItemRow[]) {
+    const setRef = Array.isArray(r.testimonial_sets)
+      ? r.testimonial_sets[0]
+      : r.testimonial_sets;
+    if (!setRef) continue;
+    const list = categoriesByTid.get(r.testimonial_id) ?? [];
+    list.push({ slug: setRef.slug, name: setRef.name, excerpt: r.excerpt });
+    categoriesByTid.set(r.testimonial_id, list);
+  }
+  // Sort each list alphabetically by category name for consistent display.
+  for (const list of categoriesByTid.values()) {
+    list.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  const testimonialsWithCats = (testimonials ?? []).map((t) => ({
+    ...t,
+    categories: categoriesByTid.get(t.id) ?? [],
+  }));
 
   return (
     <div className="space-y-10">
@@ -108,11 +142,14 @@ export default async function TestimonialsAdmin() {
         </form>
       </section>
 
-      <section>
+      {/* Break out 20% wider than the surrounding max-w-6xl admin shell on
+          xl+ screens so the list table has more room for the new categories
+          column. Negative margin gives ~7rem more on each side. */}
+      <section className="xl:-mx-[7rem]">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
           All reviews ({testimonials?.length ?? 0})
         </h2>
-        <TestimonialsList items={testimonials ?? []} />
+        <TestimonialsList items={testimonialsWithCats} />
       </section>
     </div>
   );
