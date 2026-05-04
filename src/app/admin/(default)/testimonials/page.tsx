@@ -11,7 +11,7 @@ export default async function TestimonialsAdmin() {
     sb
       .from("testimonials")
       .select(
-        "id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, review_text, published, updated_at",
+        "id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, author, review_text, published, updated_at",
       )
       .order("review_number", { ascending: true, nullsFirst: false })
       .limit(500),
@@ -79,6 +79,7 @@ export default async function TestimonialsAdmin() {
             placeholder="https://www.tripadvisor.com/ShowUserReviews-…"
           />
           <Input name="title"        label="Title"        className="sm:col-span-2" placeholder="Simply Exceptional" />
+          <Input name="author"       label="Reviewer name" placeholder="Nadia C" />
           <Input name="date_of_stay" label="Date of stay" placeholder="March 2026" />
           <Input name="trip_type"    label="Trip type"    placeholder="Traveled solo" />
           <Input name="rating"       label="Rating (1-5)" type="number" min={1} max={5} defaultValue={5} />
@@ -116,6 +117,7 @@ export default async function TestimonialsAdmin() {
               <tr>
                 <th className="px-4 py-3">#</th>
                 <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Reviewer</th>
                 <th className="px-4 py-3">Date / Trip</th>
                 <th className="px-4 py-3">Rating</th>
                 <th className="px-4 py-3">Published</th>
@@ -130,6 +132,9 @@ export default async function TestimonialsAdmin() {
                   </td>
                   <td className="max-w-md truncate px-4 py-3 font-medium">
                     {t.title ?? <span className="text-anamaya-charcoal/40">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-anamaya-charcoal/80">
+                    {t.author ?? <span className="text-anamaya-charcoal/40">—</span>}
                   </td>
                   <td className="px-4 py-3 text-xs text-anamaya-charcoal/70">
                     {[t.date_of_stay, t.trip_type].filter(Boolean).join(" · ") || "—"}

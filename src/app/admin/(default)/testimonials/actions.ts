@@ -29,6 +29,7 @@ export async function createTestimonial(formData: FormData) {
     rating:       num(formData.get("rating")) ?? 5,
     date_of_stay: str(formData.get("date_of_stay")),
     trip_type:    str(formData.get("trip_type")),
+    author:       str(formData.get("author")),
     review_text,
     published:    formData.get("published") === "on",
   });
@@ -53,6 +54,7 @@ export async function updateTestimonial(id: string, formData: FormData) {
       rating:       num(formData.get("rating")) ?? 5,
       date_of_stay: str(formData.get("date_of_stay")),
       trip_type:    str(formData.get("trip_type")),
+      author:       str(formData.get("author")),
       review_text,
       published:    formData.get("published") === "on",
     })

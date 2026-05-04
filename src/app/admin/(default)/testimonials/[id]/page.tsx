@@ -43,6 +43,7 @@ export default async function EditTestimonial({
         <Input name="review_id"     label="Review ID"  required defaultValue={t.review_id ?? ""} />
         <Input name="review_url"    label="Review URL" className="sm:col-span-2" defaultValue={t.review_url ?? ""} />
         <Input name="title"         label="Title"      className="sm:col-span-2" defaultValue={t.title ?? ""} />
+        <Input name="author"        label="Reviewer name" defaultValue={t.author ?? ""} placeholder="Nadia C" />
         <Input name="date_of_stay"  label="Date of stay" defaultValue={t.date_of_stay ?? ""} />
         <Input name="trip_type"     label="Trip type"    defaultValue={t.trip_type ?? ""} />
         <Input name="rating"        label="Rating (1-5)" type="number" min={1} max={5} defaultValue={t.rating ?? 5} />

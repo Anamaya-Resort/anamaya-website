@@ -114,9 +114,14 @@ function Slide({
   showBadge: boolean;
 }) {
   const quote = t.excerpt && t.excerpt.trim() !== "" ? t.excerpt : t.review_text;
-  const attribution = t.date_of_stay
-    ? `TripAdvisor Review · ${t.date_of_stay}`
-    : "TripAdvisor Review";
+  // Format: "<Name>, TripAdvisor · <Date>". Each segment is optional;
+  // we drop missing pieces gracefully so the line never reads awkwardly.
+  const attribution = [
+    t.author ? `${t.author}, TripAdvisor` : "TripAdvisor Review",
+    t.date_of_stay ?? null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <figure

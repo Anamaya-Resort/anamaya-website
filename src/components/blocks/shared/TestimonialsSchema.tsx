@@ -34,6 +34,12 @@ export default function TestimonialsSchema({ items }: { items: Testimonial[] }) 
       (node as Record<string, unknown>).name = t.title;
     }
 
+    if (t.author) {
+      // Reviewer attribution. Helps LLM crawlers cite the testimonial
+      // back to a named source.
+      node.creator = { "@type": "Person", name: t.author };
+    }
+
     if (t.review_url) {
       // Citation back to the original TripAdvisor review for verification.
       node.citation = {

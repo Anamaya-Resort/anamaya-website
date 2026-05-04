@@ -16,6 +16,9 @@ export type Testimonial = {
   rating: number;          // always 5 today; kept for honest display next to TripAdvisor's bubbles
   date_of_stay: string | null;
   trip_type: string | null;
+  /** TripAdvisor reviewer handle / display name. Optional — manually
+   *  populated since the original CSV didn't include it. */
+  author: string | null;
   review_text: string;     // full review (used for "show full review" toggle / SEO)
   /** Per-category sound-bite excerpt — what the carousel displays.
    *  Null means the editor hasn't written one yet; renderer falls back
@@ -56,7 +59,7 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
   const { data: items, error: itemsErr } = await sb
     .from("testimonial_set_items")
     .select(
-      "sort_order, excerpt, featured, testimonials(id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, review_text, published)",
+      "sort_order, excerpt, featured, testimonials(id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, author, review_text, published)",
     )
     .eq("set_id", set.id)
     .order("sort_order", { ascending: true });
@@ -80,6 +83,7 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
         rating: (t.rating as number | null) ?? 5,
         date_of_stay: (t.date_of_stay as string | null) ?? null,
         trip_type: (t.trip_type as string | null) ?? null,
+        author: (t.author as string | null) ?? null,
         review_text: t.review_text as string,
         excerpt: row.excerpt,
         featured: row.featured ?? false,
