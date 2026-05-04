@@ -566,19 +566,77 @@ export default function PressBarEditor({
                       }
                     }}
                   />
-                  <label className="flex items-center gap-1.5 text-xs text-anamaya-charcoal/70">
-                    <input
-                      type="checkbox"
-                      checked={!!logo.featured}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        patchLogos((arr) =>
-                          arr.map((l, ix) => (ix === i ? { ...l, featured: checked } : l)),
-                        );
-                      }}
-                    />
-                    featured (2× height)
-                  </label>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="flex items-center gap-1.5 text-xs text-anamaya-charcoal/70">
+                      <input
+                        type="checkbox"
+                        checked={!!logo.featured}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          patchLogos((arr) =>
+                            arr.map((l, ix) => (ix === i ? { ...l, featured: checked } : l)),
+                          );
+                        }}
+                      />
+                      featured (2× height)
+                    </label>
+                    <div className="flex items-center gap-1 text-xs text-anamaya-charcoal/70">
+                      <span className="mr-1 uppercase tracking-wider">Size</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          patchLogos((arr) =>
+                            arr.map((l, ix) =>
+                              ix === i
+                                ? { ...l, size_adjust_pct: (l.size_adjust_pct ?? 0) - 5 }
+                                : l,
+                            ),
+                          );
+                        }}
+                        className="rounded bg-white px-2 py-1 ring-1 ring-zinc-300 hover:bg-zinc-100"
+                        aria-label="Shrink this logo 5%"
+                      >
+                        −5%
+                      </button>
+                      <span className="min-w-[3.5rem] text-center font-mono">
+                        {(logo.size_adjust_pct ?? 0) >= 0 ? "+" : ""}
+                        {logo.size_adjust_pct ?? 0}%
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          patchLogos((arr) =>
+                            arr.map((l, ix) =>
+                              ix === i
+                                ? { ...l, size_adjust_pct: (l.size_adjust_pct ?? 0) + 5 }
+                                : l,
+                            ),
+                          );
+                        }}
+                        className="rounded bg-white px-2 py-1 ring-1 ring-zinc-300 hover:bg-zinc-100"
+                        aria-label="Grow this logo 5%"
+                      >
+                        +5%
+                      </button>
+                      {(logo.size_adjust_pct ?? 0) !== 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            patchLogos((arr) =>
+                              arr.map((l, ix) =>
+                                ix === i ? { ...l, size_adjust_pct: 0 } : l,
+                              ),
+                            );
+                          }}
+                          className="ml-1 rounded px-1.5 py-1 text-anamaya-charcoal/50 hover:bg-zinc-100 hover:text-anamaya-charcoal"
+                          aria-label="Reset size to 0%"
+                          title="Reset"
+                        >
+                          ↺
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1">

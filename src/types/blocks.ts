@@ -196,6 +196,10 @@ export type PressBarLogo = {
   href?: string | null;
   /** Featured logos take 2x width in the grid. */
   featured?: boolean;
+  /** Per-logo visual size tweak relative to the cell-width default
+   *  (set by weight). Editor offers ±5% buttons; e.g. -10 shrinks
+   *  the logo to 90%, +5 enlarges to 105%. Defaults to 0. */
+  size_adjust_pct?: number;
 };
 
 /**

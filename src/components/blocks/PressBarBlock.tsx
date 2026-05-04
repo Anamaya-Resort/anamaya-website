@@ -84,6 +84,10 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
         <li aria-hidden="true" />
         {logos.map((logo, i) => {
           const maxH = logo.featured ? featuredHeight : logoHeight;
+          const adjust = Number.isFinite(logo.size_adjust_pct)
+            ? (logo.size_adjust_pct as number)
+            : 0;
+          const scale = 1 + adjust / 100;
           const img = (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -94,7 +98,12 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
               loading="lazy"
               decoding="async"
               className="block w-full object-contain"
-              style={{ height: maxH, maxHeight: maxH }}
+              style={{
+                height: maxH,
+                maxHeight: maxH,
+                transform: scale === 1 ? undefined : `scale(${scale})`,
+                transformOrigin: "center",
+              }}
             />
           );
           return (
