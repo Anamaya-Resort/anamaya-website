@@ -69,7 +69,15 @@ export async function deleteTestimonial(id: string) {
   revalidatePath("/admin/testimonials");
 }
 
-export async function updateSetMembership(setId: string, testimonialIds: string[]) {
+/**
+ * Set-page form save: assigned rows keep their excerpt + sort_order;
+ * newly-checked rows are added with a blank excerpt that the editor can
+ * fill in afterwards. Unchecked rows are removed.
+ */
+export async function saveSetAssignments(
+  setId: string,
+  rows: Array<{ testimonial_id: string; excerpt: string; sort_order: number }>,
+) {
   const sb = supabaseServer();
   const { error: delErr } = await sb
     .from("testimonial_set_items")
@@ -77,13 +85,14 @@ export async function updateSetMembership(setId: string, testimonialIds: string[
     .eq("set_id", setId);
   if (delErr) throw new Error(delErr.message);
 
-  if (testimonialIds.length > 0) {
-    const rows = testimonialIds.map((tid, i) => ({
+  if (rows.length > 0) {
+    const payload = rows.map((r) => ({
       set_id: setId,
-      testimonial_id: tid,
-      sort_order: i,
+      testimonial_id: r.testimonial_id,
+      sort_order: r.sort_order,
+      excerpt: r.excerpt && r.excerpt.trim() !== "" ? r.excerpt.trim() : null,
     }));
-    const { error } = await sb.from("testimonial_set_items").insert(rows);
+    const { error } = await sb.from("testimonial_set_items").insert(payload);
     if (error) throw new Error(error.message);
   }
 

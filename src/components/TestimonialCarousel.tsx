@@ -11,6 +11,9 @@ type Testimonial = {
   date_of_stay: string | null;
   trip_type: string | null;
   review_text: string;
+  /** Per-category sound-bite. When present, this is what we display
+   *  on the carousel; otherwise we fall back to review_text. */
+  excerpt: string | null;
 };
 
 type Props = {
@@ -60,7 +63,7 @@ export default function TestimonialCarousel({ testimonials, autoplayMs = 6000 }:
               </h3>
             )}
             <blockquote className="text-balance text-base italic leading-relaxed text-anamaya-charcoal/80 sm:text-lg">
-              &ldquo;{t.review_text}&rdquo;
+              &ldquo;{t.excerpt ?? t.review_text}&rdquo;
             </blockquote>
             <figcaption className="mt-6 text-sm text-anamaya-charcoal/70">
               {[t.date_of_stay, t.trip_type].filter(Boolean).join(" · ") || null}

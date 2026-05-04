@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
-import { updateSetMembership } from "../../actions";
+import { saveSetAssignments } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,22 +22,55 @@ export default async function EditSet({
 
   const { data: allTestimonials } = await sb
     .from("testimonials")
-    .select("id, author, headline, source, source_date, published")
-    .order("author");
+    .select(
+      "id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, review_text, published",
+    )
+    .order("review_number", { ascending: true, nullsFirst: false });
 
   const { data: itemRows } = await sb
     .from("testimonial_set_items")
-    .select("testimonial_id, sort_order")
+    .select("testimonial_id, sort_order, excerpt")
     .eq("set_id", id)
     .order("sort_order");
-  const memberIds = new Set((itemRows ?? []).map((r) => r.testimonial_id));
+
+  const memberByTid = new Map(
+    (itemRows ?? []).map((r) => [
+      r.testimonial_id as string,
+      { sort_order: r.sort_order as number, excerpt: (r.excerpt as string | null) ?? "" },
+    ]),
+  );
+
+  // Split into assigned (in current sort order) and unassigned.
+  const tidToTestimonial = new Map(
+    (allTestimonials ?? []).map((t) => [t.id, t]),
+  );
+  const assignedOrdered = (itemRows ?? [])
+    .map((r) => tidToTestimonial.get(r.testimonial_id as string))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t));
+  const unassigned = (allTestimonials ?? []).filter(
+    (t) => !memberByTid.has(t.id),
+  );
 
   async function save(formData: FormData) {
     "use server";
-    // Preserve the order as given in form (values submitted in DOM order).
-    const selected = formData.getAll("testimonial_ids").map(String);
-    await updateSetMembership(id, selected);
-    redirect("/admin/testimonials");
+    // Form submits ALL testimonials with a hidden flag for membership +
+    // an excerpt textarea. Build the keep-list from the checked ones,
+    // preserving the order they appear in the form (which matches the
+    // order shown in the UI: assigned first, then unassigned).
+    const tids = formData.getAll("testimonial_id").map(String);
+    const keeps = formData.getAll("keep").map(String); // values = testimonial ids
+    const keepSet = new Set(keeps);
+    const rows: Array<{ testimonial_id: string; excerpt: string; sort_order: number }> =
+      [];
+    let order = 0;
+    for (const tid of tids) {
+      if (!keepSet.has(tid)) continue;
+      const excerpt = String(formData.get(`excerpt:${tid}`) ?? "");
+      rows.push({ testimonial_id: tid, excerpt, sort_order: order });
+      order += 1;
+    }
+    await saveSetAssignments(id, rows);
+    redirect(`/admin/testimonials/sets/${id}`);
   }
 
   return (
@@ -48,58 +82,167 @@ export default async function EditSet({
           {set.description && <> — {set.description}</>}
         </p>
         <p className="mt-1 text-sm text-anamaya-charcoal/60">
-          {memberIds.size} testimonial{memberIds.size === 1 ? "" : "s"} currently assigned
+          {assignedOrdered.length} review{assignedOrdered.length === 1 ? "" : "s"} assigned ·{" "}
+          {unassigned.length} unassigned
         </p>
       </header>
 
-      <form action={save} className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200">
-        <p className="mb-4 text-sm text-anamaya-charcoal/70">
-          Check the testimonials to include in this set. They will cycle through
-          on any page using <code className="rounded bg-zinc-100 px-1">setSlug=&quot;{set.slug}&quot;</code>.
-        </p>
-        <div className="max-h-[600px] overflow-y-auto rounded-md border border-zinc-200 divide-y divide-zinc-100">
-          {(allTestimonials ?? []).map((t) => (
-            <label
-              key={t.id}
-              className="flex items-start gap-3 px-3 py-3 text-sm hover:bg-zinc-50"
+      <form action={save} className="space-y-8">
+        <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
+            Assigned to this category
+          </h2>
+          <p className="mb-4 text-sm text-anamaya-charcoal/70">
+            The <strong>excerpt</strong> is what shows on the website carousel — usually 1–2
+            sentences of the original review that fit this category. The full review is shown
+            below for context. Uncheck a row to remove it from this category on save.
+          </p>
+          {assignedOrdered.length === 0 ? (
+            <p className="rounded-md bg-zinc-50 p-4 text-sm text-anamaya-charcoal/60">
+              Nothing assigned yet. Add reviews from the list below.
+            </p>
+          ) : (
+            <ul className="space-y-4">
+              {assignedOrdered.map((t) => (
+                <li key={t.id}>
+                  <ReviewRow
+                    t={t}
+                    assigned
+                    excerpt={memberByTid.get(t.id)?.excerpt ?? ""}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
+            All other reviews ({unassigned.length})
+          </h2>
+          <p className="mb-4 text-sm text-anamaya-charcoal/70">
+            Check a row to add it to this category, then click Save. You can fill in the excerpt
+            after assigning it.
+          </p>
+          <ul className="space-y-3">
+            {unassigned.map((t) => (
+              <li key={t.id}>
+                <ReviewRow t={t} assigned={false} excerpt="" />
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <div className="sticky bottom-0 -mx-6 border-t border-zinc-200 bg-white/95 p-4 backdrop-blur sm:mx-0 sm:rounded-lg sm:border sm:p-4 sm:shadow-lg">
+          <div className="flex items-center gap-4">
+            <button
+              type="submit"
+              className="rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
             >
-              <input
-                type="checkbox"
-                name="testimonial_ids"
-                value={t.id}
-                defaultChecked={memberIds.has(t.id)}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <div className="font-medium">
-                  {t.headline ?? t.author}{" "}
-                  {!t.published && (
-                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] uppercase text-amber-800">
-                      Unpublished
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-anamaya-charcoal/60">
-                  — {t.author}
-                  {t.source && <>, {t.source}</>}
-                  {t.source_date && <>, {t.source_date}</>}
-                </div>
-              </div>
-            </label>
-          ))}
-        </div>
-        <div className="mt-4 flex items-center gap-4">
-          <button
-            type="submit"
-            className="rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
-          >
-            Save set
-          </button>
-          <a href="/admin/testimonials" className="text-sm text-anamaya-charcoal/70 hover:underline">
-            Cancel
-          </a>
+              Save category
+            </button>
+            <Link
+              href="/admin/testimonials"
+              className="text-sm text-anamaya-charcoal/70 hover:underline"
+            >
+              Cancel
+            </Link>
+          </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function ReviewRow({
+  t,
+  assigned,
+  excerpt,
+}: {
+  t: {
+    id: string;
+    review_number: number | null;
+    review_id: string;
+    review_url: string | null;
+    title: string | null;
+    rating: number;
+    date_of_stay: string | null;
+    trip_type: string | null;
+    review_text: string;
+    published: boolean;
+  };
+  assigned: boolean;
+  excerpt: string;
+}) {
+  return (
+    <div
+      className={`rounded-md border p-4 ${
+        assigned ? "border-anamaya-mint bg-anamaya-mint/10" : "border-zinc-200 bg-white"
+      }`}
+    >
+      <input type="hidden" name="testimonial_id" value={t.id} />
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          name="keep"
+          value={t.id}
+          defaultChecked={assigned}
+          className="mt-1.5"
+          aria-label={`Include review ${t.review_number ?? t.review_id} in this category`}
+        />
+        <div className="flex-1 space-y-3">
+          <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+            <span className="font-mono text-xs text-anamaya-charcoal/50">
+              #{t.review_number ?? "?"}
+            </span>
+            <span className="font-semibold text-anamaya-charcoal">
+              {t.title ?? <em className="text-anamaya-charcoal/40">No title</em>}
+            </span>
+            <span className="text-xs text-anamaya-charcoal/60">
+              {[t.date_of_stay, t.trip_type].filter(Boolean).join(" · ")}
+            </span>
+            {!t.published && (
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] uppercase text-amber-800">
+                Unpublished
+              </span>
+            )}
+            {t.review_url && (
+              <a
+                href={t.review_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-xs text-anamaya-charcoal/50 hover:text-anamaya-green hover:underline"
+              >
+                View on TripAdvisor ↗
+              </a>
+            )}
+          </header>
+
+          {assigned && (
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+                Excerpt (shown on the website)
+              </span>
+              <textarea
+                name={`excerpt:${t.id}`}
+                rows={3}
+                defaultValue={excerpt}
+                placeholder="1–2 sentence sound-bite from the review text below…"
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+              />
+            </label>
+          )}
+
+          <details className={assigned ? "" : ""}>
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60 hover:text-anamaya-green">
+              {assigned ? "Show full review" : "Preview full review"}
+            </summary>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-anamaya-charcoal/80">
+              {t.review_text}
+            </p>
+          </details>
+        </div>
+      </div>
     </div>
   );
 }
