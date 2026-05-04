@@ -78,6 +78,15 @@ export async function deleteTestimonialFromForm(formData: FormData) {
   if (id) await deleteTestimonial(id);
 }
 
+/** Client-component-friendly wrapper for updateTestimonial. Reads the
+ *  id from the formData and forwards everything else to the existing
+ *  update action. */
+export async function updateTestimonialFromForm(formData: FormData) {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) throw new Error("Missing testimonial id");
+  await updateTestimonial(id, formData);
+}
+
 /**
  * Set-page form save: replaces all rows for this set in one shot,
  * preserving each kept row's excerpt + featured + sort_order.

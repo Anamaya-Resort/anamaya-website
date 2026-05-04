@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { deleteTestimonialFromForm } from "./actions";
+import { deleteTestimonialFromForm, updateTestimonialFromForm } from "./actions";
 
 export type ListRow = {
   id: string;
@@ -21,17 +20,18 @@ export type ListRow = {
 
 /**
  * Client-side accordion list of testimonials. Each row has a chevron
- * on the far left (left of the review #). Clicking the chevron opens
- * a detail panel beneath the row showing every field. Only one row
- * can be open at a time — opening another auto-closes the previous.
+ * on the far left. Clicking the chevron expands an inline edit form
+ * beneath the row. Only one row can be open at a time.
+ *
+ * The expanded panel doubles as the edit screen — there is no
+ * separate /admin/testimonials/[id] page anymore.
  */
 export default function TestimonialsList({ items }: { items: ListRow[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
-  // Track which Tailwind grid classes match the header. Single source
-  // of truth so header + rows stay aligned.
+  // Single source of truth so header + rows stay aligned.
   const cols =
-    "grid grid-cols-[28px_56px_1fr_160px_180px_60px_70px_140px] items-center gap-2";
+    "grid grid-cols-[28px_56px_1fr_180px_220px] items-center gap-2";
 
   return (
     <div className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-zinc-200">
@@ -41,9 +41,6 @@ export default function TestimonialsList({ items }: { items: ListRow[] }) {
         <div>Title</div>
         <div>Reviewer</div>
         <div>Date / Trip</div>
-        <div>Rating</div>
-        <div>Pub</div>
-        <div className="text-right" />
       </div>
 
       <div className="divide-y divide-zinc-100">
@@ -51,15 +48,21 @@ export default function TestimonialsList({ items }: { items: ListRow[] }) {
           const open = openId === t.id;
           return (
             <div key={t.id}>
-              <div className={`${cols} px-4 py-3 text-sm transition-colors ${
-                open ? "bg-anamaya-mint/15" : "hover:bg-zinc-50/60"
-              }`}>
+              <div
+                className={`${cols} cursor-pointer px-4 py-3 text-sm transition-colors ${
+                  open ? "bg-zinc-100" : "hover:bg-zinc-50/60"
+                }`}
+                onClick={() => setOpenId(open ? null : t.id)}
+              >
                 <button
                   type="button"
                   aria-expanded={open}
                   aria-label={open ? "Collapse details" : "Expand details"}
-                  onClick={() => setOpenId(open ? null : t.id)}
-                  className="flex h-7 w-7 items-center justify-center rounded text-anamaya-charcoal/60 hover:bg-anamaya-mint/30 hover:text-anamaya-green"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenId(open ? null : t.id);
+                  }}
+                  className="flex h-7 w-7 items-center justify-center rounded text-anamaya-charcoal/60 hover:bg-zinc-200 hover:text-anamaya-charcoal"
                 >
                   <Chevron open={open} />
                 </button>
@@ -75,28 +78,9 @@ export default function TestimonialsList({ items }: { items: ListRow[] }) {
                 <div className="truncate text-xs text-anamaya-charcoal/70">
                   {[t.date_of_stay, t.trip_type].filter(Boolean).join(" · ") || "—"}
                 </div>
-                <div>{t.rating}/5</div>
-                <div>{t.published ? "Yes" : "—"}</div>
-                <div className="flex items-center justify-end gap-3 text-right">
-                  <Link
-                    href={`/admin/testimonials/${t.id}`}
-                    className="text-anamaya-green hover:underline"
-                  >
-                    Edit
-                  </Link>
-                  <form action={deleteTestimonialFromForm} className="inline">
-                    <input type="hidden" name="id" value={t.id} />
-                    <button
-                      type="submit"
-                      className="text-red-600 hover:underline"
-                    >
-                      Delete
-                    </button>
-                  </form>
-                </div>
               </div>
 
-              {open && <DetailPanel t={t} />}
+              {open && <EditPanel t={t} onClose={() => setOpenId(null)} />}
             </div>
           );
         })}
@@ -105,91 +89,136 @@ export default function TestimonialsList({ items }: { items: ListRow[] }) {
   );
 }
 
-function DetailPanel({ t }: { t: ListRow }) {
+function EditPanel({ t, onClose }: { t: ListRow; onClose: () => void }) {
   return (
-    <div className="border-t border-anamaya-mint/40 bg-anamaya-mint/10 px-6 py-5 text-sm">
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        <Field label="Review #" value={t.review_number ?? "—"} />
-        <Field label="Review ID" value={t.review_id} mono />
-        <Field label="Reviewer" value={t.author ?? "—"} />
-        <Field
-          label="Rating"
-          value={`${t.rating} / 5`}
-        />
-        <Field label="Date of stay" value={t.date_of_stay ?? "—"} />
-        <Field label="Trip type" value={t.trip_type ?? "—"} />
-        <Field
-          label="Published"
-          value={t.published ? "Yes" : "Unpublished"}
-        />
-        {t.updated_at && (
-          <Field
-            label="Last updated"
-            value={new Date(t.updated_at).toLocaleString()}
-          />
-        )}
-      </div>
+    <div className="border-t border-zinc-200 bg-zinc-50 px-6 py-5">
+      <form action={updateTestimonialFromForm} className="grid gap-3 sm:grid-cols-2">
+        <input type="hidden" name="id" value={t.id} />
 
-      {t.title && (
-        <div className="mb-3">
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
-            Title
-          </span>
-          <div className="text-base font-semibold text-anamaya-charcoal">
-            {t.title}
+        <Input
+          name="review_number"
+          label="Review #"
+          type="number"
+          defaultValue={t.review_number ?? ""}
+        />
+        <Input
+          name="review_id"
+          label="Review ID"
+          required
+          defaultValue={t.review_id}
+        />
+        <Input
+          name="review_url"
+          label="Review URL"
+          className="sm:col-span-2"
+          defaultValue={t.review_url ?? ""}
+        />
+        <Input
+          name="title"
+          label="Title"
+          className="sm:col-span-2"
+          defaultValue={t.title ?? ""}
+        />
+        <Input
+          name="author"
+          label="Reviewer name"
+          defaultValue={t.author ?? ""}
+        />
+        <Input
+          name="date_of_stay"
+          label="Date of stay"
+          defaultValue={t.date_of_stay ?? ""}
+        />
+        <Input
+          name="trip_type"
+          label="Trip type"
+          defaultValue={t.trip_type ?? ""}
+        />
+        <Input
+          name="rating"
+          label="Rating (1–5)"
+          type="number"
+          min={1}
+          max={5}
+          defaultValue={t.rating ?? 5}
+        />
+
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+            Review text
+          </label>
+          <textarea
+            name="review_text"
+            required
+            rows={8}
+            defaultValue={t.review_text}
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm leading-relaxed focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+          />
+        </div>
+
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" name="published" defaultChecked={t.published} />
+          Published (visible on site)
+        </label>
+
+        <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+          <button
+            type="submit"
+            className="rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-sm text-anamaya-charcoal/70 hover:underline"
+          >
+            Cancel
+          </button>
+          <div className="ml-auto">
+            <DeleteButton id={t.id} />
           </div>
         </div>
-      )}
-
-      <div className="mb-3">
-        <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
-          Review text
-        </span>
-        <p className="whitespace-pre-wrap text-base leading-relaxed text-anamaya-charcoal/85">
-          {t.review_text}
-        </p>
-      </div>
-
-      {t.review_url && (
-        <div className="mb-1">
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
-            Review URL
-          </span>
-          <a
-            href={t.review_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="break-all text-xs text-anamaya-green hover:underline"
-          >
-            {t.review_url}
-          </a>
-        </div>
-      )}
-
-      <div className="mt-4">
-        <Link
-          href={`/admin/testimonials/${t.id}`}
-          className="rounded-full bg-anamaya-green px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
-        >
-          Edit this review
-        </Link>
-      </div>
+      </form>
     </div>
   );
 }
 
-function Field({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
+function DeleteButton({ id }: { id: string }) {
   return (
-    <div>
-      <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
+    <form
+      action={deleteTestimonialFromForm}
+      onSubmit={(e) => {
+        if (!confirm("Delete this testimonial? This cannot be undone.")) {
+          e.preventDefault();
+        }
+      }}
+    >
+      <input type="hidden" name="id" value={id} />
+      <button
+        type="submit"
+        className="rounded-full border border-red-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
+      >
+        Delete
+      </button>
+    </form>
+  );
+}
+
+function Input(
+  props: React.InputHTMLAttributes<HTMLInputElement> & { label: string },
+) {
+  const { label, className, ...rest } = props;
+  return (
+    <label className={`block ${className ?? ""}`}>
+      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
         {label}
       </span>
-      <div
-        className={`text-sm text-anamaya-charcoal ${mono ? "font-mono text-xs" : ""}`}
-      >
-        {value}
-      </div>
-    </div>
+      <input
+        {...rest}
+        className="w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+      />
+    </label>
   );
 }
 
