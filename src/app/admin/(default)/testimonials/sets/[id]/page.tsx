@@ -40,16 +40,14 @@ export default async function EditSet({
     ]),
   );
 
-  // Split into assigned (in current sort order) and unassigned.
+  // Only the testimonials currently assigned to this category are
+  // rendered — the page is for managing assignments, not adding new ones.
   const tidToTestimonial = new Map(
     (allTestimonials ?? []).map((t) => [t.id, t]),
   );
   const assignedOrdered = (itemRows ?? [])
     .map((r) => tidToTestimonial.get(r.testimonial_id as string))
     .filter((t): t is NonNullable<typeof t> => Boolean(t));
-  const unassigned = (allTestimonials ?? []).filter(
-    (t) => !memberByTid.has(t.id),
-  );
 
   async function save(formData: FormData) {
     "use server";
@@ -82,12 +80,23 @@ export default async function EditSet({
           {set.description && <> — {set.description}</>}
         </p>
         <p className="mt-1 text-sm text-anamaya-charcoal/60">
-          {assignedOrdered.length} review{assignedOrdered.length === 1 ? "" : "s"} assigned ·{" "}
-          {unassigned.length} unassigned
+          {assignedOrdered.length} review{assignedOrdered.length === 1 ? "" : "s"} assigned
         </p>
       </header>
 
       <form action={save} className="space-y-8">
+        <div className="sticky top-0 z-10 -mx-2 flex items-center gap-4 border-b border-zinc-200 bg-white/95 px-2 py-3 backdrop-blur">
+          <button
+            type="submit"
+            className="rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white shadow-sm hover:bg-anamaya-green-dark"
+          >
+            Save changes
+          </button>
+          <span className="text-xs text-anamaya-charcoal/60">
+            Uncheck a row to remove it. Edits to excerpts also save with this button.
+          </span>
+        </div>
+
         <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
             Assigned to this category
@@ -99,7 +108,7 @@ export default async function EditSet({
           </p>
           {assignedOrdered.length === 0 ? (
             <p className="rounded-md bg-zinc-50 p-4 text-sm text-anamaya-charcoal/60">
-              Nothing assigned yet. Add reviews from the list below.
+              Nothing assigned yet.
             </p>
           ) : (
             <ul className="space-y-4">
@@ -114,23 +123,6 @@ export default async function EditSet({
               ))}
             </ul>
           )}
-        </section>
-
-        <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
-            All other reviews ({unassigned.length})
-          </h2>
-          <p className="mb-4 text-sm text-anamaya-charcoal/70">
-            Check a row to add it to this category, then click Save. You can fill in the excerpt
-            after assigning it.
-          </p>
-          <ul className="space-y-3">
-            {unassigned.map((t) => (
-              <li key={t.id}>
-                <ReviewRow t={t} assigned={false} excerpt="" />
-              </li>
-            ))}
-          </ul>
         </section>
 
         <div className="sticky bottom-0 -mx-6 border-t border-zinc-200 bg-white/95 p-4 backdrop-blur sm:mx-0 sm:rounded-lg sm:border sm:p-4 sm:shadow-lg">
@@ -195,7 +187,7 @@ function ReviewRow({
             <span className="font-mono text-xs text-anamaya-charcoal/50">
               #{t.review_number ?? "?"}
             </span>
-            <span className="font-semibold text-anamaya-charcoal">
+            <span className="text-lg font-semibold text-anamaya-charcoal">
               {t.title ?? <em className="text-anamaya-charcoal/40">No title</em>}
             </span>
             <span className="text-xs text-anamaya-charcoal/60">
@@ -237,7 +229,7 @@ function ReviewRow({
             <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60 hover:text-anamaya-green">
               {assigned ? "Show full review" : "Preview full review"}
             </summary>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-anamaya-charcoal/80">
+            <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed text-anamaya-charcoal/80">
               {t.review_text}
             </p>
           </details>
