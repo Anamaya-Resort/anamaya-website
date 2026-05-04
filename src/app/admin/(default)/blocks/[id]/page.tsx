@@ -36,6 +36,7 @@ import UiFooterLegalEditor from "./editors/UiFooterLegalEditor";
 import FeaturedRetreatsEditor from "./editors/FeaturedRetreatsEditor";
 import SmallFormOverImageEditor from "./editors/SmallFormOverImageEditor";
 import GoogleMapTextEditor from "./editors/GoogleMapTextEditor";
+import TestimonialsEditor from "./editors/TestimonialsEditor";
 import { getBrandTokens } from "@/lib/brand-tokens";
 
 export const dynamic = "force-dynamic";
@@ -416,6 +417,18 @@ export default async function EditBlock({
       )}
       {block.type_slug === "google_map_with_text" && (
         <GoogleMapTextEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "testimonials" && (
+        <TestimonialsEditor
           blockId={id}
           name={block.name}
           slug={block.slug}

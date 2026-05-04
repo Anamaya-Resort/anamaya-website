@@ -21,6 +21,9 @@ export type Testimonial = {
    *  Null means the editor hasn't written one yet; renderer falls back
    *  to the first ~280 chars of review_text. */
   excerpt: string | null;
+  /** Per-category featured flag. The Testimonials block renders only
+   *  featured rows from its assigned category. */
+  featured: boolean;
 };
 
 export type TestimonialSet = {
@@ -53,7 +56,7 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
   const { data: items, error: itemsErr } = await sb
     .from("testimonial_set_items")
     .select(
-      "sort_order, excerpt, testimonials(id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, review_text, published)",
+      "sort_order, excerpt, featured, testimonials(id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, review_text, published)",
     )
     .eq("set_id", set.id)
     .order("sort_order", { ascending: true });
@@ -65,7 +68,7 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
 
   const testimonials: Testimonial[] = (items ?? [])
     .map((i) => {
-      const row = i as { excerpt: string | null; testimonials: unknown };
+      const row = i as { excerpt: string | null; featured: boolean | null; testimonials: unknown };
       const t = row.testimonials as Record<string, unknown> | null;
       if (!t || t.published !== true) return null;
       return {
@@ -79,6 +82,7 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
         trip_type: (t.trip_type as string | null) ?? null,
         review_text: t.review_text as string,
         excerpt: row.excerpt,
+        featured: row.featured ?? false,
       } satisfies Testimonial;
     })
     .filter((t): t is Testimonial => t !== null);
@@ -89,4 +93,20 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
     autoplay_ms: set.autoplay_ms ?? 6000,
     testimonials,
   };
+}
+
+/**
+ * Fetch only the featured testimonials in a category. Used by the
+ * `testimonials` block on the public site so editors can curate a
+ * small "best of" rotation without removing reviews from the
+ * category's roster on the admin sets page.
+ */
+export async function getFeaturedTestimonials(
+  slug: string,
+  max?: number,
+): Promise<Testimonial[]> {
+  const set = await getTestimonialSet(slug);
+  if (!set) return [];
+  const featured = set.testimonials.filter((t) => t.featured);
+  return typeof max === "number" ? featured.slice(0, max) : featured;
 }

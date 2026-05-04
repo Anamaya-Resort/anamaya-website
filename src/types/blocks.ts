@@ -1087,13 +1087,59 @@ export type BlockTypeSlug =
   | "ui_footer_legal"
   | "featured_retreats"
   | "small_form_over_image"
-  | "google_map_with_text";
+  | "google_map_with_text"
+  | "testimonials";
 
 export type BlockRecord = {
   id: string;
   type_slug: BlockTypeSlug;
   name: string;
   content: unknown;
+};
+
+/**
+ * Testimonials carousel block. Pulls featured testimonials from one
+ * testimonial category (testimonial_sets.slug) and rotates through
+ * them with a crossfade. Server-renders all slides as semantic
+ * `<figure><blockquote>` elements so crawlers + LLM agents can parse
+ * every testimonial regardless of which is currently visible.
+ */
+export type TestimonialsBlockContent = {
+  /** Category slug (testimonial_sets.slug). Required for the block to
+   *  render anything. */
+  category_slug?: string;
+  /** Number of seconds each slide stays fully visible before the fade
+   *  starts. Defaults to 4. */
+  display_seconds?: number;
+  /** Crossfade duration between slides, in seconds. Defaults to 2. */
+  fade_seconds?: number;
+  /** Maximum slides to include from the category (after featured filter).
+   *  Default: all featured rows. */
+  max_count?: number;
+
+  /** Section background colour. */
+  bg_color?: string;
+  /** Optional decorative image laid over the section background. */
+  bg_image_url?: string;
+  /** Background image opacity 0..100 (default 100). */
+  bg_image_opacity?: number;
+  /** CSS mix-blend-mode for the image layer. Default "normal". */
+  bg_image_blend_mode?: string;
+
+  /** Vertical padding in px. Default 80. */
+  padding_y_px?: number;
+  /** Max content width in px. Default 900. */
+  content_width_px?: number;
+
+  /** Heading text. Default "TESTIMONIALS". */
+  heading?: string;
+  /** Heading colour token (brand-token key). */
+  heading_color?: string;
+  /** Body text colour token. */
+  text_color?: string;
+
+  /** Show the TripAdvisor 5-star badge under each testimonial. Default true. */
+  show_tripadvisor_badge?: boolean;
 };
 
 export type BlockUsage = {

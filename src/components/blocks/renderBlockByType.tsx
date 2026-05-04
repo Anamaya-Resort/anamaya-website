@@ -28,6 +28,7 @@ import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
+import TestimonialsBlock from "./TestimonialsBlock";
 
 /**
  * Renders a block from its type slug and resolved content. The single
@@ -75,6 +76,7 @@ export default function renderBlockByType(
     case "featured_retreats":     return <FeaturedRetreatsBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text":  return <GoogleMapTextBlock content={content} />;
+    case "testimonials":          return <TestimonialsBlock content={content} />;
     default:                      return null;
   }
 }

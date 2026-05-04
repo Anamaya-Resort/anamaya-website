@@ -76,7 +76,10 @@ type Props = {
 
 /** Block types that have an async/server-only renderer and therefore
  *  preview via the /block-preview iframe instead of inline rendering. */
-const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set(["featured_retreats"]);
+const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set([
+  "featured_retreats",
+  "testimonials",
+]);
 
 // 15px checkerboard via two stacked linear-gradients. No image asset.
 const OVERLAY_CANVAS_BG: React.CSSProperties = {
@@ -216,14 +219,19 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "three_column":      return <ThreeColumnBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text": return <GoogleMapTextBlock content={content} />;
-    // FeaturedRetreatsBlock is async (fetches AO data). LivePreview is
-    // a client component, so we render a placeholder here; the real
-    // component renders fine in the public TemplateRenderer + admin
-    // /block-preview iframe (both server-rendered).
+    // Async server-only blocks render via the iframe path above; the
+    // case below is just a fallback placeholder when we fall through
+    // (e.g. the iframe preview is disabled because blockSlug is missing).
     case "featured_retreats":
       return (
         <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-xs italic text-anamaya-charcoal/60">
           Featured Retreats — preview at the page&rsquo;s public URL
+        </div>
+      );
+    case "testimonials":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-xs italic text-anamaya-charcoal/60">
+          Testimonials — save to see the iframe preview
         </div>
       );
     default:

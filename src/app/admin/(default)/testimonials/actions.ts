@@ -70,13 +70,17 @@ export async function deleteTestimonial(id: string) {
 }
 
 /**
- * Set-page form save: assigned rows keep their excerpt + sort_order;
- * newly-checked rows are added with a blank excerpt that the editor can
- * fill in afterwards. Unchecked rows are removed.
+ * Set-page form save: replaces all rows for this set in one shot,
+ * preserving each kept row's excerpt + featured + sort_order.
  */
 export async function saveSetAssignments(
   setId: string,
-  rows: Array<{ testimonial_id: string; excerpt: string; sort_order: number }>,
+  rows: Array<{
+    testimonial_id: string;
+    excerpt: string;
+    sort_order: number;
+    featured: boolean;
+  }>,
 ) {
   const sb = supabaseServer();
   const { error: delErr } = await sb
@@ -91,6 +95,7 @@ export async function saveSetAssignments(
       testimonial_id: r.testimonial_id,
       sort_order: r.sort_order,
       excerpt: r.excerpt && r.excerpt.trim() !== "" ? r.excerpt.trim() : null,
+      featured: r.featured,
     }));
     const { error } = await sb.from("testimonial_set_items").insert(payload);
     if (error) throw new Error(error.message);

@@ -29,14 +29,18 @@ export default async function EditSet({
 
   const { data: itemRows } = await sb
     .from("testimonial_set_items")
-    .select("testimonial_id, sort_order, excerpt")
+    .select("testimonial_id, sort_order, excerpt, featured")
     .eq("set_id", id)
     .order("sort_order");
 
   const memberByTid = new Map(
     (itemRows ?? []).map((r) => [
       r.testimonial_id as string,
-      { sort_order: r.sort_order as number, excerpt: (r.excerpt as string | null) ?? "" },
+      {
+        sort_order: r.sort_order as number,
+        excerpt: ((r as { excerpt?: string | null }).excerpt as string | null) ?? "",
+        featured: ((r as { featured?: boolean | null }).featured as boolean | null) ?? false,
+      },
     ]),
   );
 
@@ -51,20 +55,26 @@ export default async function EditSet({
 
   async function save(formData: FormData) {
     "use server";
-    // Form submits ALL testimonials with a hidden flag for membership +
-    // an excerpt textarea. Build the keep-list from the checked ones,
-    // preserving the order they appear in the form (which matches the
-    // order shown in the UI: assigned first, then unassigned).
     const tids = formData.getAll("testimonial_id").map(String);
-    const keeps = formData.getAll("keep").map(String); // values = testimonial ids
+    const keeps = formData.getAll("keep").map(String);
     const keepSet = new Set(keeps);
-    const rows: Array<{ testimonial_id: string; excerpt: string; sort_order: number }> =
-      [];
+    const featuredSet = new Set(formData.getAll("featured").map(String));
+    const rows: Array<{
+      testimonial_id: string;
+      excerpt: string;
+      sort_order: number;
+      featured: boolean;
+    }> = [];
     let order = 0;
     for (const tid of tids) {
       if (!keepSet.has(tid)) continue;
       const excerpt = String(formData.get(`excerpt:${tid}`) ?? "");
-      rows.push({ testimonial_id: tid, excerpt, sort_order: order });
+      rows.push({
+        testimonial_id: tid,
+        excerpt,
+        sort_order: order,
+        featured: featuredSet.has(tid),
+      });
       order += 1;
     }
     await saveSetAssignments(id, rows);
@@ -118,6 +128,7 @@ export default async function EditSet({
                     t={t}
                     assigned
                     excerpt={memberByTid.get(t.id)?.excerpt ?? ""}
+                    featured={memberByTid.get(t.id)?.featured ?? false}
                   />
                 </li>
               ))}
@@ -150,6 +161,7 @@ function ReviewRow({
   t,
   assigned,
   excerpt,
+  featured,
 }: {
   t: {
     id: string;
@@ -165,6 +177,7 @@ function ReviewRow({
   };
   assigned: boolean;
   excerpt: string;
+  featured: boolean;
 }) {
   return (
     <div
@@ -233,6 +246,21 @@ function ReviewRow({
               {t.review_text}
             </p>
           </details>
+
+          {assigned && (
+            <div className="flex justify-end pt-1">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-wider ring-1 ring-anamaya-mint hover:bg-anamaya-mint/20">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  value={t.id}
+                  defaultChecked={featured}
+                  className="h-4 w-4 accent-anamaya-green"
+                />
+                <span className="text-anamaya-charcoal">★ Featured</span>
+              </label>
+            </div>
+          )}
         </div>
       </div>
     </div>
