@@ -17,13 +17,14 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
   const justifyImage =
     halign === "left" ? "justify-start" : halign === "right" ? "justify-end" : "justify-center";
 
-  // Container dimensions — new model. If container_height_px is set, the
-  // section is that tall and padding_y is unused; otherwise fall back to
-  // the legacy padding_y_px default for content-sized sections.
+  // Container width + the inner grid's height. padding_y_px ALWAYS
+  // applies to the outer section so editors can space the block away
+  // from neighbouring blocks regardless of whether they've also set a
+  // fixed inner height. Total section height = grid height + 2*padY.
   const containerWidth = content?.container_width_px ?? 1400;
   const containerHeightPx = content?.container_height_px ?? 0;
   const hasFixedHeight = containerHeightPx > 0;
-  const padY = hasFixedHeight ? 0 : content?.padding_y_px ?? 48;
+  const padY = content?.padding_y_px ?? 48;
 
   // Image scale — 10-200%. At ≤100 the image is constrained to scalePct%
   // of the column (never crops). At >100 it's rendered at natural size then
@@ -99,7 +100,6 @@ export default function ImageTextBlock({ content }: { content: ImageTextContent 
         color,
         paddingTop: padY,
         paddingBottom: padY,
-        minHeight: hasFixedHeight ? containerHeightPx : undefined,
       }}
     >
       <div

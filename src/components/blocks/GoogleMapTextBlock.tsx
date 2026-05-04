@@ -37,12 +37,14 @@ export default function GoogleMapTextBlock({
     : halign === "right" ? "justify-end"
     : "justify-center";
 
-  // Container dims — same logic as ImageText: when container_height_px
-  // is set, the section is that tall and padding_y is unused.
+  // Container width + the inner grid's height. padding_y_px ALWAYS
+  // applies to the outer section so editors can space the block away
+  // from neighbouring blocks regardless of whether they've also set a
+  // fixed inner height. Total section height = grid height + 2*padY.
   const containerWidth = content?.container_width_px ?? 1400;
   const containerHeightPx = content?.container_height_px ?? 0;
   const hasFixedHeight = containerHeightPx > 0;
-  const padY = hasFixedHeight ? 0 : content?.padding_y_px ?? 48;
+  const padY = content?.padding_y_px ?? 48;
 
   // Map fields
   const lat = numOr(content?.lat, DEFAULT_LAT);
@@ -125,7 +127,6 @@ export default function GoogleMapTextBlock({
         color,
         paddingTop: padY,
         paddingBottom: padY,
-        minHeight: hasFixedHeight ? containerHeightPx : undefined,
       }}
     >
       <div className="mx-auto w-full px-6" style={{ maxWidth: containerWidth }}>
