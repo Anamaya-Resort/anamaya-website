@@ -24,7 +24,7 @@ export default async function TestimonialsAdmin() {
       sb.from("testimonials").select("*", { count: "exact", head: true }),
       sb
         .from("testimonial_set_items")
-        .select("testimonial_id, excerpt, testimonial_sets(slug, name)"),
+        .select("testimonial_id, excerpt, is_visible, testimonial_sets(slug, name)"),
     ]);
 
   // Build a per-testimonial list of categories + excerpt assignments.
@@ -32,11 +32,12 @@ export default async function TestimonialsAdmin() {
   type SetItemRow = {
     testimonial_id: string;
     excerpt: string | null;
+    is_visible: boolean | null;
     testimonial_sets: SetEmbed | SetEmbed[] | null;
   };
   const categoriesByTid = new Map<
     string,
-    Array<{ slug: string; name: string; excerpt: string | null }>
+    Array<{ slug: string; name: string; excerpt: string | null; is_visible: boolean }>
   >();
   for (const r of (setItemRows ?? []) as SetItemRow[]) {
     const setRef = Array.isArray(r.testimonial_sets)
@@ -44,7 +45,12 @@ export default async function TestimonialsAdmin() {
       : r.testimonial_sets;
     if (!setRef) continue;
     const list = categoriesByTid.get(r.testimonial_id) ?? [];
-    list.push({ slug: setRef.slug, name: setRef.name, excerpt: r.excerpt });
+    list.push({
+      slug: setRef.slug,
+      name: setRef.name,
+      excerpt: r.excerpt,
+      is_visible: r.is_visible ?? true,
+    });
     categoriesByTid.set(r.testimonial_id, list);
   }
   // Sort each list alphabetically by category name for consistent display.

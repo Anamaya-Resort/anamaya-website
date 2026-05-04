@@ -88,6 +88,43 @@ export async function updateTestimonialFromForm(formData: FormData) {
 }
 
 /**
+ * Toggle the per-(testimonial × category) Visible flag. Used by the
+ * Visible checkbox on each Category card in the inline edit panel on
+ * /admin/testimonials. When false, the row is hidden from the
+ * category's sets page AND from the public Testimonials block, but
+ * the excerpt/featured/sort_order state is preserved so toggling back
+ * on restores everything.
+ *
+ * Form fields:
+ *   - testimonial_id : uuid
+ *   - set_slug       : the testimonial_sets slug (e.g. "homepage")
+ *   - visible        : checkbox; "on" means visible, missing means hidden
+ */
+export async function setAssignmentVisibilityFromForm(formData: FormData) {
+  const tid = String(formData.get("testimonial_id") ?? "").trim();
+  const slug = String(formData.get("set_slug") ?? "").trim();
+  const visible = formData.get("visible") === "on";
+  if (!tid || !slug) return;
+  const sb = supabaseServer();
+  const { data: set } = await sb
+    .from("testimonial_sets")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!set) return;
+  const { error } = await sb
+    .from("testimonial_set_items")
+    .update({ is_visible: visible })
+    .eq("set_id", set.id)
+    .eq("testimonial_id", tid);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/testimonials");
+  revalidatePath(`/admin/testimonials/sets/${set.id}`);
+  // Also bust public pages — hidden assignments shouldn't render publicly.
+  revalidatePath("/", "layout");
+}
+
+/**
  * Set-page form save: replaces all rows for this set in one shot,
  * preserving each kept row's excerpt + featured + sort_order.
  */

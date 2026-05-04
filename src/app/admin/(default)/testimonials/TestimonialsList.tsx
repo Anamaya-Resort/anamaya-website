@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { deleteTestimonialFromForm, updateTestimonialFromForm } from "./actions";
+import {
+  deleteTestimonialFromForm,
+  setAssignmentVisibilityFromForm,
+  updateTestimonialFromForm,
+} from "./actions";
 
 export type Category = {
   slug: string;
   name: string;
   excerpt: string | null;
+  is_visible: boolean;
 };
 
 export type ListRow = {
@@ -222,12 +227,18 @@ function EditPanel({ t, onClose }: { t: ListRow; onClose: () => void }) {
           categories+excerpts section below. */}
       <hr className="my-6 border-zinc-300" />
 
-      <CategoriesSection categories={t.categories} />
+      <CategoriesSection testimonialId={t.id} categories={t.categories} />
     </div>
   );
 }
 
-function CategoriesSection({ categories }: { categories: Category[] }) {
+function CategoriesSection({
+  testimonialId,
+  categories,
+}: {
+  testimonialId: string;
+  categories: Category[];
+}) {
   return (
     <section>
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60">
@@ -243,10 +254,21 @@ function CategoriesSection({ categories }: { categories: Category[] }) {
           {categories.map((c) => (
             <li
               key={c.slug}
-              className="rounded-md border border-zinc-200 bg-white p-3"
+              className={`rounded-md border p-3 ${
+                c.is_visible
+                  ? "border-zinc-200 bg-white"
+                  : "border-zinc-200 bg-zinc-100/70 opacity-70"
+              }`}
             >
-              <div className="mb-1 text-sm font-semibold text-anamaya-charcoal">
-                {c.name}
+              <div className="mb-1 flex items-center gap-3">
+                <div className="flex-1 text-sm font-semibold text-anamaya-charcoal">
+                  {c.name}
+                </div>
+                <VisibleToggle
+                  testimonialId={testimonialId}
+                  setSlug={c.slug}
+                  defaultChecked={c.is_visible}
+                />
               </div>
               {c.excerpt ? (
                 <p className="text-sm leading-relaxed text-anamaya-charcoal/80">
@@ -262,6 +284,33 @@ function CategoriesSection({ categories }: { categories: Category[] }) {
         </ul>
       )}
     </section>
+  );
+}
+
+function VisibleToggle({
+  testimonialId,
+  setSlug,
+  defaultChecked,
+}: {
+  testimonialId: string;
+  setSlug: string;
+  defaultChecked: boolean;
+}) {
+  return (
+    <form action={setAssignmentVisibilityFromForm}>
+      <input type="hidden" name="testimonial_id" value={testimonialId} />
+      <input type="hidden" name="set_slug" value={setSlug} />
+      <label className="inline-flex cursor-pointer select-none items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal ring-1 ring-zinc-200 hover:bg-zinc-50">
+        <input
+          type="checkbox"
+          name="visible"
+          defaultChecked={defaultChecked}
+          onChange={(e) => e.currentTarget.form?.requestSubmit()}
+          className="h-4 w-4 accent-anamaya-green"
+        />
+        Visible
+      </label>
+    </form>
   );
 }
 

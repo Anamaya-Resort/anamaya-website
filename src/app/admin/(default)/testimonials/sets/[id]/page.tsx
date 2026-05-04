@@ -31,6 +31,7 @@ export default async function EditSet({
     .from("testimonial_set_items")
     .select("testimonial_id, sort_order, excerpt, featured")
     .eq("set_id", id)
+    .eq("is_visible", true)
     .order("sort_order");
 
   const memberByTid = new Map(

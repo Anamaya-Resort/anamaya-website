@@ -65,6 +65,7 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
       "sort_order, excerpt, featured, testimonials(*)",
     )
     .eq("set_id", set.id)
+    .eq("is_visible", true)
     .order("sort_order", { ascending: true });
   if (itemsErr) {
     // eslint-disable-next-line no-console
