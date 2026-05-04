@@ -705,15 +705,22 @@ function LogoThumb({
       <button
         type="button"
         onClick={() => (isOpen ? onClose() : onOpen())}
-        className="block h-12 w-20 shrink-0 overflow-hidden rounded bg-white ring-1 ring-zinc-200 transition-all hover:ring-anamaya-green disabled:opacity-50"
+        className="relative block h-[88px] w-36 shrink-0 overflow-hidden rounded ring-1 ring-zinc-200 transition-all hover:ring-anamaya-green disabled:opacity-50"
+        style={{
+          backgroundColor: "#a3a3a3",
+          backgroundImage:
+            "linear-gradient(45deg, #737373 25%, transparent 25%), linear-gradient(-45deg, #737373 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #737373 75%), linear-gradient(-45deg, transparent 75%, #737373 75%)",
+          backgroundSize: "20px 20px",
+          backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0",
+        }}
         disabled={isUploading}
         aria-label="Edit logo image"
       >
         {logo.src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo.src} alt="" className="h-full w-full object-contain" />
+          <img src={logo.src} alt="" className="h-full w-full object-contain p-1" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center text-[10px] uppercase text-anamaya-charcoal/50">
+          <span className="flex h-full w-full items-center justify-center bg-white/70 text-[10px] uppercase text-anamaya-charcoal/60">
             No image
           </span>
         )}
