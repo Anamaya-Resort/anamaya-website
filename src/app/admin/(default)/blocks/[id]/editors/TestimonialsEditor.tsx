@@ -55,6 +55,10 @@ function normalize(c: TestimonialsBlockContent | null | undefined): Testimonials
     heading_color:        c?.heading_color ?? "",
     text_color:           c?.text_color ?? "",
 
+    heading_size_px:      c?.heading_size_px ?? 37,
+    title_size_px:        c?.title_size_px ?? 25,
+    body_size_px:         c?.body_size_px ?? 19,
+
     show_tripadvisor_badge: c?.show_tripadvisor_badge ?? true,
   };
 }
@@ -124,7 +128,7 @@ function Form({ state }: { state: BlockEditorState<TestimonialsBlockContent> }) 
       </section>
 
       <section className={sectionCls}>
-        <h3 className={sectionTitleCls}>Heading</h3>
+        <h3 className={sectionTitleCls}>Heading &amp; type</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block sm:col-span-2">
             <span className={labelCls}>Heading text</span>
@@ -150,6 +154,39 @@ function Form({ state }: { state: BlockEditorState<TestimonialsBlockContent> }) 
               onChange={(v) => patch({ text_color: v })}
               brandTokens={brandTokens}
               allowAuto
+            />
+          </label>
+          <label className="block">
+            <span className={labelCls}>Heading size (px)</span>
+            <input
+              type="number"
+              min={10}
+              max={120}
+              className={inputCls}
+              value={draft.heading_size_px ?? 37}
+              onChange={(e) => patch({ heading_size_px: Number(e.target.value) || 37 })}
+            />
+          </label>
+          <label className="block">
+            <span className={labelCls}>Review-title size (px)</span>
+            <input
+              type="number"
+              min={10}
+              max={80}
+              className={inputCls}
+              value={draft.title_size_px ?? 25}
+              onChange={(e) => patch({ title_size_px: Number(e.target.value) || 25 })}
+            />
+          </label>
+          <label className="block">
+            <span className={labelCls}>Quote-body size (px)</span>
+            <input
+              type="number"
+              min={10}
+              max={60}
+              className={inputCls}
+              value={draft.body_size_px ?? 19}
+              onChange={(e) => patch({ body_size_px: Number(e.target.value) || 19 })}
             />
           </label>
         </div>

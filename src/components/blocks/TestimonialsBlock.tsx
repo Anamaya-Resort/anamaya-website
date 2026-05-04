@@ -39,6 +39,10 @@ export default async function TestimonialsBlock({
   const heading = c.heading ?? "TESTIMONIALS";
   const showBadge = c.show_tripadvisor_badge ?? true;
 
+  const headingSize = c.heading_size_px ?? 37;
+  const titleSize = c.title_size_px ?? 25;
+  const bodySize = c.body_size_px ?? 19;
+
   const display = c.display_seconds ?? 4;
   const fade = c.fade_seconds ?? 2;
 
@@ -61,8 +65,8 @@ export default async function TestimonialsBlock({
 
       <div className="relative mx-auto w-full px-6" style={{ maxWidth: maxW }}>
         <h2
-          className="mb-10 text-center font-heading text-3xl font-semibold uppercase tracking-[0.3em] sm:text-4xl"
-          style={{ color: headingColor }}
+          className="mb-10 text-center font-heading font-semibold uppercase tracking-[0.3em]"
+          style={{ color: headingColor, fontSize: headingSize }}
         >
           {heading}
         </h2>
@@ -84,6 +88,8 @@ export default async function TestimonialsBlock({
               firstVisible={i === 0}
               fadeSeconds={fade}
               showBadge={showBadge}
+              titleSize={titleSize}
+              bodySize={bodySize}
             />
           ))}
         </div>
@@ -107,11 +113,15 @@ function Slide({
   firstVisible,
   fadeSeconds,
   showBadge,
+  titleSize,
+  bodySize,
 }: {
   t: Testimonial;
   firstVisible: boolean;
   fadeSeconds: number;
   showBadge: boolean;
+  titleSize: number;
+  bodySize: number;
 }) {
   const quote = t.excerpt && t.excerpt.trim() !== "" ? t.excerpt : t.review_text;
   // Format: "<Name>, TripAdvisor · <Date>". Each segment is optional;
@@ -140,14 +150,16 @@ function Slide({
     >
       {t.title && (
         <h3
-          className="mb-4 font-heading text-xl font-semibold leading-snug sm:text-2xl"
+          className="mb-4 font-heading font-semibold leading-snug"
+          style={{ fontSize: titleSize }}
           itemProp="name"
         >
           &ldquo;{t.title}&rdquo;
         </h3>
       )}
       <blockquote
-        className="text-balance text-base italic leading-relaxed sm:text-lg"
+        className="text-balance italic leading-relaxed"
+        style={{ fontSize: bodySize }}
         itemProp="text"
         cite={t.review_url ?? undefined}
       >

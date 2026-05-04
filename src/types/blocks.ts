@@ -1138,6 +1138,13 @@ export type TestimonialsBlockContent = {
   /** Body text colour token. */
   text_color?: string;
 
+  /** Section-heading font size in px. Default 37 (was 36). */
+  heading_size_px?: number;
+  /** Review-title font size in px. Default 25 (was 24). */
+  title_size_px?: number;
+  /** Quote-body font size in px. Default 19 (was 18). */
+  body_size_px?: number;
+
   /** Show the TripAdvisor 5-star badge under each testimonial. Default true. */
   show_tripadvisor_badge?: boolean;
 };
