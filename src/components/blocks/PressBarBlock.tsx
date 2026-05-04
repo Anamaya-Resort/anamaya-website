@@ -93,8 +93,8 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
               height={logo.height}
               loading="lazy"
               decoding="async"
-              className="max-w-full object-contain"
-              style={{ maxHeight: maxH, height: "auto" }}
+              className="block w-full object-contain"
+              style={{ height: maxH, maxHeight: maxH }}
             />
           );
           return (
