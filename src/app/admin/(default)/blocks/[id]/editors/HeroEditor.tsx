@@ -11,18 +11,11 @@ import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import { HeroBlockSnapshot } from "@/components/blocks/HeroBlock";
 import type { OrgBranding } from "@/config/brand-tokens";
-import { playClick } from "@/lib/click-sound";
+import { SaveButton } from "@/components/admin/blocks/BlockEditorChrome";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
 
-const saveIdleCls =
-  "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark active:bg-anamaya-brand-btn disabled:opacity-50";
-const saveBusyCls =
-  "rounded-full bg-anamaya-brand-btn px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white disabled:opacity-70";
-function saveClass(saving: boolean) {
-  return saving ? saveBusyCls : saveIdleCls;
-}
 
 type Variant = { id: string; name: string; slug: string; snapshot_url: string | null };
 
@@ -247,9 +240,7 @@ export default function HeroEditor({
             <h3 className="text-lg font-semibold uppercase tracking-wider text-anamaya-charcoal">
               Video
             </h3>
-            <button type="submit" disabled={saving} onClick={playClick} className={saveClass(saving)}>
-              {saving ? "Saving…" : "Save"}
-            </button>
+            <SaveButton saving={saving} />
           </header>
 
           <div className="mb-3 flex flex-wrap items-center gap-4">
@@ -492,9 +483,7 @@ export default function HeroEditor({
         />
 
         <div className="flex justify-end">
-          <button type="submit" disabled={saving} onClick={playClick} className={saveClass(saving)}>
-            {saving ? "Saving…" : "Save"}
-          </button>
+          <SaveButton saving={saving} />
         </div>
       </form>
     </>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SaveButton } from "@/components/admin/blocks/BlockEditorChrome";
 import type { GalleryContent, GalleryImage } from "@/types/blocks";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
@@ -177,13 +178,7 @@ export default function GalleryEditor({
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="col-span-full justify-self-start rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark disabled:opacity-50"
-      >
-        {saving ? "Saving…" : "Save"}
-      </button>
+      <SaveButton saving={saving} className="col-span-full justify-self-start" />
     </form>
   );
 }

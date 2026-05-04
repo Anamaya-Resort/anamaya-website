@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SaveButton } from "@/components/admin/blocks/BlockEditorChrome";
 import type { RichTextContent } from "@/types/blocks";
 import RTE from "@/components/admin/rte/RichTextEditor";
 
@@ -30,13 +31,7 @@ export default function RichTextEditor({
         Content
       </label>
       <RTE value={html} onChange={setHtml} placeholder="Write your content…" />
-      <button
-        type="submit"
-        disabled={saving}
-        className="mt-4 rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark disabled:opacity-50"
-      >
-        {saving ? "Saving…" : "Save"}
-      </button>
+      <SaveButton saving={saving} className="mt-4" />
     </form>
   );
 }

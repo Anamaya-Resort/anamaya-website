@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import LivePreview from "@/components/admin/blocks/LivePreview";
 import { captureAndUploadBlockSnapshot } from "@/components/admin/blocks/snapshot";
 import { playClick } from "@/lib/click-sound";
@@ -31,12 +32,45 @@ const saveIdleCls =
   "rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark active:bg-anamaya-brand-btn disabled:opacity-50";
 const saveBusyCls =
   "rounded-full bg-anamaya-brand-btn px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white disabled:opacity-70";
+const saveJustSavedCls =
+  "rounded-full bg-blue-600 px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white transition-colors";
 
 /**
- * Reusable Save submit-button. Editors can drop additional <SaveButton>s
- * in their form to match the main one at the bottom — they all submit
- * the same <form action={handleSave}>, so clicking any of them triggers
- * the same save flow, and the shared `saving` state keeps them in sync.
+ * Tracks whether the page just loaded with a `?saved=1` query string,
+ * which is what server actions across the admin set after a successful
+ * save (via redirect). Returns true for ~2 seconds, then false. Strips
+ * the query param from the URL so a refresh doesn't re-trigger the
+ * flash. Co-located with SaveButton so any admin button using this
+ * gets consistent feedback.
+ */
+export function useSavedFlash(): boolean {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  // Derived directly from the URL — no separate state to keep in sync.
+  // Once the effect strips the `?saved=1` param, the next render returns
+  // false on its own.
+  const justSaved = searchParams?.get("saved") === "1";
+
+  useEffect(() => {
+    if (!justSaved) return;
+    // Strip the param after a 2-second flash so a reload doesn't
+    // re-trigger it.
+    const timer = window.setTimeout(() => {
+      router.replace(pathname, { scroll: false });
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [justSaved, pathname, router]);
+
+  return justSaved;
+}
+
+/**
+ * Reusable Save submit-button. Plays a tactile click sound, shows
+ * "Saving…" while the action is in flight (via `saving` prop), and
+ * flashes blue with "Saved!" for ~2 seconds after the page reloads
+ * with `?saved=1` in the URL. Editors drop multiple <SaveButton>s in
+ * one form and they all stay in sync via the shared `saving` state.
  */
 export function SaveButton({
   saving,
@@ -45,14 +79,17 @@ export function SaveButton({
   saving: boolean;
   className?: string;
 }) {
+  const justSaved = useSavedFlash();
+  const stateCls = justSaved ? saveJustSavedCls : saving ? saveBusyCls : saveIdleCls;
+  const label = justSaved ? "Saved!" : saving ? "Saving…" : "Save";
   return (
     <button
       type="submit"
       disabled={saving}
       onClick={playClick}
-      className={`${saving ? saveBusyCls : saveIdleCls} ${className}`}
+      className={`${stateCls} ${className}`}
     >
-      {saving ? "Saving…" : "Save"}
+      {label}
     </button>
   );
 }
