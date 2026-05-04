@@ -71,6 +71,13 @@ export async function deleteTestimonial(id: string) {
   revalidatePath("/admin/testimonials");
 }
 
+/** FormData-based wrapper so the delete button can live inside a
+ *  client component (which can't define inline `"use server"` closures). */
+export async function deleteTestimonialFromForm(formData: FormData) {
+  const id = String(formData.get("id") ?? "").trim();
+  if (id) await deleteTestimonial(id);
+}
+
 /**
  * Set-page form save: replaces all rows for this set in one shot,
  * preserving each kept row's excerpt + featured + sort_order.

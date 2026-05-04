@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseServer } from "@/lib/supabase-server";
-import { createTestimonial, deleteTestimonial } from "./actions";
+import { createTestimonial } from "./actions";
+import TestimonialsList from "./TestimonialsList";
 
 export const dynamic = "force-dynamic";
 
@@ -111,63 +112,7 @@ export default async function TestimonialsAdmin() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
           All reviews ({testimonials?.length ?? 0})
         </h2>
-        <div className="overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-zinc-200">
-          <table className="min-w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wider text-anamaya-charcoal/60">
-              <tr>
-                <th className="px-4 py-3">#</th>
-                <th className="px-4 py-3">Title</th>
-                <th className="px-4 py-3">Reviewer</th>
-                <th className="px-4 py-3">Date / Trip</th>
-                <th className="px-4 py-3">Rating</th>
-                <th className="px-4 py-3">Published</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {(testimonials ?? []).map((t) => (
-                <tr key={t.id}>
-                  <td className="px-4 py-3 font-mono text-xs text-anamaya-charcoal/70">
-                    {t.review_number ?? "—"}
-                  </td>
-                  <td className="max-w-md truncate px-4 py-3 font-medium">
-                    {t.title ?? <span className="text-anamaya-charcoal/40">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-anamaya-charcoal/80">
-                    {t.author ?? <span className="text-anamaya-charcoal/40">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-anamaya-charcoal/70">
-                    {[t.date_of_stay, t.trip_type].filter(Boolean).join(" · ") || "—"}
-                  </td>
-                  <td className="px-4 py-3">{t.rating}/5</td>
-                  <td className="px-4 py-3">{t.published ? "Yes" : "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/testimonials/${t.id}`}
-                      className="text-anamaya-green hover:underline"
-                    >
-                      Edit
-                    </Link>
-                    <form
-                      action={async () => {
-                        "use server";
-                        await deleteTestimonial(t.id);
-                      }}
-                      className="inline"
-                    >
-                      <button
-                        type="submit"
-                        className="ml-4 text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <TestimonialsList items={testimonials ?? []} />
       </section>
     </div>
   );
