@@ -69,8 +69,12 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
       style={{ backgroundColor: bg, minHeight: sectionHeight }}
     >
       <h2
-        className={`${headingFontClass} mb-6 text-center text-sm font-semibold uppercase tracking-[0.3em]`}
-        style={{ color: headingCss }}
+        className={`${headingFontClass} text-center font-semibold uppercase tracking-[0.3em]`}
+        style={{
+          color: headingCss,
+          fontSize: content.heading_size_px ?? 14,
+          marginBottom: content.heading_gap_px ?? 24,
+        }}
       >
         {heading}
       </h2>

@@ -42,6 +42,8 @@ function normalize(content: PressBarContent | null | undefined): PressBarContent
     left_gutter_pct: content?.left_gutter_pct ?? 5,
     right_gutter_pct: content?.right_gutter_pct ?? 5,
     gap_px: content?.gap_px ?? 16,
+    heading_size_px: content?.heading_size_px ?? 14,
+    heading_gap_px: content?.heading_gap_px ?? 24,
   };
 }
 
@@ -353,6 +355,55 @@ export default function PressBarEditor({
                 onChange={(e) => {
                   const v = Number(e.target.value) || 200;
                   setDraft((d) => ({ ...d, section_height_px: v }));
+                }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commit();
+                  }
+                }}
+              />
+            </label>
+            <label className="block w-40">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                Heading size (px)
+              </span>
+              <input
+                type="number"
+                min={8}
+                max={96}
+                className={inputCls}
+                value={draft.heading_size_px ?? 14}
+                onChange={(e) => {
+                  const v = Number(e.target.value) || 14;
+                  setDraft((d) => ({ ...d, heading_size_px: v }));
+                }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commit();
+                  }
+                }}
+              />
+            </label>
+            <label className="block w-40">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                Heading → logos gap (px)
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={200}
+                className={inputCls}
+                value={draft.heading_gap_px ?? 24}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setDraft((d) => ({
+                    ...d,
+                    heading_gap_px: Number.isFinite(v) ? v : 24,
+                  }));
                 }}
                 onBlur={commit}
                 onKeyDown={(e) => {

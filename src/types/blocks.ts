@@ -246,6 +246,11 @@ export type PressBarContent = {
   /** Uniform horizontal gap between every column (gutters + logos),
    *  in pixels. Default 16. Replaces the previous per-cell padding. */
   gap_px?: number;
+  /** Heading font size in px. Default 14 (matches Tailwind text-sm). */
+  heading_size_px?: number;
+  /** Vertical gap between the heading and the logo row, in px.
+   *  Default 24 (matches the previous mb-6). */
+  heading_gap_px?: number;
 };
 
 // ─── NEW HOMEPAGE BLOCKS ──────────────────────────────────────────────
