@@ -59,7 +59,10 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
   const { data: items, error: itemsErr } = await sb
     .from("testimonial_set_items")
     .select(
-      "sort_order, excerpt, featured, testimonials(id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, author, review_text, published)",
+      // `testimonials(*)` instead of an explicit column list so this
+      // query doesn't break when a column is added to testimonials
+      // before PostgREST's schema cache reloads.
+      "sort_order, excerpt, featured, testimonials(*)",
     )
     .eq("set_id", set.id)
     .order("sort_order", { ascending: true });
@@ -100,10 +103,17 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
 }
 
 /**
- * Fetch only the featured testimonials in a category. Used by the
- * `testimonials` block on the public site so editors can curate a
- * small "best of" rotation without removing reviews from the
- * category's roster on the admin sets page.
+ * Fetch testimonials for the public Testimonials block.
+ *
+ * Behaviour:
+ *   - If at least one testimonial in the category is marked featured,
+ *     return ONLY featured ones (curated rotation).
+ *   - If NO testimonial is marked featured, fall back to ALL
+ *     testimonials in the category so the block doesn't appear
+ *     broken before the editor has had a chance to mark favourites.
+ *
+ * This matches the editor's mental model: featured is opt-in;
+ * starting from "show everything" and narrowing down feels right.
  */
 export async function getFeaturedTestimonials(
   slug: string,
@@ -112,5 +122,6 @@ export async function getFeaturedTestimonials(
   const set = await getTestimonialSet(slug);
   if (!set) return [];
   const featured = set.testimonials.filter((t) => t.featured);
-  return typeof max === "number" ? featured.slice(0, max) : featured;
+  const list = featured.length > 0 ? featured : set.testimonials;
+  return typeof max === "number" ? list.slice(0, max) : list;
 }
