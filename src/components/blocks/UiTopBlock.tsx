@@ -65,7 +65,12 @@ export default function UiTopBlock({ content }: { content: UiTopContent }) {
       ].join(" ")}
       style={{ zIndex: z }}
     >
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      {/* Full-bleed bar: logo flush with the left viewport edge, nav
+          flush with the right edge, both inset 24px (px-6). The
+          previous mx-auto + max-w-7xl wrapper centred everything in
+          a 1280px container, leaving the logo and nav floating
+          inside that band rather than at the actual edges. */}
+      <div className="flex h-20 w-full items-center justify-between px-6">
         <Link href="/" aria-label="Anamaya home" className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
