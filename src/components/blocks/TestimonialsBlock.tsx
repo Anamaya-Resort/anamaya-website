@@ -138,7 +138,7 @@ function Slide({
           className="mb-4 font-heading text-xl font-semibold leading-snug sm:text-2xl"
           itemProp="name"
         >
-          Testimonial: &ldquo;{t.title}&rdquo;
+          &ldquo;{t.title}&rdquo;
         </h3>
       )}
       <blockquote
@@ -157,7 +157,8 @@ function Slide({
               href={t.review_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-anamaya-green underline-offset-2 hover:underline"
+              className="font-semibold underline underline-offset-2"
+              style={{ color: "inherit" }}
             >
               Full Review
             </a>
@@ -170,11 +171,11 @@ function Slide({
           <img
             src="/img/tripadvisor-5-stars.webp"
             alt={`${t.rating} out of 5 stars on TripAdvisor`}
-            width={140}
-            height={28}
+            width={280}
+            height={56}
             loading="lazy"
             decoding="async"
-            className="h-7 w-auto"
+            className="h-14 w-auto"
           />
         </div>
       )}
