@@ -579,9 +579,9 @@ export type FeatureListItem = {
   price?: string;
   /** Brand-token key or hex; only meaningful for icon variant. */
   icon?: "check" | "star" | "heart" | "leaf" | "sparkle" | "dot";
-  /** Emoji marker shown to the left of the title. Wins over `icon` when
-   *  set — pick from the preset row in the editor (✓ • 🍃) or paste any
-   *  emoji you like (e.g. ⭐, 🔥, 🌊). Empty falls back to `icon`. */
+  /** @deprecated Per-item marker — superseded by section-level
+   *  `FeatureListContent.marker_emoji`. Still read by the renderer as
+   *  a legacy fallback so older block content keeps working. */
   marker_emoji?: string;
   image_url?: string;
   image_alt?: string;
@@ -600,6 +600,12 @@ export type FeatureListContent = BlockCta & SectionFrame & {
   /** For "stack" layout: 1 or 2 side-by-side columns (default 1).
    *  When 2, each item's `column` field decides which side it lands on. */
   stack_columns?: 1 | 2;
+  /** One emoji applied as the bullet to every item in the list (e.g.
+   *  "✓", "•", "🍃", or any pasted emoji). When empty, the renderer
+   *  falls back to legacy per-item `marker_emoji` / `icon` for older
+   *  data. The editor surfaces this once at the section level — items
+   *  no longer carry their own. */
+  marker_emoji?: string;
   bg_color?: string;
   text_color?: string;
   padding_y_px?: number;
