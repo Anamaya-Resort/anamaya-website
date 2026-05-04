@@ -25,9 +25,27 @@ export default function YouTubeFacade({
   const [activated, setActivated] = useState(false);
 
   if (activated) {
+    // YouTube embed parameters chosen to strip as much chrome as the
+    // free embed allows: no related videos, no annotations, no captions
+    // by default, no keyboard hotkey overlay, modest YouTube branding.
+    // Standard play/pause/seek controls remain because the user
+    // explicitly asked for those. Note: the "Watch on YouTube" tag
+    // that appears centred-bottom on pause is part of YouTube's
+    // attribution requirement and cannot be removed via parameters —
+    // for fully chrome-free playback, upload an MP4 via the block's
+    // upload path instead (renders a native <video controls>).
+    const params = new URLSearchParams({
+      autoplay: "1",
+      rel: "0",              // no related videos
+      modestbranding: "1",   // smaller YouTube logo
+      playsinline: "1",      // inline on iOS
+      iv_load_policy: "3",   // hide annotations
+      cc_load_policy: "0",   // captions off by default
+      disablekb: "1",        // disable keyboard hotkeys
+    });
     return (
       <iframe
-        src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}?${params}`}
         title={title}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
