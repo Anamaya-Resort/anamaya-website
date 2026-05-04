@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { playClick } from "@/lib/click-sound";
 import {
   deleteTestimonialFromForm,
   setAssignmentVisibilityFromForm,
@@ -122,9 +123,39 @@ function CategoryPills({ categories }: { categories: Category[] }) {
 }
 
 function EditPanel({ t, onClose }: { t: ListRow; onClose: () => void }) {
+  const [pending, startTransition] = useTransition();
+  // Briefly true after a successful save — drives the blue "Saved!"
+  // confirmation state. A separate counter forces useEffect to re-run
+  // even if multiple saves happen in quick succession.
+  const [justSaved, setJustSaved] = useState(false);
+  const [saveTick, setSaveTick] = useState(0);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!justSaved) return;
+    const id = window.setTimeout(() => setJustSaved(false), 2000);
+    return () => window.clearTimeout(id);
+  }, [justSaved, saveTick]);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    setErrorMsg(null);
+    startTransition(async () => {
+      try {
+        await updateTestimonialFromForm(formData);
+        playClick();
+        setJustSaved(true);
+        setSaveTick((n) => n + 1);
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "Save failed");
+      }
+    });
+  }
+
   return (
     <div className="border-t border-zinc-200 bg-zinc-50 px-6 py-5">
-      <form action={updateTestimonialFromForm} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <input type="hidden" name="id" value={t.id} />
 
         {/* Row 1: review # + review id */}
@@ -206,9 +237,16 @@ function EditPanel({ t, onClose }: { t: ListRow; onClose: () => void }) {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="submit"
-            className="rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark"
+            disabled={pending}
+            className={`rounded-full px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white transition-colors ${
+              justSaved
+                ? "bg-blue-600 hover:bg-blue-600"
+                : pending
+                  ? "bg-zinc-400"
+                  : "bg-anamaya-green hover:bg-anamaya-green-dark"
+            } disabled:cursor-not-allowed`}
           >
-            Save
+            {justSaved ? "Saved!" : pending ? "Saving…" : "Save"}
           </button>
           <button
             type="button"
@@ -217,6 +255,9 @@ function EditPanel({ t, onClose }: { t: ListRow; onClose: () => void }) {
           >
             Cancel
           </button>
+          {errorMsg && (
+            <span className="text-xs text-red-600">{errorMsg}</span>
+          )}
           <div className="ml-auto">
             <DeleteButton id={t.id} />
           </div>
