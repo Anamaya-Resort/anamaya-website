@@ -1,6 +1,7 @@
 import type { VideoShowcaseContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
+import YouTubeFacade from "./shared/YouTubeFacade";
 
 /** Video on a solid background with optional titles above + below. */
 export default function VideoShowcaseBlock({ content }: { content: VideoShowcaseContent }) {
@@ -38,12 +39,9 @@ export default function VideoShowcaseBlock({ content }: { content: VideoShowcase
             />
           ) : youtubeId ? (
             <div className="aspect-video w-full bg-black">
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0&modestbranding=1&playsinline=1`}
-                title="Video"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                className="h-full w-full"
+              <YouTubeFacade
+                videoId={youtubeId}
+                title={content?.title_top ?? "Video"}
               />
             </div>
           ) : (
