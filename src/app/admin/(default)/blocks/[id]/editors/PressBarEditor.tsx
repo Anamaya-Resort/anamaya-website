@@ -566,49 +566,19 @@ export default function PressBarEditor({
                       }
                     }}
                   />
-                  <div className="grid grid-cols-3 gap-2">
+                  <label className="flex items-center gap-1.5 text-xs text-anamaya-charcoal/70">
                     <input
-                      type="number"
-                      className={inputCls}
-                      placeholder="width"
-                      value={logo.width}
-                      onChange={(e) => updateLogoDraft(i, { width: Number(e.target.value) || 0 })}
-                      onBlur={commit}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          commit();
-                        }
+                      type="checkbox"
+                      checked={!!logo.featured}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        patchLogos((arr) =>
+                          arr.map((l, ix) => (ix === i ? { ...l, featured: checked } : l)),
+                        );
                       }}
                     />
-                    <input
-                      type="number"
-                      className={inputCls}
-                      placeholder="height"
-                      value={logo.height}
-                      onChange={(e) => updateLogoDraft(i, { height: Number(e.target.value) || 0 })}
-                      onBlur={commit}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          commit();
-                        }
-                      }}
-                    />
-                    <label className="flex items-center gap-1.5 text-xs text-anamaya-charcoal/70">
-                      <input
-                        type="checkbox"
-                        checked={!!logo.featured}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          patchLogos((arr) =>
-                            arr.map((l, ix) => (ix === i ? { ...l, featured: checked } : l)),
-                          );
-                        }}
-                      />
-                      featured
-                    </label>
-                  </div>
+                    featured (2× height)
+                  </label>
                 </div>
 
                 <div className="flex flex-col gap-1">
