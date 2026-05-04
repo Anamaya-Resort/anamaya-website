@@ -230,6 +230,18 @@ export type PressBarContent = {
    * plus default padding. Default 200.
    */
   section_height_px?: number;
+  /** Left gutter weight in % (default 5). The bar fills the full
+   *  viewport width with this much weight as empty space on the left
+   *  before the logos start. Treated as a fr unit alongside the
+   *  per-logo weights, so non-100 totals normalise proportionally
+   *  rather than break the layout. */
+  left_gutter_pct?: number;
+  /** Right gutter weight in % (default 5). Same semantics as
+   *  left_gutter_pct, applied after the last logo. */
+  right_gutter_pct?: number;
+  /** Uniform horizontal gap between every column (gutters + logos),
+   *  in pixels. Default 16. Replaces the previous per-cell padding. */
+  gap_px?: number;
 };
 
 // ─── NEW HOMEPAGE BLOCKS ──────────────────────────────────────────────

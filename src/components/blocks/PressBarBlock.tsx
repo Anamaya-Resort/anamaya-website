@@ -39,63 +39,92 @@ export default function PressBarBlock({ content }: { content: PressBarContent })
   const headingCss = resolveBrandColor(heading_color) ?? fgDefault;
   const headingFontClass = heading_font === "body" ? "font-sans" : "font-heading";
 
-  const gridTemplateColumns =
-    column_widths_pct && column_widths_pct.length === logos.length
-      ? column_widths_pct.map((w) => `${w}%`).join(" ")
-      : `repeat(${logos.length}, minmax(0, 1fr))`;
+  // Layout weights: left gutter | logo1 ... logoN | right gutter.
+  // Each cell's % is treated as a fr unit so non-100 totals normalise
+  // proportionally — editors can mix any numbers without the grid
+  // breaking. Inter-cell spacing is a uniform pixel gap (no per-cell
+  // padding any more).
+  const lg = clamp(content.left_gutter_pct ?? 5, 0, 100);
+  const rg = clamp(content.right_gutter_pct ?? 5, 0, 100);
+  const gap = clamp(content.gap_px ?? 16, 0, 200);
+  const logoWeights = logos.map((logo, i) => {
+    if (
+      column_widths_pct &&
+      column_widths_pct.length === logos.length &&
+      Number.isFinite(column_widths_pct[i])
+    ) {
+      return column_widths_pct[i];
+    }
+    return logo.featured ? 2 : 1;
+  });
+  const gridTemplateColumns = [
+    `${lg}fr`,
+    ...logoWeights.map((w) => `${w}fr`),
+    `${rg}fr`,
+  ].join(" ");
 
   return (
     <section
-      className="flex w-full flex-col justify-center px-6 py-6"
+      className="flex w-full flex-col justify-center py-6"
       style={{ backgroundColor: bg, minHeight: sectionHeight }}
     >
-      {/* Full-bleed — no max-width cap; logos fill the available width */}
-      <div className="mx-auto w-full max-w-[1600px]">
-        <h2
-          className={`${headingFontClass} mb-6 text-center text-sm font-semibold uppercase tracking-[0.3em]`}
-          style={{ color: headingCss }}
-        >
-          {heading}
-        </h2>
-        <ul className="grid items-center" style={{ gridTemplateColumns }}>
-          {logos.map((logo, i) => {
-            const maxH = logo.featured ? featuredHeight : logoHeight;
-            const img = (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={logo.src}
-                alt={logo.name}
-                width={logo.width}
-                height={logo.height}
-                loading="lazy"
-                decoding="async"
-                className="max-w-full object-contain"
-                style={{ maxHeight: maxH, height: "auto" }}
-              />
-            );
-            return (
-              <li
-                key={`${logo.name}-${i}`}
-                className="flex items-center justify-center px-3 sm:px-4"
-              >
-                {logo.href ? (
-                  <Link
-                    href={logo.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Read the article in ${logo.name}`}
-                    className="block transition-opacity hover:opacity-80"
-                  >
-                    {img}
-                  </Link>
-                ) : (
-                  img
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      <h2
+        className={`${headingFontClass} mb-6 text-center text-sm font-semibold uppercase tracking-[0.3em]`}
+        style={{ color: headingCss }}
+      >
+        {heading}
+      </h2>
+      {/* Full-viewport-width grid: gutter + N logos + gutter. fr units
+          let the editor's percentages distribute proportionally without
+          summing to exactly 100. */}
+      <ul
+        className="grid w-full items-center"
+        style={{ gridTemplateColumns, columnGap: gap }}
+      >
+        <li aria-hidden="true" />
+        {logos.map((logo, i) => {
+          const maxH = logo.featured ? featuredHeight : logoHeight;
+          const img = (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logo.src}
+              alt={logo.name}
+              width={logo.width}
+              height={logo.height}
+              loading="lazy"
+              decoding="async"
+              className="max-w-full object-contain"
+              style={{ maxHeight: maxH, height: "auto" }}
+            />
+          );
+          return (
+            <li
+              key={`${logo.name}-${i}`}
+              className="flex items-center justify-center"
+            >
+              {logo.href ? (
+                <Link
+                  href={logo.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Read the article in ${logo.name}`}
+                  className="block transition-opacity hover:opacity-80"
+                >
+                  {img}
+                </Link>
+              ) : (
+                img
+              )}
+            </li>
+          );
+        })}
+        <li aria-hidden="true" />
+      </ul>
     </section>
   );
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  if (!Number.isFinite(n)) return lo;
+  return Math.max(lo, Math.min(hi, n));
 }

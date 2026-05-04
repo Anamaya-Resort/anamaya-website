@@ -38,6 +38,10 @@ function normalize(content: PressBarContent | null | undefined): PressBarContent
     heading_color: content?.heading_color ?? "",
     heading_font: content?.heading_font ?? "heading",
     logo_height_px: content?.logo_height_px ?? 48,
+    section_height_px: content?.section_height_px ?? 200,
+    left_gutter_pct: content?.left_gutter_pct ?? 5,
+    right_gutter_pct: content?.right_gutter_pct ?? 5,
+    gap_px: content?.gap_px ?? 16,
   };
 }
 
@@ -372,13 +376,85 @@ export default function PressBarEditor({
           </div>
         </div>
 
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+              Left gutter (weight, default 5)
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              className={inputCls}
+              value={draft.left_gutter_pct ?? 5}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setDraft((d) => ({ ...d, left_gutter_pct: Number.isFinite(v) ? v : 5 }));
+              }}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commit();
+                }
+              }}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+              Right gutter (weight, default 5)
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              className={inputCls}
+              value={draft.right_gutter_pct ?? 5}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setDraft((d) => ({ ...d, right_gutter_pct: Number.isFinite(v) ? v : 5 }));
+              }}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commit();
+                }
+              }}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+              Gap between logos (px)
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={200}
+              className={inputCls}
+              value={draft.gap_px ?? 16}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setDraft((d) => ({ ...d, gap_px: Number.isFinite(v) ? v : 16 }));
+              }}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commit();
+                }
+              }}
+            />
+          </label>
+        </div>
+
         <label className="mt-4 block">
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-            Column widths (% per logo, comma-separated, must sum to 100)
+            Per-logo column weights (comma-separated, fr units)
           </span>
           <input
             className={inputCls}
-            placeholder="e.g. 10,10,10,10,20,10,10,10,10"
+            placeholder="e.g. 1,1,1,1,2,1,1,1,1"
             value={(draft.column_widths_pct ?? []).join(",")}
             onChange={(e) => {
               const parts = e.target.value
@@ -396,7 +472,7 @@ export default function PressBarEditor({
             }}
           />
           <span className="mt-1 block text-[10px] text-anamaya-charcoal/50">
-            Leave blank to use equal column widths.
+            Leave blank for default weights (1 per logo, 2 for featured). Numbers don&apos;t need to sum to 100 — they&apos;re fr-unit weights.
           </span>
         </label>
 
