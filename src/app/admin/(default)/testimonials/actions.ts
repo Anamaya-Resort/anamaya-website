@@ -3,16 +3,34 @@
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 
+function num(v: FormDataEntryValue | null): number | null {
+  const s = String(v ?? "").trim();
+  if (s === "") return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+function str(v: FormDataEntryValue | null): string | null {
+  const s = String(v ?? "").trim();
+  return s === "" ? null : s;
+}
+
 export async function createTestimonial(formData: FormData) {
   const sb = supabaseServer();
+  const review_id = str(formData.get("review_id"));
+  if (!review_id) throw new Error("review_id is required");
+  const review_text = str(formData.get("review_text"));
+  if (!review_text) throw new Error("review_text is required");
+
   const { error } = await sb.from("testimonials").insert({
-    author: String(formData.get("author") ?? "").trim(),
-    source: (formData.get("source") as string) || null,
-    source_date: (formData.get("source_date") as string) || null,
-    rating: Number(formData.get("rating") || 5),
-    headline: (formData.get("headline") as string) || null,
-    quote: String(formData.get("quote") ?? "").trim(),
-    published: formData.get("published") === "on",
+    review_number: num(formData.get("review_number")),
+    review_id,
+    review_url:   str(formData.get("review_url")),
+    title:        str(formData.get("title")),
+    rating:       num(formData.get("rating")) ?? 5,
+    date_of_stay: str(formData.get("date_of_stay")),
+    trip_type:    str(formData.get("trip_type")),
+    review_text,
+    published:    formData.get("published") === "on",
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/testimonials");
@@ -20,16 +38,23 @@ export async function createTestimonial(formData: FormData) {
 
 export async function updateTestimonial(id: string, formData: FormData) {
   const sb = supabaseServer();
+  const review_id = str(formData.get("review_id"));
+  if (!review_id) throw new Error("review_id is required");
+  const review_text = str(formData.get("review_text"));
+  if (!review_text) throw new Error("review_text is required");
+
   const { error } = await sb
     .from("testimonials")
     .update({
-      author: String(formData.get("author") ?? "").trim(),
-      source: (formData.get("source") as string) || null,
-      source_date: (formData.get("source_date") as string) || null,
-      rating: Number(formData.get("rating") || 5),
-      headline: (formData.get("headline") as string) || null,
-      quote: String(formData.get("quote") ?? "").trim(),
-      published: formData.get("published") === "on",
+      review_number: num(formData.get("review_number")),
+      review_id,
+      review_url:   str(formData.get("review_url")),
+      title:        str(formData.get("title")),
+      rating:       num(formData.get("rating")) ?? 5,
+      date_of_stay: str(formData.get("date_of_stay")),
+      trip_type:    str(formData.get("trip_type")),
+      review_text,
+      published:    formData.get("published") === "on",
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
@@ -46,7 +71,6 @@ export async function deleteTestimonial(id: string) {
 
 export async function updateSetMembership(setId: string, testimonialIds: string[]) {
   const sb = supabaseServer();
-  // Wipe then re-insert preserving provided order
   const { error: delErr } = await sb
     .from("testimonial_set_items")
     .delete()
@@ -65,6 +89,5 @@ export async function updateSetMembership(setId: string, testimonialIds: string[
 
   revalidatePath("/admin/testimonials");
   revalidatePath(`/admin/testimonials/sets/${setId}`);
-  // Invalidate all public pages that pull testimonial sets
   revalidatePath("/", "layout");
 }

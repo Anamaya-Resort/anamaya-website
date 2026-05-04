@@ -1,15 +1,22 @@
 import "server-only";
 import { supabaseServerOrNull } from "./supabase-server";
 
+/**
+ * TripAdvisor-sourced testimonial. Schema matches the columns in the
+ * source spreadsheet (Trip Advisor - Simple Reviews 1-150.xlsx) — no
+ * reviewer name is stored, by design. Reviews are Anamaya-as-a-whole;
+ * we don't try to attach them to specific programs.
+ */
 export type Testimonial = {
   id: string;
-  author: string;
-  source: string | null;
-  source_date: string | null;
-  rating: number;
-  headline: string | null;
-  quote: string;
-  avatar_url: string | null;
+  review_number: number | null;
+  review_id: string;
+  review_url: string | null;
+  title: string | null;
+  rating: number;          // always 5 today; kept for honest display next to TripAdvisor's bubbles
+  date_of_stay: string | null;
+  trip_type: string | null;
+  review_text: string;
 };
 
 export type TestimonialSet = {
@@ -33,8 +40,6 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
     .eq("slug", slug)
     .maybeSingle();
   if (setErr) {
-    // Most common cause: migration 0004 hasn't run yet. Return null so the
-    // carousel renders its empty state instead of crashing the page.
     // eslint-disable-next-line no-console
     console.warn("[testimonials] fetch failed:", setErr.message);
     return null;
@@ -43,7 +48,9 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
 
   const { data: items, error: itemsErr } = await sb
     .from("testimonial_set_items")
-    .select("sort_order, testimonials(id, author, source, source_date, rating, headline, quote, avatar_url, published)")
+    .select(
+      "sort_order, testimonials(id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, review_text, published)",
+    )
     .eq("set_id", set.id)
     .order("sort_order", { ascending: true });
   if (itemsErr) {
@@ -53,17 +60,18 @@ export async function getTestimonialSet(slug: string): Promise<TestimonialSet | 
   }
 
   const testimonials: Testimonial[] = (items ?? [])
-    .map((i: any) => i.testimonials)
-    .filter((t: any) => t && t.published)
-    .map((t: any) => ({
-      id: t.id,
-      author: t.author,
-      source: t.source,
-      source_date: t.source_date,
-      rating: t.rating ?? 5,
-      headline: t.headline,
-      quote: t.quote,
-      avatar_url: t.avatar_url,
+    .map((i: { testimonials: unknown }) => i.testimonials as Record<string, unknown>)
+    .filter((t): t is Record<string, unknown> => Boolean(t) && t.published === true)
+    .map((t) => ({
+      id: t.id as string,
+      review_number: (t.review_number as number | null) ?? null,
+      review_id: t.review_id as string,
+      review_url: (t.review_url as string | null) ?? null,
+      title: (t.title as string | null) ?? null,
+      rating: (t.rating as number | null) ?? 5,
+      date_of_stay: (t.date_of_stay as string | null) ?? null,
+      trip_type: (t.trip_type as string | null) ?? null,
+      review_text: t.review_text as string,
     }));
 
   return {

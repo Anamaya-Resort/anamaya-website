@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { supabaseServer } from "@/lib/supabase-server";
 import { createTestimonial, deleteTestimonial } from "./actions";
 
@@ -9,8 +10,10 @@ export default async function TestimonialsAdmin() {
   const [{ data: testimonials }, { data: sets }, { count: total }] = await Promise.all([
     sb
       .from("testimonials")
-      .select("id, author, source, source_date, headline, quote, rating, published, updated_at")
-      .order("updated_at", { ascending: false })
+      .select(
+        "id, review_number, review_id, review_url, title, rating, date_of_stay, trip_type, review_text, published, updated_at",
+      )
+      .order("review_number", { ascending: true, nullsFirst: false })
       .limit(500),
     sb
       .from("testimonial_sets")
@@ -21,18 +24,28 @@ export default async function TestimonialsAdmin() {
 
   return (
     <div className="space-y-10">
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-anamaya-charcoal">Testimonials</h1>
-          <p className="mt-1 text-sm text-anamaya-charcoal/70">
-            {total ?? 0} total · assign them into sets below, and those sets appear on pages.
-          </p>
+      <header className="flex items-start justify-between gap-6">
+        <div className="flex items-center gap-5">
+          <Image
+            src="/img/tripadvisor-5-stars.webp"
+            alt="TripAdvisor 5-star reviews"
+            width={120}
+            height={48}
+            className="h-12 w-auto"
+            priority
+          />
+          <div>
+            <h1 className="text-2xl font-semibold text-anamaya-charcoal">Testimonials</h1>
+            <p className="mt-1 text-sm text-anamaya-charcoal/70">
+              {total ?? 0} reviews imported from TripAdvisor · assign them into categories below.
+            </p>
+          </div>
         </div>
       </header>
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
-          Sets
+          Categories
         </h2>
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {(sets ?? []).map((s) => (
@@ -51,25 +64,32 @@ export default async function TestimonialsAdmin() {
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
-          Add a new testimonial
+          Add a new TripAdvisor review
         </h2>
         <form
           action={createTestimonial}
           className="grid grid-cols-1 gap-3 rounded-lg bg-white p-5 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2"
         >
-          <Input name="author"      label="Author"         required />
-          <Input name="source"      label="Source"         placeholder="TripAdvisor, Google, …" />
-          <Input name="source_date" label="Date"           placeholder="November 2011" />
-          <Input name="rating"      label="Rating (1-5)"   type="number" min={1} max={5} defaultValue={5} />
-          <Input name="headline"    label="Headline"       className="sm:col-span-2" placeholder="Treasure in Paradise…" />
+          <Input name="review_number" label="Review #"   type="number" placeholder="151" />
+          <Input name="review_id"     label="Review ID"  required placeholder="r1052702616" />
+          <Input
+            name="review_url"
+            label="Review URL"
+            className="sm:col-span-2"
+            placeholder="https://www.tripadvisor.com/ShowUserReviews-…"
+          />
+          <Input name="title"        label="Title"        className="sm:col-span-2" placeholder="Simply Exceptional" />
+          <Input name="date_of_stay" label="Date of stay" placeholder="March 2026" />
+          <Input name="trip_type"    label="Trip type"    placeholder="Traveled solo" />
+          <Input name="rating"       label="Rating (1-5)" type="number" min={1} max={5} defaultValue={5} />
           <div className="sm:col-span-2">
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
-              Quote
+              Review text
             </label>
             <textarea
-              name="quote"
+              name="review_text"
               required
-              rows={4}
+              rows={5}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
             />
           </div>
@@ -81,22 +101,22 @@ export default async function TestimonialsAdmin() {
             type="submit"
             className="justify-self-start rounded-full bg-anamaya-green px-6 py-2 text-sm font-semibold uppercase tracking-wider text-white hover:bg-anamaya-green-dark sm:col-span-2"
           >
-            Add Testimonial
+            Add review
           </button>
         </form>
       </section>
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-anamaya-olive-dark">
-          All testimonials ({testimonials?.length ?? 0})
+          All reviews ({testimonials?.length ?? 0})
         </h2>
         <div className="overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-zinc-200">
           <table className="min-w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wider text-anamaya-charcoal/60">
               <tr>
-                <th className="px-4 py-3">Author</th>
-                <th className="px-4 py-3">Headline</th>
-                <th className="px-4 py-3">Source</th>
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Date / Trip</th>
                 <th className="px-4 py-3">Rating</th>
                 <th className="px-4 py-3">Published</th>
                 <th className="px-4 py-3"></th>
@@ -105,10 +125,14 @@ export default async function TestimonialsAdmin() {
             <tbody className="divide-y divide-zinc-100">
               {(testimonials ?? []).map((t) => (
                 <tr key={t.id}>
-                  <td className="px-4 py-3 font-medium">{t.author}</td>
-                  <td className="px-4 py-3 text-anamaya-charcoal/70">{t.headline ?? "—"}</td>
-                  <td className="px-4 py-3 text-anamaya-charcoal/70">
-                    {[t.source, t.source_date].filter(Boolean).join(" · ") || "—"}
+                  <td className="px-4 py-3 font-mono text-xs text-anamaya-charcoal/70">
+                    {t.review_number ?? "—"}
+                  </td>
+                  <td className="max-w-md truncate px-4 py-3 font-medium">
+                    {t.title ?? <span className="text-anamaya-charcoal/40">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-anamaya-charcoal/70">
+                    {[t.date_of_stay, t.trip_type].filter(Boolean).join(" · ") || "—"}
                   </td>
                   <td className="px-4 py-3">{t.rating}/5</td>
                   <td className="px-4 py-3">{t.published ? "Yes" : "—"}</td>

@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TripAdvisorRating } from "./TripAdvisorRating";
 
 type Testimonial = {
   id: string;
-  author: string;
-  source: string | null;
-  source_date: string | null;
+  review_id: string;
+  review_url: string | null;
+  title: string | null;
   rating: number;
-  headline: string | null;
-  quote: string;
+  date_of_stay: string | null;
+  trip_type: string | null;
+  review_text: string;
 };
 
 type Props = {
@@ -45,7 +45,7 @@ export default function TestimonialCarousel({ testimonials, autoplayMs = 6000 }:
       onMouseLeave={() => setPaused(false)}
     >
       {/* Fader: stack all slides, show the active one */}
-      <div className="relative min-h-[360px] sm:min-h-[320px]">
+      <div className="relative min-h-[400px] sm:min-h-[360px]">
         {testimonials.map((t, i) => (
           <figure
             key={t.id}
@@ -54,22 +54,40 @@ export default function TestimonialCarousel({ testimonials, autoplayMs = 6000 }:
               i === idx ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
           >
-            {t.headline && (
+            {t.title && (
               <h3 className="mb-6 text-xl font-semibold leading-snug text-anamaya-olive-dark sm:text-2xl">
-                &ldquo;{t.headline}&rdquo;
+                &ldquo;{t.title}&rdquo;
               </h3>
             )}
             <blockquote className="text-balance text-base italic leading-relaxed text-anamaya-charcoal/80 sm:text-lg">
-              &ldquo;{t.quote}&rdquo;
+              &ldquo;{t.review_text}&rdquo;
             </blockquote>
             <figcaption className="mt-6 text-sm text-anamaya-charcoal/70">
-              — <span className="font-medium">{t.author}</span>
-              {t.source_date && <span className="text-anamaya-charcoal/50">, {t.source_date}</span>}
+              {[t.date_of_stay, t.trip_type].filter(Boolean).join(" · ") || null}
+              {t.review_url && (
+                <>
+                  {" "}
+                  <a
+                    href={t.review_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-anamaya-green underline-offset-2 hover:underline"
+                  >
+                    View on TripAdvisor ↗
+                  </a>
+                </>
+              )}
             </figcaption>
             <div className="mt-4">
-              <TripAdvisorRating
-                rating={t.rating ?? 5}
-                showLogo={(t.source ?? "").toLowerCase().includes("trip")}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/img/tripadvisor-5-stars.webp"
+                alt={`${t.rating} out of 5 stars on TripAdvisor`}
+                width={120}
+                height={20}
+                loading="lazy"
+                decoding="async"
+                className="h-5 w-auto"
               />
             </div>
           </figure>
