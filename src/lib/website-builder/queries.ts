@@ -34,6 +34,10 @@ export type ListResult = {
   statusCounts: ListStatusCounts;
   page: number;
   perPage: number;
+  /** Set when the underlying query failed — used by the list page to
+   *  show an inline error banner instead of silently rendering "no
+   *  items found." */
+  error?: string;
 };
 
 export type ListOpts = {
@@ -63,12 +67,14 @@ export async function listByPostType(
   const offset = (page - 1) * perPage;
   const status = opts.status ?? "all";
 
+  // Use `select("*")` instead of an explicit column list so the query
+  // doesn't fail with a 400 when a column is missing from PostgREST's
+  // schema cache (e.g. shortly after a migration adds a new column
+  // like cms_template_id). The previous explicit list silently zeroed
+  // out the entire list page whenever the cache was a step behind.
   let query = sb
     .from("url_inventory")
-    .select(
-      "id, title, url_path, wp_status, date_published, date_modified, cms_template_id, author_id",
-      { count: "exact" },
-    )
+    .select("*", { count: "exact" })
     .eq("source_site", SOURCE_SITE)
     .eq("post_type", postType)
     .eq("url_kind", "content");
@@ -93,11 +99,33 @@ export async function listByPostType(
     .range(offset, offset + perPage - 1);
 
   const { data, count, error } = await query;
-  if (error || !data) return { ...EMPTY_RESULT, page, perPage };
+  if (error || !data) {
+    console.error("[website list] url_inventory select failed:", error);
+    return {
+      ...EMPTY_RESULT,
+      page,
+      perPage,
+      error: error?.message ?? "url_inventory query returned no data",
+    };
+  }
+
+  // `data` is now Record<string, unknown> because we use select("*").
+  // Cast at the row boundary so the rest of the function reads as
+  // typed property access.
+  const rawRows = data as unknown as Array<{
+    id: string;
+    title?: string | null;
+    url_path?: string | null;
+    wp_status?: string | null;
+    date_published?: string | null;
+    date_modified?: string | null;
+    cms_template_id?: string | null;
+    author_id?: string | null;
+  }>;
 
   const authorIds = [
     ...new Set(
-      data.map((r) => r.author_id).filter((x): x is string => Boolean(x)),
+      rawRows.map((r) => r.author_id).filter((x): x is string => Boolean(x)),
     ),
   ];
   const authorMap = new Map<string, { display_name: string; slug: string }>();
@@ -111,7 +139,7 @@ export async function listByPostType(
     }
   }
 
-  const ids = data.map((r) => r.id);
+  const ids = rawRows.map((r) => r.id);
   const termsByPost = new Map<
     string,
     { taxonomy: string; name: string; slug: string }[]
@@ -142,13 +170,13 @@ export async function listByPostType(
 
   const statusCounts = await getStatusCountsForType(postType, opts.search);
 
-  const rows: ListRow[] = data.map((r) => ({
+  const rows: ListRow[] = rawRows.map((r) => ({
     id: r.id,
     title: decodeEntities(r.title ?? "(no title)"),
-    url_path: r.url_path,
-    wp_status: r.wp_status,
-    date_published: r.date_published,
-    date_modified: r.date_modified,
+    url_path: r.url_path ?? "",
+    wp_status: r.wp_status ?? null,
+    date_published: r.date_published ?? null,
+    date_modified: r.date_modified ?? null,
     author: r.author_id ? authorMap.get(r.author_id) ?? null : null,
     terms: termsByPost.get(r.id) ?? [],
     has_template: !!r.cms_template_id,

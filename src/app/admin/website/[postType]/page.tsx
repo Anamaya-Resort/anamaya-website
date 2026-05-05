@@ -47,6 +47,12 @@ export default async function PostTypeListPage({
           label: `Add New ${pt.label}`,
         }}
       />
+      {result.error && (
+        <div className="mb-3 rounded-sm border border-red-300 bg-red-50 px-3 py-2 text-[13px] text-red-800">
+          <strong>Couldn&rsquo;t load {pt.pluralLabel.toLowerCase()}:</strong>{" "}
+          <code className="break-all font-mono text-[12px]">{result.error}</code>
+        </div>
+      )}
       <ListShell
         pt={pt}
         result={result}
