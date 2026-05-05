@@ -325,6 +325,11 @@ function SlidePanel({
             </span>
           )}
         </div>
+        <p className="mt-1.5 text-[11px] text-anamaya-charcoal/55">
+          Recommended: <strong>2400 × 1350 px</strong> (16:9). Images are
+          cropped from the centre to fill the slideshow area, so keep the
+          subject in the middle of the frame.
+        </p>
         <div className="mt-2 flex items-center gap-3">
           <ImageUploadButton
             value={slide.image_url}
