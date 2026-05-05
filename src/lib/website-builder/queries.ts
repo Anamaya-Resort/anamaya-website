@@ -192,21 +192,37 @@ async function getStatusCountsForType(
   return counts;
 }
 
-/** Counts per post type for the Dashboard "At a Glance" widget. */
-export async function getDashboardCounts(): Promise<Record<string, number>> {
+/** Counts per post type for the Dashboard "At a Glance" widget.
+ *
+ *  `total`   = all non-trash content items of that type
+ *  `matched` = items that have a CMS template assigned
+ *              (cms_template_id is not null) — i.e. items the editor
+ *              has reviewed and approved a layout for. The dashboard
+ *              renders these as "matched/total" so the editor can see
+ *              how much of each type still needs to be paired with a
+ *              template.
+ */
+export type DashboardCount = { matched: number; total: number };
+export async function getDashboardCounts(): Promise<Record<string, DashboardCount>> {
   const sb = supabaseServerOrNull();
   if (!sb) return {};
-  const counts: Record<string, number> = {};
+  const counts: Record<string, DashboardCount> = {};
   await Promise.all(
     POST_TYPES.map(async (pt) => {
-      const { count } = await sb
-        .from("url_inventory")
-        .select("id", { count: "exact", head: true })
-        .eq("source_site", SOURCE_SITE)
-        .eq("post_type", pt.postType)
-        .eq("url_kind", "content")
-        .in("wp_status", NON_TRASH_STATUSES);
-      counts[pt.slug] = count ?? 0;
+      const baseQuery = () =>
+        sb
+          .from("url_inventory")
+          .select("id", { count: "exact", head: true })
+          .eq("source_site", SOURCE_SITE)
+          .eq("post_type", pt.postType)
+          .eq("url_kind", "content")
+          .in("wp_status", NON_TRASH_STATUSES);
+
+      const [{ count: total }, { count: matched }] = await Promise.all([
+        baseQuery(),
+        baseQuery().not("cms_template_id", "is", null),
+      ]);
+      counts[pt.slug] = { matched: matched ?? 0, total: total ?? 0 };
     }),
   );
   return counts;
