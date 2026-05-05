@@ -20,7 +20,7 @@ export default async function WebsiteBuilderDashboard() {
       <div className="rounded-sm border border-[#c3c4c7] bg-white">
         <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-4 py-2.5">
           <h2 className="text-[14px] font-semibold text-[#1d2327]">
-            At a Glance
+            Conversions
           </h2>
         </div>
         <p className="px-4 pt-3 text-[12px] text-[#50575e]">
