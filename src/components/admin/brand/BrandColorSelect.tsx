@@ -22,6 +22,11 @@ type Props = {
    *  by side on a single row. Default false (toggle on top, swatches
    *  below — the long-standing layout). */
   horizontal?: boolean;
+  /** Extra fixed-hex swatches rendered BEFORE the brand swatches. Useful
+   *  for always-available picks like pure black/white that aren't part
+   *  of the brand palette. Selecting one stores the raw hex (just like
+   *  picking a value in Custom mode). */
+  extraSwatches?: { hex: string; label: string }[];
 };
 
 /**
@@ -38,6 +43,7 @@ export default function BrandColorSelect({
   allowAuto = false,
   includeStatus = false,
   horizontal = false,
+  extraSwatches,
 }: Props) {
   const isBrandKey = !!value && value in COLOR_KEY_TO_CSS_VAR;
   const initialMode: "brand" | "custom" =
@@ -91,6 +97,26 @@ export default function BrandColorSelect({
               Auto
             </button>
           )}
+          {(extraSwatches ?? []).map((s) => {
+            const selected =
+              !!value && value.toLowerCase() === s.hex.toLowerCase();
+            return (
+              <button
+                key={s.hex}
+                type="button"
+                onClick={() => onChange(s.hex)}
+                title={`${s.label} — ${s.hex}`}
+                className={`group relative h-9 w-9 overflow-hidden rounded-md border transition-all ${
+                  selected
+                    ? "ring-2 ring-anamaya-green ring-offset-1"
+                    : "border-zinc-300 hover:scale-110"
+                }`}
+                style={{ backgroundColor: s.hex }}
+                aria-label={s.label}
+                aria-pressed={selected}
+              />
+            );
+          })}
           {allKeys.map((key) => {
             const hex = brandTokens.light[key];
             if (!hex) return null;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import BlockEditorChrome, {
   type BlockEditorVariant,
   type BlockEditorState,
@@ -16,6 +17,14 @@ import {
   SLIDESHOW_FONTS,
   getSlideshowFont,
 } from "@/lib/slideshow-fonts";
+
+// Always-available swatches prepended before the brand colours so
+// editors can pick pure black / pure white in one click. Same hex
+// flow as the Custom mode, just easier to find.
+const FIXED_TEXT_SWATCHES = [
+  { hex: "#000000", label: "Black" },
+  { hex: "#ffffff", label: "White" },
+];
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -63,24 +72,30 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
   function patchSlides(fn: (arr: ImageSlideshowSlide[]) => ImageSlideshowSlide[]) {
     setDraft((d) => ({ ...d, slides: fn(d.slides ?? []) }));
   }
-  function addSlide() {
-    patchSlides((arr) => [
-      ...arr,
-      {
-        image_url: "",
-        image_alt: "",
-        text: "",
-        text_font: DEFAULT_SLIDESHOW_FONT_ID,
-        text_size_px: 64,
-        text_color: "",
-        text_align: "center",
-        text_position: "center",
-        text_bold: false,
-        text_italic: false,
-        text_stroke_color: "",
-        text_stroke_width_px: 0,
-      },
-    ]);
+  function makeBlankSlide(): ImageSlideshowSlide {
+    return {
+      image_url: "",
+      image_alt: "",
+      text: "",
+      text_font: DEFAULT_SLIDESHOW_FONT_ID,
+      text_size_px: 64,
+      text_color: "",
+      text_align: "center",
+      text_position: "center",
+      text_bold: false,
+      text_italic: false,
+      text_stroke_color: "",
+      text_stroke_width_px: 0,
+    };
+  }
+  /** Insert a new blank slide at the given index (0 = before first,
+   *  arr.length = after last, anything in between = between rows). */
+  function addSlideAt(index: number) {
+    patchSlides((arr) => {
+      const copy = [...arr];
+      copy.splice(Math.max(0, Math.min(index, copy.length)), 0, makeBlankSlide());
+      return copy;
+    });
   }
   function removeSlide(i: number) {
     patchSlides((arr) => arr.filter((_, ix) => ix !== i));
@@ -106,15 +121,12 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
             <span className={labelCls}>Section height (vh)</span>
-            <input
-              type="number"
+            <NumberInput
               min={10}
               max={100}
               className={inputCls}
               value={draft.height_vh ?? 80}
-              onChange={(e) =>
-                patch({ height_vh: Number(e.target.value) || 80 })
-              }
+              onChange={(n) => patch({ height_vh: n })}
             />
           </label>
           <label className="block">
@@ -132,48 +144,34 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
           </label>
           <label className="block">
             <span className={labelCls}>Display seconds (per slide)</span>
-            <input
-              type="number"
+            <NumberInput
               min={0.5}
               max={60}
               step={0.5}
               className={inputCls}
               value={draft.display_seconds ?? 4}
-              onChange={(e) =>
-                patch({ display_seconds: Number(e.target.value) || 4 })
-              }
+              onChange={(n) => patch({ display_seconds: n })}
             />
           </label>
           <label className="block">
             <span className={labelCls}>Crossfade seconds</span>
-            <input
-              type="number"
+            <NumberInput
               min={0}
               max={10}
               step={0.25}
               className={inputCls}
               value={draft.fade_seconds ?? 1.5}
-              onChange={(e) =>
-                patch({ fade_seconds: Number(e.target.value) || 0 })
-              }
+              onChange={(n) => patch({ fade_seconds: n })}
             />
           </label>
           <label className="block">
             <span className={labelCls}>Dark overlay opacity (0–100)</span>
-            <input
-              type="number"
+            <NumberInput
               min={0}
               max={100}
               className={inputCls}
               value={draft.overlay_opacity ?? 0}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                patch({
-                  overlay_opacity: Number.isFinite(n)
-                    ? Math.max(0, Math.min(100, n))
-                    : 0,
-                });
-              }}
+              onChange={(n) => patch({ overlay_opacity: n })}
             />
           </label>
           <label className="block">
@@ -189,28 +187,39 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
       </section>
 
       {/* Slides — one panel per slide, with image at top + all text-overlay
-          controls below it. */}
+          controls below it. Insertion `+` buttons sit on the right gutter
+          at every junction (above the first slide, between each pair,
+          and below the last slide), matching the template editor's
+          insert pattern. */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-anamaya-charcoal">
-            Slides ({slides.length})
-          </h3>
-          <button
-            type="button"
-            onClick={addSlide}
-            className="rounded-full bg-anamaya-olive-dark px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white hover:opacity-90"
-          >
-            + Add slide
-          </button>
-        </div>
+        <h3 className="mb-3 text-sm font-semibold text-anamaya-charcoal">
+          Slides ({slides.length})
+        </h3>
         {slides.length === 0 ? (
-          <p className="rounded-md border border-dashed border-zinc-300 p-6 text-center text-sm italic text-anamaya-charcoal/60">
-            No slides yet. Click &ldquo;+ Add slide&rdquo; to upload your first image.
-          </p>
+          <div className="relative rounded-md border border-dashed border-zinc-300 p-6 text-center">
+            <p className="text-sm italic text-anamaya-charcoal/60">
+              No slides yet — click the &ldquo;+&rdquo; on the right to add the first one.
+            </p>
+            <InsertButton
+              title="Add the first slide"
+              onClick={() => addSlideAt(0)}
+              position="middle"
+            />
+          </div>
         ) : (
           <ul className="space-y-4">
             {slides.map((s, i) => (
-              <li key={i}>
+              <li key={i} className="relative">
+                {/* Top-edge insert: only on the very first slide so the
+                    chain of "+ between slides" buttons stays one per
+                    junction. */}
+                {i === 0 && (
+                  <InsertButton
+                    title="Add a slide above"
+                    onClick={() => addSlideAt(0)}
+                    position="top"
+                  />
+                )}
                 <SlidePanel
                   index={i}
                   total={slides.length}
@@ -220,6 +229,18 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
                   onMoveUp={() => moveSlide(i, -1)}
                   onMoveDown={() => moveSlide(i, +1)}
                   onRemove={() => removeSlide(i)}
+                />
+                {/* Bottom-edge insert: rendered for every slide.
+                    Inserts a new slide AFTER this one, so the last
+                    slide's button doubles as "add at end." */}
+                <InsertButton
+                  title={
+                    i === slides.length - 1
+                      ? "Add a slide at the end"
+                      : "Add a slide here"
+                  }
+                  onClick={() => addSlideAt(i + 1)}
+                  position="bottom"
                 />
               </li>
             ))}
@@ -361,15 +382,12 @@ function SlidePanel({
         </label>
         <label className="block">
           <span className={labelCls}>Font size (px)</span>
-          <input
-            type="number"
+          <NumberInput
             min={10}
             max={240}
             className={inputCls}
             value={slide.text_size_px ?? 64}
-            onChange={(e) =>
-              onUpdate({ text_size_px: Number(e.target.value) || 64 })
-            }
+            onChange={(n) => onUpdate({ text_size_px: n })}
           />
         </label>
       </div>
@@ -417,7 +435,8 @@ function SlidePanel({
         </div>
       </div>
 
-      {/* Text color — Brand/Custom toggle + swatches on a single row. */}
+      {/* Text color — Brand/Custom toggle + swatches on a single row,
+          with Black/White prepended as the first picks. */}
       <div className="mb-4">
         <span className={labelCls}>Text color</span>
         <BrandColorSelect
@@ -426,6 +445,7 @@ function SlidePanel({
           brandTokens={brandTokens}
           horizontal
           allowAuto
+          extraSwatches={FIXED_TEXT_SWATCHES}
         />
       </div>
 
@@ -435,20 +455,12 @@ function SlidePanel({
         <div className="flex flex-wrap items-center gap-4 rounded-md border border-zinc-200 bg-white p-3">
           <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
             Thickness
-            <input
-              type="number"
+            <NumberInput
               min={0}
               max={20}
               className="w-16 rounded-md border border-zinc-300 px-2 py-1 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
               value={slide.text_stroke_width_px ?? 0}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                onUpdate({
-                  text_stroke_width_px: Number.isFinite(n)
-                    ? Math.max(0, Math.min(20, n))
-                    : 0,
-                });
-              }}
+              onChange={(n) => onUpdate({ text_stroke_width_px: n })}
             />
             <span className="font-mono text-[10px] text-anamaya-charcoal/50">px</span>
           </label>
@@ -458,10 +470,88 @@ function SlidePanel({
             onChange={(v) => onUpdate({ text_stroke_color: v })}
             brandTokens={brandTokens}
             horizontal
+            extraSwatches={FIXED_TEXT_SWATCHES}
           />
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Number input that allows free typing — including transient empty
+ * states while editing — without snapping to a fallback every
+ * keystroke. The previous inline `Number(e.target.value) || N` pattern
+ * fought the user: backspacing to clear the field instantly forced
+ * the value back to the fallback, which made it impossible to type a
+ * fresh number.
+ *
+ * Holds a string locally; commits to the parent only when the typed
+ * text parses as a finite number. On blur it clamps to min/max and
+ * restores the last valid value if the field was left empty.
+ */
+function NumberInput({
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  className,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  className?: string;
+}) {
+  const [text, setText] = useState<string>(String(value));
+  const lastValid = useRef<number>(value);
+
+  // Sync from parent when the prop changes externally (e.g. another
+  // edit elsewhere in the form, or an undo).
+  useEffect(() => {
+    if (lastValid.current !== value) {
+      setText(String(value));
+      lastValid.current = value;
+    }
+  }, [value]);
+
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      step={step}
+      className={className}
+      value={text}
+      onChange={(e) => {
+        const v = e.target.value;
+        setText(v);
+        if (v === "") return; // allow empty mid-edit
+        const n = Number(v);
+        if (Number.isFinite(n)) {
+          lastValid.current = n;
+          onChange(n);
+        }
+      }}
+      onBlur={() => {
+        const n = Number(text);
+        if (!Number.isFinite(n)) {
+          // Restore the last valid number if the field was emptied.
+          setText(String(lastValid.current));
+          return;
+        }
+        let clamped = n;
+        if (typeof min === "number" && clamped < min) clamped = min;
+        if (typeof max === "number" && clamped > max) clamped = max;
+        if (clamped !== n) {
+          setText(String(clamped));
+        }
+        lastValid.current = clamped;
+        onChange(clamped);
+      }}
+    />
   );
 }
 
@@ -489,6 +579,60 @@ function ToggleButton({
       }`}
     >
       {label}
+    </button>
+  );
+}
+
+/**
+ * Round "+" insert handle anchored to the right gutter of a slide
+ * row, mirroring the template editor's between-rows + button.
+ *   position="top"     → centred on the top edge of the parent
+ *   position="bottom"  → centred on the bottom edge of the parent
+ *   position="middle"  → vertically centred (used for the empty state)
+ * The parent element MUST have `position: relative`.
+ */
+function InsertButton({
+  title,
+  onClick,
+  position,
+}: {
+  title: string;
+  onClick: () => void;
+  position: "top" | "bottom" | "middle";
+}) {
+  const topStyle =
+    position === "top"
+      ? "0%"
+      : position === "bottom"
+        ? "100%"
+        : "50%";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className="absolute z-10 flex h-7 w-7 items-center justify-center rounded-md bg-anamaya-charcoal text-white shadow-md transition-colors hover:bg-black"
+      style={{
+        left: "100%",
+        top: topStyle,
+        transform: "translateY(-50%)",
+        marginLeft: 12,
+      }}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={3}
+        strokeLinecap="round"
+        aria-hidden="true"
+      >
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
     </button>
   );
 }
