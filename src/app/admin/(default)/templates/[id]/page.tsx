@@ -223,17 +223,22 @@ export default async function EditTemplate({
       style={{ paddingLeft: "10vw", paddingRight: "10vw" }}
     >
       <header className="relative mb-6">
-        <Link
-          href="/admin/templates"
-          className="text-xs uppercase tracking-wider text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
-        >
-          ← Templates
-        </Link>
-        <TemplateHeaderEditor
-          id={template.id}
-          name={template.name}
-          slug={template.slug}
-        />
+        <div>
+          <Link
+            href="/admin/templates"
+            className="text-xs uppercase tracking-wider text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
+          >
+            ← Templates
+          </Link>
+        </div>
+        {defaultVariant && (
+          <TemplateHeaderEditor
+            templateId={template.id}
+            templateName={template.name}
+            variantId={defaultVariant.id}
+            variantSlug={defaultVariant.slug}
+          />
+        )}
         {/* Live Preview button hangs into the right gutter, anchored
             roughly to the slug row's Y. */}
         <div

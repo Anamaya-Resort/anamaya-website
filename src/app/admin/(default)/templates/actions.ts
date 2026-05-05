@@ -52,6 +52,33 @@ export async function updateTemplateSlugFromForm(formData: FormData) {
   await updateTemplateSlug(id, slug);
 }
 
+/** Update a single variant's slug. Used by the inline editor on
+ *  /admin/templates/<id> where we surface the variant slug as the
+ *  template's working slug (e.g. home_v1). The variant slug is
+ *  unique within its template, so collisions on the same template
+ *  are rejected by the DB. */
+export async function updateVariantSlugFromForm(formData: FormData) {
+  const variantId = String(formData.get("variant_id") ?? "").trim();
+  const templateId = String(formData.get("template_id") ?? "").trim();
+  const slug = String(formData.get("slug") ?? "").trim();
+  if (!variantId || !slug) return;
+  const cleaned = slug
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_-]/gi, "")
+    .toLowerCase();
+  if (!cleaned) throw new Error("Slug cannot be empty");
+  const sb = supabaseServer();
+  const { error } = await sb
+    .from("page_template_variants")
+    .update({ slug: cleaned })
+    .eq("id", variantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/templates");
+  if (templateId) revalidatePath(`/admin/templates/${templateId}`);
+  revalidatePath("/", "layout");
+}
+
 /**
  * Delete a template. Cascades to variants and variant_blocks via the FK
  * definitions in migration 0013. Block rows themselves are untouched —

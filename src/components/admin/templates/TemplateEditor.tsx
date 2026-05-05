@@ -149,7 +149,9 @@ export default function TemplateEditor({
 
   return (
     <div>
-      <VariantHeader variant={variant} />
+      {/* Variant header removed: the slug + name are surfaced inline at
+          the top of the page now (TemplateHeaderEditor), so repeating
+          them here was redundant + confusing. */}
 
       {rows.length === 0 && (
         <div className="rounded-md border-2 border-dashed border-zinc-300 p-8 text-center text-sm italic text-anamaya-charcoal/60">
@@ -216,19 +218,6 @@ export default function TemplateEditor({
           onClose={() => setInserterAt(null)}
         />
       )}
-    </div>
-  );
-}
-
-function VariantHeader({ variant }: { variant: NonNullable<Variant> }) {
-  return (
-    <div className="mb-3 flex items-center justify-between rounded-md bg-zinc-50 px-4 py-2 text-xs text-anamaya-charcoal/70 ring-1 ring-zinc-200">
-      <div>
-        <span className="font-semibold">{variant.name}</span>
-        <code className="ml-2 rounded bg-white px-1.5 py-0.5 font-mono text-[10px] ring-1 ring-zinc-200">
-          {variant.slug}
-        </code>
-      </div>
     </div>
   );
 }
