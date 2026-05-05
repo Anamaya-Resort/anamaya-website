@@ -92,104 +92,9 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
 
   return (
     <div className="space-y-6">
-      {/* Slides */}
-      <section className={sectionCls}>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className={sectionTitleCls}>Slides ({slides.length})</h3>
-          <button
-            type="button"
-            onClick={addSlide}
-            className="rounded-full bg-anamaya-olive-dark px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white hover:opacity-90"
-          >
-            + Add slide
-          </button>
-        </div>
-        {slides.length === 0 ? (
-          <p className="rounded-md border border-dashed border-zinc-300 p-4 text-center text-sm italic text-anamaya-charcoal/60">
-            No slides yet. Add one to get started.
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {slides.map((s, i) => (
-              <li
-                key={i}
-                className="grid grid-cols-[80px_1fr_auto] items-start gap-3 rounded-md border border-zinc-200 bg-white p-3"
-              >
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded bg-zinc-100">
-                  {s.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={s.image_url}
-                      alt=""
-                      className="max-h-20 max-w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-[10px] italic text-anamaya-charcoal/40">
-                      no image
-                    </span>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <ImageUploadButton
-                      value={s.image_url}
-                      onUploaded={(u) =>
-                        updateSlide(i, { image_url: u })
-                      }
-                      kind="slideshow"
-                      maxWidth={2400}
-                    />
-                    <span className="font-mono text-[10px] text-anamaya-charcoal/50">
-                      Slide #{i + 1}
-                    </span>
-                  </div>
-                  <input
-                    className={inputCls}
-                    placeholder="Alt text (for screen readers)"
-                    value={s.image_alt ?? ""}
-                    onChange={(e) =>
-                      updateSlide(i, { image_alt: e.target.value })
-                    }
-                  />
-                  <input
-                    className={inputCls}
-                    placeholder="Text overlay (optional)"
-                    value={s.text ?? ""}
-                    onChange={(e) => updateSlide(i, { text: e.target.value })}
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <button
-                    type="button"
-                    onClick={() => moveSlide(i, -1)}
-                    disabled={i === 0}
-                    className="rounded bg-zinc-50 px-2 py-1 text-xs ring-1 ring-zinc-300 hover:bg-zinc-100 disabled:opacity-40"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveSlide(i, +1)}
-                    disabled={i === slides.length - 1}
-                    className="rounded bg-zinc-50 px-2 py-1 text-xs ring-1 ring-zinc-300 hover:bg-zinc-100 disabled:opacity-40"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeSlide(i)}
-                    className="mt-1 rounded border border-red-300 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Layout & timing */}
+      {/* Layout & timing — global, applies to the whole slideshow.
+          Sits first so the editor sees the high-level controls before
+          drilling into individual slide content. */}
       <section className={sectionCls}>
         <h3 className={sectionTitleCls}>Layout &amp; timing</h3>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -400,6 +305,155 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
           </label>
         </div>
       </section>
+
+      {/* Per-slide panels. Each slide is its own large card with its
+          image upload, alt text, text overlay and reorder controls. */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-anamaya-charcoal">
+            Slides ({slides.length})
+          </h3>
+          <button
+            type="button"
+            onClick={addSlide}
+            className="rounded-full bg-anamaya-olive-dark px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white hover:opacity-90"
+          >
+            + Add slide
+          </button>
+        </div>
+        {slides.length === 0 ? (
+          <p className="rounded-md border border-dashed border-zinc-300 p-6 text-center text-sm italic text-anamaya-charcoal/60">
+            No slides yet. Click &ldquo;+ Add slide&rdquo; to upload your first image.
+          </p>
+        ) : (
+          <ul className="space-y-4">
+            {slides.map((s, i) => (
+              <li key={i}>
+                <SlidePanel
+                  index={i}
+                  total={slides.length}
+                  slide={s}
+                  onUpdate={(p) => updateSlide(i, p)}
+                  onMoveUp={() => moveSlide(i, -1)}
+                  onMoveDown={() => moveSlide(i, +1)}
+                  onRemove={() => removeSlide(i)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function SlidePanel({
+  index,
+  total,
+  slide,
+  onUpdate,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}: {
+  index: number;
+  total: number;
+  slide: ImageSlideshowSlide;
+  onUpdate: (p: Partial<ImageSlideshowSlide>) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className={`${sectionCls} bg-white`}>
+      {/* Header: slide number + reorder + remove buttons */}
+      <header className="mb-4 flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-anamaya-charcoal">
+          Slide {index + 1}
+        </h4>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={index === 0}
+            aria-label="Move slide up"
+            className="rounded bg-zinc-50 px-2 py-1 text-sm ring-1 ring-zinc-300 hover:bg-zinc-100 disabled:opacity-40"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={index === total - 1}
+            aria-label="Move slide down"
+            className="rounded bg-zinc-50 px-2 py-1 text-sm ring-1 ring-zinc-300 hover:bg-zinc-100 disabled:opacity-40"
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="ml-2 rounded-full border border-red-300 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
+          >
+            Remove
+          </button>
+        </div>
+      </header>
+
+      <div className="grid gap-4 sm:grid-cols-[240px_1fr]">
+        {/* Image preview + upload */}
+        <div className="space-y-2">
+          <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded bg-zinc-100 ring-1 ring-zinc-200">
+            {slide.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={slide.image_url}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-xs italic text-anamaya-charcoal/40">
+                No image yet
+              </span>
+            )}
+          </div>
+          <div className="flex justify-center">
+            <ImageUploadButton
+              value={slide.image_url}
+              onUploaded={(u) => onUpdate({ image_url: u })}
+              kind="slideshow"
+              maxWidth={2400}
+            />
+          </div>
+        </div>
+
+        {/* Right column: alt + text overlay */}
+        <div className="space-y-3">
+          <label className="block">
+            <span className={labelCls}>Alt text (for screen readers)</span>
+            <input
+              className={inputCls}
+              placeholder="e.g. Sunset over the yoga deck"
+              value={slide.image_alt ?? ""}
+              onChange={(e) => onUpdate({ image_alt: e.target.value })}
+            />
+          </label>
+          <label className="block">
+            <span className={labelCls}>Text overlay (optional)</span>
+            <textarea
+              rows={3}
+              className={`${inputCls} resize-y leading-relaxed`}
+              placeholder="Headline or caption shown on top of this slide…"
+              value={slide.text ?? ""}
+              onChange={(e) => onUpdate({ text: e.target.value })}
+            />
+            <span className="mt-1 block text-[10px] text-anamaya-charcoal/50">
+              Styling (font, size, color, border) is set globally above —
+              only the text content is per-slide.
+            </span>
+          </label>
+        </div>
+      </div>
     </div>
   );
 }
