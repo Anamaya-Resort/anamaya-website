@@ -3,6 +3,7 @@ import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase-server";
 import TemplateEditor from "@/components/admin/templates/TemplateEditor";
 import LivePreviewButton from "@/components/admin/templates/LivePreviewButton";
+import TemplateHeaderEditor from "./TemplateHeaderEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -221,39 +222,30 @@ export default async function EditTemplate({
       className="mx-[calc(50%-50vw)] w-screen"
       style={{ paddingLeft: "10vw", paddingRight: "10vw" }}
     >
-      <header className="mb-6">
+      <header className="relative mb-6">
         <Link
           href="/admin/templates"
           className="text-xs uppercase tracking-wider text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
         >
           ← Templates
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold text-anamaya-charcoal">
-          {template.name}
-        </h1>
-        {/* Slug row sits at the boundary of the inner content (80vw)
-            and the right gutter (10vw). The Live Preview / Copy URL
-            buttons hang into the right gutter via left:100% so they
-            sit on the same Y as the slug code, exactly where the
-            per-row info panels live. */}
-        <div className="relative mt-1 flex items-center gap-2">
-          <code className="inline-block rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-anamaya-charcoal/80">
-            {template.slug}
-          </code>
-          {template.slug === "home" && (
-            <span className="text-xs italic text-anamaya-charcoal/60">
-              Preview at{" "}
-              <Link href="/home2" target="_blank" className="underline">
-                /home2
-              </Link>
-            </span>
-          )}
-          <div
-            className="absolute"
-            style={{ left: "100%", marginLeft: 16, top: "50%", transform: "translateY(-50%)" }}
-          >
-            <LivePreviewButton href={livePreviewUrl} />
-          </div>
+        <TemplateHeaderEditor
+          id={template.id}
+          name={template.name}
+          slug={template.slug}
+        />
+        {/* Live Preview button hangs into the right gutter, anchored
+            roughly to the slug row's Y. */}
+        <div
+          className="absolute"
+          style={{
+            left: "100%",
+            marginLeft: 16,
+            top: "calc(100% - 1.5rem)",
+            transform: "translateY(-50%)",
+          }}
+        >
+          <LivePreviewButton href={livePreviewUrl} />
         </div>
       </header>
 

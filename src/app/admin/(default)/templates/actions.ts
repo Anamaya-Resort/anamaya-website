@@ -16,6 +16,42 @@ export async function renameTemplate(id: string, name: string) {
   revalidatePath(`/admin/templates/${id}`);
 }
 
+/** Update a page template's slug. Slug is normalised to lowercase
+ *  letters/numbers/dashes/underscores. Caller is responsible for
+ *  uniqueness — the DB has a unique index on slug and will reject
+ *  duplicates. */
+export async function updateTemplateSlug(id: string, slug: string) {
+  const sb = supabaseServer();
+  const cleaned = slug
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_-]/gi, "")
+    .toLowerCase();
+  if (!cleaned) throw new Error("Slug cannot be empty");
+  const { error } = await sb.from("page_templates").update({ slug: cleaned }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/templates");
+  revalidatePath(`/admin/templates/${id}`);
+  revalidatePath("/", "layout");
+}
+
+/** Form-friendly wrappers so an inline form on the template editor
+ *  page can submit name / slug edits without callers needing to bind
+ *  the id at construction time. Both expect a hidden `id` input plus
+ *  the relevant value field. */
+export async function renameTemplateFromForm(formData: FormData) {
+  const id = String(formData.get("id") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
+  if (!id || !name) return;
+  await renameTemplate(id, name);
+}
+export async function updateTemplateSlugFromForm(formData: FormData) {
+  const id = String(formData.get("id") ?? "").trim();
+  const slug = String(formData.get("slug") ?? "").trim();
+  if (!id || !slug) return;
+  await updateTemplateSlug(id, slug);
+}
+
 /**
  * Delete a template. Cascades to variants and variant_blocks via the FK
  * definitions in migration 0013. Block rows themselves are untouched —

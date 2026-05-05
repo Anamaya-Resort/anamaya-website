@@ -229,7 +229,6 @@ function VariantHeader({ variant }: { variant: NonNullable<Variant> }) {
           {variant.slug}
         </code>
       </div>
-      <span className="italic text-anamaya-charcoal/50">A/B variant picker coming later</span>
     </div>
   );
 }
