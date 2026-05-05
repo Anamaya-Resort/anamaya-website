@@ -29,6 +29,7 @@ import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
 import TestimonialsBlock from "./TestimonialsBlock";
+import ImageSlideshowBlock from "./ImageSlideshowBlock";
 
 /** Renders a single block-usage by dispatching on type. Null if unknown. */
 export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
@@ -68,6 +69,7 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text": return <GoogleMapTextBlock content={content} />;
     case "testimonials":   return <TestimonialsBlock content={content} />;
+    case "image_slideshow": return <ImageSlideshowBlock content={content} />;
     default: {
       console.warn(`[blocks] unknown block type: ${usage.block.type_slug}`);
       return null;

@@ -59,6 +59,7 @@ const BLOCK_CATEGORIES: Record<string, Category[]> = {
   small_form_over_image: ["signup", "image"],
   google_map_with_text: ["2-column", "rich-text"],
   testimonials: ["rich-text", "image"],
+  image_slideshow: ["image", "rich-text"],
 };
 
 const CATEGORY_COLORS: Record<Category, string> = {

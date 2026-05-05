@@ -28,6 +28,7 @@ import UiFooterLegalBlock from "@/components/blocks/UiFooterLegalBlock";
 import ThreeColumnBlock from "@/components/blocks/ThreeColumnBlock";
 import SmallFormOverImageBlock from "@/components/blocks/SmallFormOverImageBlock";
 import GoogleMapTextBlock from "@/components/blocks/GoogleMapTextBlock";
+import ImageSlideshowBlock from "@/components/blocks/ImageSlideshowBlock";
 import VariantCarousel from "./VariantCarousel";
 
 /**
@@ -234,6 +235,8 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
           Testimonials — save to see the iframe preview
         </div>
       );
+    case "image_slideshow":
+      return <ImageSlideshowBlock content={content} />;
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">

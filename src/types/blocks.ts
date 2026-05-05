@@ -1088,7 +1088,8 @@ export type BlockTypeSlug =
   | "featured_retreats"
   | "small_form_over_image"
   | "google_map_with_text"
-  | "testimonials";
+  | "testimonials"
+  | "image_slideshow";
 
 export type BlockRecord = {
   id: string;
@@ -1147,6 +1148,53 @@ export type TestimonialsBlockContent = {
 
   /** Show the TripAdvisor 5-star badge under each testimonial. Default true. */
   show_tripadvisor_badge?: boolean;
+};
+
+/** A single slide in an Image Slideshow block. */
+export type ImageSlideshowSlide = {
+  image_url: string;
+  image_alt?: string;
+  /** Optional text overlay shown on top of this slide's image. */
+  text?: string;
+};
+
+/**
+ * Full-width slideshow that crossfades between editor-uploaded images.
+ * Each slide can carry its own text overlay; font, size, colour and
+ * stroke (border around letters) are global so the whole rotation
+ * stays visually consistent.
+ */
+export type ImageSlideshowContent = {
+  slides?: ImageSlideshowSlide[];
+
+  /** Seconds each slide stays fully visible before the fade starts. Default 4. */
+  display_seconds?: number;
+  /** Crossfade duration in seconds. Default 1.5. */
+  fade_seconds?: number;
+
+  /** Section height in viewport heights (vh). Default 80. */
+  height_vh?: number;
+  /** Object-fit for slide images. Default "cover". */
+  image_fit?: "cover" | "contain";
+  /** Dark overlay opacity 0..100 to improve text contrast. Default 0. */
+  overlay_opacity?: number;
+
+  /** Global text styling for the per-slide text overlay. */
+  text_font?: "heading" | "body";
+  text_size_px?: number;
+  text_color?: string;        // brand-token key
+  text_align?: "left" | "center" | "right";
+  text_position?: "top" | "center" | "bottom";
+  text_bold?: boolean;
+  text_italic?: boolean;
+
+  /** Stroke (border) painted around each letter to help text stand out
+   *  against busy images. Width is in pixels (0..20). 0 disables it. */
+  text_stroke_color?: string;
+  text_stroke_width_px?: number;
+
+  /** Section background colour shown if a slide image fails to load. */
+  bg_color?: string;
 };
 
 export type BlockUsage = {

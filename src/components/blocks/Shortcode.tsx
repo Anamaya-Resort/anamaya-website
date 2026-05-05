@@ -30,6 +30,7 @@ import TwoColumnBlock from "./TwoColumnBlock";
 import ThreeColumnBlock from "./ThreeColumnBlock";
 import DetailsRatesDynamicBlock from "./DetailsRatesDynamicBlock";
 import TestimonialsBlock from "./TestimonialsBlock";
+import ImageSlideshowBlock from "./ImageSlideshowBlock";
 
 /**
  * Server component that renders the block identified by `slug` (matched
@@ -91,6 +92,7 @@ export default async function Shortcode({ slug }: { slug: string }) {
     case "three_column":   return <ThreeColumnBlock content={content} />;
     case "details_rates_dynamic": return <DetailsRatesDynamicBlock content={content} />;
     case "testimonials":   return <TestimonialsBlock content={content} />;
+    case "image_slideshow": return <ImageSlideshowBlock content={content} />;
     default:               return null;
   }
 }
