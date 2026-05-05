@@ -5,13 +5,17 @@ import BlockEditorChrome, {
   type BlockEditorState,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
-import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type {
   ImageSlideshowContent,
   ImageSlideshowSlide,
 } from "@/types/blocks";
+import {
+  DEFAULT_SLIDESHOW_FONT_ID,
+  SLIDESHOW_FONTS,
+  getSlideshowFont,
+} from "@/lib/slideshow-fonts";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -28,18 +32,6 @@ function normalize(c: ImageSlideshowContent | null | undefined): ImageSlideshowC
     height_vh:             c?.height_vh ?? 80,
     image_fit:             c?.image_fit ?? "cover",
     overlay_opacity:       c?.overlay_opacity ?? 0,
-
-    text_font:             c?.text_font ?? "heading",
-    text_size_px:          c?.text_size_px ?? 56,
-    text_color:            c?.text_color ?? "",
-    text_align:            c?.text_align ?? "center",
-    text_position:         c?.text_position ?? "center",
-    text_bold:             c?.text_bold ?? false,
-    text_italic:           c?.text_italic ?? false,
-
-    text_stroke_color:     c?.text_stroke_color ?? "",
-    text_stroke_width_px:  c?.text_stroke_width_px ?? 0,
-
     bg_color:              c?.bg_color ?? "",
   };
 }
@@ -72,7 +64,23 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
     setDraft((d) => ({ ...d, slides: fn(d.slides ?? []) }));
   }
   function addSlide() {
-    patchSlides((arr) => [...arr, { image_url: "", image_alt: "", text: "" }]);
+    patchSlides((arr) => [
+      ...arr,
+      {
+        image_url: "",
+        image_alt: "",
+        text: "",
+        text_font: DEFAULT_SLIDESHOW_FONT_ID,
+        text_size_px: 64,
+        text_color: "",
+        text_align: "center",
+        text_position: "center",
+        text_bold: false,
+        text_italic: false,
+        text_stroke_color: "",
+        text_stroke_width_px: 0,
+      },
+    ]);
   }
   function removeSlide(i: number) {
     patchSlides((arr) => arr.filter((_, ix) => ix !== i));
@@ -92,9 +100,7 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
 
   return (
     <div className="space-y-6">
-      {/* Layout & timing — global, applies to the whole slideshow.
-          Sits first so the editor sees the high-level controls before
-          drilling into individual slide content. */}
+      {/* Layout & timing — global, applies to the whole slideshow. */}
       <section className={sectionCls}>
         <h3 className={sectionTitleCls}>Layout &amp; timing</h3>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -176,138 +182,14 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
               value={draft.bg_color}
               onChange={(v) => patch({ bg_color: v })}
               brandTokens={brandTokens}
+              horizontal
             />
           </label>
         </div>
       </section>
 
-      {/* Text overlay styling */}
-      <section className={sectionCls}>
-        <h3 className={sectionTitleCls}>Text overlay (applies to all slides)</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className={labelCls}>Font</span>
-            <BrandFontSelect
-              value={draft.text_font}
-              onChange={(v) => patch({ text_font: v })}
-            />
-          </label>
-          <label className="block">
-            <span className={labelCls}>Font size (px)</span>
-            <input
-              type="number"
-              min={10}
-              max={200}
-              className={inputCls}
-              value={draft.text_size_px ?? 56}
-              onChange={(e) =>
-                patch({ text_size_px: Number(e.target.value) || 56 })
-              }
-            />
-          </label>
-          <label className="block">
-            <span className={labelCls}>Text color</span>
-            <BrandColorSelect
-              value={draft.text_color}
-              onChange={(v) => patch({ text_color: v })}
-              brandTokens={brandTokens}
-              allowAuto
-            />
-          </label>
-          <div />
-          <label className="block">
-            <span className={labelCls}>Text alignment</span>
-            <select
-              className={inputCls}
-              value={draft.text_align ?? "center"}
-              onChange={(e) =>
-                patch({
-                  text_align: e.target.value as "left" | "center" | "right",
-                })
-              }
-            >
-              <option value="left">Left</option>
-              <option value="center">Center</option>
-              <option value="right">Right</option>
-            </select>
-          </label>
-          <label className="block">
-            <span className={labelCls}>Text vertical position</span>
-            <select
-              className={inputCls}
-              value={draft.text_position ?? "center"}
-              onChange={(e) =>
-                patch({
-                  text_position: e.target.value as "top" | "center" | "bottom",
-                })
-              }
-            >
-              <option value="top">Top</option>
-              <option value="center">Center</option>
-              <option value="bottom">Bottom</option>
-            </select>
-          </label>
-          <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={draft.text_bold ?? false}
-              onChange={(e) => patch({ text_bold: e.target.checked })}
-              className="h-4 w-4 accent-anamaya-green"
-            />
-            Bold
-          </label>
-          <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={draft.text_italic ?? false}
-              onChange={(e) => patch({ text_italic: e.target.checked })}
-              className="h-4 w-4 accent-anamaya-green"
-            />
-            Italic
-          </label>
-        </div>
-      </section>
-
-      {/* Text border / stroke */}
-      <section className={sectionCls}>
-        <h3 className={sectionTitleCls}>Text border (helps text stand out)</h3>
-        <p className="mb-3 text-xs text-anamaya-charcoal/60">
-          A coloured stroke painted around each letter. Set the width to 0 to
-          disable. Useful when the text colour is similar to the underlying
-          image — try a contrasting border (e.g. white text + black border).
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className={labelCls}>Border width (0–20 px)</span>
-            <input
-              type="number"
-              min={0}
-              max={20}
-              className={inputCls}
-              value={draft.text_stroke_width_px ?? 0}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                patch({
-                  text_stroke_width_px: Number.isFinite(n)
-                    ? Math.max(0, Math.min(20, n))
-                    : 0,
-                });
-              }}
-            />
-          </label>
-          <label className="block">
-            <span className={labelCls}>Border color</span>
-            <BrandColorSelect
-              value={draft.text_stroke_color}
-              onChange={(v) => patch({ text_stroke_color: v })}
-              brandTokens={brandTokens}
-            />
-          </label>
-        </div>
-      </section>
-
-      {/* Per-slide panels. Each slide is its own large card with its
-          image upload, alt text, text overlay and reorder controls. */}
+      {/* Slides — one panel per slide, with image at top + all text-overlay
+          controls below it. */}
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-anamaya-charcoal">
@@ -333,6 +215,7 @@ function Form({ state }: { state: BlockEditorState<ImageSlideshowContent> }) {
                   index={i}
                   total={slides.length}
                   slide={s}
+                  brandTokens={brandTokens}
                   onUpdate={(p) => updateSlide(i, p)}
                   onMoveUp={() => moveSlide(i, -1)}
                   onMoveDown={() => moveSlide(i, +1)}
@@ -351,6 +234,7 @@ function SlidePanel({
   index,
   total,
   slide,
+  brandTokens,
   onUpdate,
   onMoveUp,
   onMoveDown,
@@ -359,14 +243,18 @@ function SlidePanel({
   index: number;
   total: number;
   slide: ImageSlideshowSlide;
+  brandTokens: Required<OrgBranding>;
   onUpdate: (p: Partial<ImageSlideshowSlide>) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onRemove: () => void;
 }) {
+  const fontId = slide.text_font ?? DEFAULT_SLIDESHOW_FONT_ID;
+  const fontPreview = getSlideshowFont(fontId);
+
   return (
     <div className={`${sectionCls} bg-white`}>
-      {/* Header: slide number + reorder + remove buttons */}
+      {/* Header: slide #, reorder, remove. */}
       <header className="mb-4 flex items-center justify-between">
         <h4 className="text-sm font-semibold text-anamaya-charcoal">
           Slide {index + 1}
@@ -400,60 +288,239 @@ function SlidePanel({
         </div>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-[240px_1fr]">
-        {/* Image preview + upload */}
-        <div className="space-y-2">
-          <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded bg-zinc-100 ring-1 ring-zinc-200">
-            {slide.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={slide.image_url}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-xs italic text-anamaya-charcoal/40">
-                No image yet
-              </span>
-            )}
-          </div>
-          <div className="flex justify-center">
-            <ImageUploadButton
-              value={slide.image_url}
-              onUploaded={(u) => onUpdate({ image_url: u })}
-              kind="slideshow"
-              maxWidth={2400}
+      {/* Image preview + upload at top of the panel. */}
+      <div className="mb-5">
+        <div className="flex aspect-video w-full max-w-2xl items-center justify-center overflow-hidden rounded bg-zinc-100 ring-1 ring-zinc-200">
+          {slide.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={slide.image_url}
+              alt=""
+              className="h-full w-full object-cover"
             />
-          </div>
-        </div>
-
-        {/* Right column: alt + text overlay */}
-        <div className="space-y-3">
-          <label className="block">
-            <span className={labelCls}>Alt text (for screen readers)</span>
-            <input
-              className={inputCls}
-              placeholder="e.g. Sunset over the yoga deck"
-              value={slide.image_alt ?? ""}
-              onChange={(e) => onUpdate({ image_alt: e.target.value })}
-            />
-          </label>
-          <label className="block">
-            <span className={labelCls}>Text overlay (optional)</span>
-            <textarea
-              rows={3}
-              className={`${inputCls} resize-y leading-relaxed`}
-              placeholder="Headline or caption shown on top of this slide…"
-              value={slide.text ?? ""}
-              onChange={(e) => onUpdate({ text: e.target.value })}
-            />
-            <span className="mt-1 block text-[10px] text-anamaya-charcoal/50">
-              Styling (font, size, color, border) is set globally above —
-              only the text content is per-slide.
+          ) : (
+            <span className="text-xs italic text-anamaya-charcoal/40">
+              No image yet
             </span>
-          </label>
+          )}
+        </div>
+        <div className="mt-2 flex items-center gap-3">
+          <ImageUploadButton
+            value={slide.image_url}
+            onUploaded={(u) => onUpdate({ image_url: u })}
+            kind="slideshow"
+            maxWidth={2400}
+          />
+          <input
+            className={`${inputCls} max-w-md`}
+            placeholder="Alt text (for screen readers)"
+            value={slide.image_alt ?? ""}
+            onChange={(e) => onUpdate({ image_alt: e.target.value })}
+          />
         </div>
       </div>
+
+      {/* Text overlay content. */}
+      <div className="mb-4">
+        <label className="block">
+          <span className={labelCls}>Text overlay</span>
+          <textarea
+            rows={3}
+            className={`${inputCls} resize-y leading-relaxed`}
+            placeholder="Headline or caption shown on top of this slide…"
+            value={slide.text ?? ""}
+            onChange={(e) => onUpdate({ text: e.target.value })}
+          />
+        </label>
+      </div>
+
+      {/* Font + size, then formatting row (bold, italic, alignment, position). */}
+      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className={labelCls}>Font</span>
+          <select
+            className={inputCls}
+            value={fontId}
+            onChange={(e) => onUpdate({ text_font: e.target.value })}
+            style={{ fontFamily: fontPreview.family }}
+          >
+            {(["Sans", "Display", "Serif", "Script"] as const).map((group) => (
+              <optgroup key={group} label={group}>
+                {SLIDESHOW_FONTS.filter((f) => f.group === group).map((f) => (
+                  <option
+                    key={f.id}
+                    value={f.id}
+                    style={{ fontFamily: f.family }}
+                  >
+                    {f.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className={labelCls}>Font size (px)</span>
+          <input
+            type="number"
+            min={10}
+            max={240}
+            className={inputCls}
+            value={slide.text_size_px ?? 64}
+            onChange={(e) =>
+              onUpdate({ text_size_px: Number(e.target.value) || 64 })
+            }
+          />
+        </label>
+      </div>
+
+      {/* Bold, italic, text alignment, vertical position — all on the same row. */}
+      <div className="mb-4">
+        <span className={labelCls}>Formatting</span>
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-zinc-200 bg-white p-2">
+          <ToggleButton
+            label="Bold"
+            pressed={slide.text_bold ?? false}
+            onClick={() => onUpdate({ text_bold: !slide.text_bold })}
+            style={{ fontWeight: 700 }}
+          />
+          <ToggleButton
+            label="Italic"
+            pressed={slide.text_italic ?? false}
+            onClick={() => onUpdate({ text_italic: !slide.text_italic })}
+            style={{ fontStyle: "italic" }}
+          />
+          <div className="mx-1 h-5 w-px bg-zinc-200" />
+          <SegmentedControl
+            value={slide.text_align ?? "center"}
+            options={[
+              { value: "left", label: "Align ⤺" },
+              { value: "center", label: "Center" },
+              { value: "right", label: "Align ⤻" },
+            ]}
+            onChange={(v) =>
+              onUpdate({ text_align: v as "left" | "center" | "right" })
+            }
+          />
+          <div className="mx-1 h-5 w-px bg-zinc-200" />
+          <SegmentedControl
+            value={slide.text_position ?? "center"}
+            options={[
+              { value: "top", label: "Top" },
+              { value: "center", label: "Middle" },
+              { value: "bottom", label: "Bottom" },
+            ]}
+            onChange={(v) =>
+              onUpdate({ text_position: v as "top" | "center" | "bottom" })
+            }
+          />
+        </div>
+      </div>
+
+      {/* Text color — Brand/Custom toggle + swatches on a single row. */}
+      <div className="mb-4">
+        <span className={labelCls}>Text color</span>
+        <BrandColorSelect
+          value={slide.text_color}
+          onChange={(v) => onUpdate({ text_color: v })}
+          brandTokens={brandTokens}
+          horizontal
+          allowAuto
+        />
+      </div>
+
+      {/* Border: thickness on left, color picker on right of same row. */}
+      <div>
+        <span className={labelCls}>Text border (helps text stand out)</span>
+        <div className="flex flex-wrap items-center gap-4 rounded-md border border-zinc-200 bg-white p-3">
+          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+            Thickness
+            <input
+              type="number"
+              min={0}
+              max={20}
+              className="w-16 rounded-md border border-zinc-300 px-2 py-1 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green"
+              value={slide.text_stroke_width_px ?? 0}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                onUpdate({
+                  text_stroke_width_px: Number.isFinite(n)
+                    ? Math.max(0, Math.min(20, n))
+                    : 0,
+                });
+              }}
+            />
+            <span className="font-mono text-[10px] text-anamaya-charcoal/50">px</span>
+          </label>
+          <div className="h-5 w-px bg-zinc-200" />
+          <BrandColorSelect
+            value={slide.text_stroke_color}
+            onChange={(v) => onUpdate({ text_stroke_color: v })}
+            brandTokens={brandTokens}
+            horizontal
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ToggleButton({
+  label,
+  pressed,
+  onClick,
+  style,
+}: {
+  label: string;
+  pressed: boolean;
+  onClick: () => void;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      style={style}
+      className={`rounded-md px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
+        pressed
+          ? "bg-anamaya-charcoal text-white"
+          : "bg-zinc-100 text-anamaya-charcoal/70 hover:bg-zinc-200"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function SegmentedControl({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="inline-flex overflow-hidden rounded-md ring-1 ring-zinc-300">
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            className={`px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+              active
+                ? "bg-anamaya-charcoal text-white"
+                : "bg-white text-anamaya-charcoal/60 hover:bg-zinc-100"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

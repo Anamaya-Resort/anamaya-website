@@ -18,6 +18,10 @@ type Props = {
   keys?: (keyof BrandingColors)[];
   allowAuto?: boolean;
   includeStatus?: boolean;
+  /** When true, the Brand/Custom toggle and the swatches render side
+   *  by side on a single row. Default false (toggle on top, swatches
+   *  below — the long-standing layout). */
+  horizontal?: boolean;
 };
 
 /**
@@ -33,6 +37,7 @@ export default function BrandColorSelect({
   keys = BRAND_COLOR_KEYS,
   allowAuto = false,
   includeStatus = false,
+  horizontal = false,
 }: Props) {
   const isBrandKey = !!value && value in COLOR_KEY_TO_CSS_VAR;
   const initialMode: "brand" | "custom" =
@@ -43,7 +48,7 @@ export default function BrandColorSelect({
   const allKeys = includeStatus ? [...keys, ...STATUS_COLOR_KEYS] : keys;
 
   return (
-    <div className="space-y-3">
+    <div className={horizontal ? "flex flex-wrap items-center gap-3" : "space-y-3"}>
       {/* Mode toggle */}
       <div className="inline-flex rounded-md border border-zinc-300 bg-white p-0.5 text-[11px] font-semibold uppercase tracking-wider">
         <button

@@ -1,16 +1,14 @@
 import type { ImageSlideshowContent, ImageSlideshowSlide } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import { buildGoogleFontsUrl, getSlideshowFont } from "@/lib/slideshow-fonts";
 import SlideshowCarousel from "./shared/SlideshowCarousel";
 
 /**
- * Full-width image slideshow with crossfade. Server-renders every
- * slide as a stacked grid cell so SEO + LLM crawlers see all images
- * + their captions in initial HTML; a small client island toggles
- * opacity to crossfade between slides.
- *
- * Per-slide content: image_url + optional text overlay.
- * Global content: font / size / colour / alignment / position /
- * stroke (letter border) / dark-overlay / display + fade timing.
+ * Full-width image slideshow with crossfade. Each slide carries its
+ * own image + complete text-overlay configuration (font, size,
+ * colour, alignment, position, stroke). All slides server-render
+ * into the initial HTML for SEO + LLM crawlers; a small client island
+ * toggles opacity to crossfade between them.
  */
 export default function ImageSlideshowBlock({
   content,
@@ -28,65 +26,36 @@ export default function ImageSlideshowBlock({
   const imageFit = c.image_fit ?? "cover";
   const bg = resolveBrandColor(c.bg_color) ?? "#000";
 
-  // Text styling
-  const textFontClass =
-    c.text_font === "body" ? "font-sans" : "font-heading";
-  const textSize = c.text_size_px ?? 56;
-  const textColor = resolveBrandColor(c.text_color) ?? "#ffffff";
-  const textAlign = c.text_align ?? "center";
-  const textPosition = c.text_position ?? "center";
-  const textBold = c.text_bold ?? false;
-  const textItalic = c.text_italic ?? false;
-
-  const strokeWidth = clamp(c.text_stroke_width_px ?? 0, 0, 20);
-  const strokeColor = resolveBrandColor(c.text_stroke_color) ?? "#000000";
-
-  const positionClass =
-    textPosition === "top"
-      ? "items-start"
-      : textPosition === "bottom"
-        ? "items-end"
-        : "items-center";
-  const alignClass =
-    textAlign === "left"
-      ? "justify-start text-left"
-      : textAlign === "right"
-        ? "justify-end text-right"
-        : "justify-center text-center";
-
   return (
-    <section
-      className="relative w-full overflow-hidden"
-      style={{ height: `${heightVh}vh`, backgroundColor: bg }}
-      data-slideshow-carousel
-    >
-      {slides.map((slide, i) => (
-        <Slide
-          key={i}
-          slide={slide}
-          firstVisible={i === 0}
-          fadeSeconds={fade}
-          imageFit={imageFit}
-          overlayOpacity={overlay}
-          textFontClass={textFontClass}
-          textSize={textSize}
-          textColor={textColor}
-          textBold={textBold}
-          textItalic={textItalic}
-          strokeWidth={strokeWidth}
-          strokeColor={strokeColor}
-          positionClass={positionClass}
-          alignClass={alignClass}
-        />
-      ))}
-      {slides.length > 1 && (
-        <SlideshowCarousel
-          count={slides.length}
-          displaySeconds={display}
-          fadeSeconds={fade}
-        />
-      )}
-    </section>
+    <>
+      {/* Loads the entire slideshow-font set in one request. Font
+          files only fetch when actually rendered, so listing all
+          faces is cheap. */}
+      <link rel="stylesheet" href={buildGoogleFontsUrl()} />
+      <section
+        className="relative w-full overflow-hidden"
+        style={{ height: `${heightVh}vh`, backgroundColor: bg }}
+        data-slideshow-carousel
+      >
+        {slides.map((slide, i) => (
+          <Slide
+            key={i}
+            slide={slide}
+            firstVisible={i === 0}
+            fadeSeconds={fade}
+            imageFit={imageFit}
+            overlayOpacity={overlay}
+          />
+        ))}
+        {slides.length > 1 && (
+          <SlideshowCarousel
+            count={slides.length}
+            displaySeconds={display}
+            fadeSeconds={fade}
+          />
+        )}
+      </section>
+    </>
   );
 }
 
@@ -96,31 +65,37 @@ function Slide({
   fadeSeconds,
   imageFit,
   overlayOpacity,
-  textFontClass,
-  textSize,
-  textColor,
-  textBold,
-  textItalic,
-  strokeWidth,
-  strokeColor,
-  positionClass,
-  alignClass,
 }: {
   slide: ImageSlideshowSlide;
   firstVisible: boolean;
   fadeSeconds: number;
   imageFit: "cover" | "contain";
   overlayOpacity: number;
-  textFontClass: string;
-  textSize: number;
-  textColor: string;
-  textBold: boolean;
-  textItalic: boolean;
-  strokeWidth: number;
-  strokeColor: string;
-  positionClass: string;
-  alignClass: string;
 }) {
+  const font = getSlideshowFont(slide.text_font);
+  const textSize = slide.text_size_px ?? 64;
+  const textColor = resolveBrandColor(slide.text_color) ?? "#ffffff";
+  const align = slide.text_align ?? "center";
+  const position = slide.text_position ?? "center";
+  const bold = slide.text_bold ?? false;
+  const italic = slide.text_italic ?? false;
+
+  const strokeWidth = clamp(slide.text_stroke_width_px ?? 0, 0, 20);
+  const strokeColor = resolveBrandColor(slide.text_stroke_color) ?? "#000000";
+
+  const positionClass =
+    position === "top"
+      ? "items-start"
+      : position === "bottom"
+        ? "items-end"
+        : "items-center";
+  const alignClass =
+    align === "left"
+      ? "justify-start text-left"
+      : align === "right"
+        ? "justify-end text-right"
+        : "justify-center text-center";
+
   return (
     <figure
       data-slideshow-slide
@@ -152,12 +127,13 @@ function Slide({
           className={`absolute inset-0 flex p-6 sm:p-12 ${positionClass} ${alignClass}`}
         >
           <span
-            className={`${textFontClass} max-w-5xl leading-tight`}
+            className="max-w-5xl leading-tight"
             style={{
+              fontFamily: font.family,
               color: textColor,
               fontSize: textSize,
-              fontWeight: textBold ? 700 : 400,
-              fontStyle: textItalic ? "italic" : "normal",
+              fontWeight: bold ? 700 : 400,
+              fontStyle: italic ? "italic" : "normal",
               WebkitTextStroke:
                 strokeWidth > 0
                   ? `${strokeWidth}px ${strokeColor}`
