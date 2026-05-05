@@ -186,8 +186,13 @@ function Slide({
         <div className="mt-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/img/tripadvisor-5-stars.webp"
-            alt={`${t.rating} out of 5 stars on TripAdvisor`}
+            // Filename intentionally does NOT contain "tripadvisor" —
+            // EasyList-style ad-block filters include `*tripadvisor*$image`
+            // rules that block any image URL with the brand in the path,
+            // even on first-party domains. Renamed to ta-5-stars.webp to
+            // sidestep that pattern. Same file, just a safer URL.
+            src="/img/ta-5-stars.webp"
+            alt={`${t.rating} out of 5 stars`}
             width={280}
             height={56}
             loading="lazy"

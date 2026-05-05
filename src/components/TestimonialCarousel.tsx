@@ -84,8 +84,8 @@ export default function TestimonialCarousel({ testimonials, autoplayMs = 6000 }:
             <div className="mt-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/img/tripadvisor-5-stars.webp"
-                alt={`${t.rating} out of 5 stars on TripAdvisor`}
+                src="/img/ta-5-stars.webp"
+                alt={`${t.rating} out of 5 stars`}
                 width={120}
                 height={20}
                 loading="lazy"

@@ -68,8 +68,8 @@ export default async function TestimonialsAdmin() {
       <header className="flex items-start justify-between gap-6">
         <div className="flex items-center gap-5">
           <Image
-            src="/img/tripadvisor-5-stars.webp"
-            alt="TripAdvisor 5-star reviews"
+            src="/img/ta-5-stars.webp"
+            alt="5-star reviews"
             width={120}
             height={48}
             className="h-12 w-auto"
