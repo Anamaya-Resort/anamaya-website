@@ -55,6 +55,26 @@ export default async function EditItemPage({
   const migratedBody = item.content_rendered ?? item.scraped_body_html ?? "";
   const editorStatus = isTrashed ? "draft" : item.wp_status ?? "draft";
 
+  // Migrated SEO is intentionally kept inline next to the SEO inputs
+  // (where it's most useful while authoring); this consolidated panel
+  // covers the rest of the WP-source audit data, which becomes inert
+  // once the page is rebuilt in the new CMS.
+  const hasMigrationProvenance =
+    item.wp_id != null ||
+    !!item.wp_template ||
+    item.menu_order != null ||
+    item.parent_wp_id != null ||
+    !!item.scraped_at;
+  const hasMigratedData =
+    !!migratedBody ||
+    !!item.content_raw ||
+    item.elementor_data != null ||
+    item.acf != null ||
+    item.post_meta != null ||
+    !!item.featured_media?.url ||
+    !!item.excerpt_rendered ||
+    hasMigrationProvenance;
+
   return (
     <div className="px-5 py-4">
       <PageHeader
@@ -101,34 +121,6 @@ export default async function EditItemPage({
               </div>
             </div>
 
-            {item.featured_media?.url && (
-              <div className="rounded-sm border border-[#c3c4c7] bg-white">
-                <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  Featured image
-                </div>
-                <div className="px-3 py-3 text-[13px]">
-                  <Image
-                    src={item.featured_media.url}
-                    alt={item.featured_media.alt ?? ""}
-                    width={item.featured_media.width ?? 1200}
-                    height={item.featured_media.height ?? 800}
-                    className="h-auto max-w-full rounded-sm border border-[#dcdcde]"
-                    unoptimized
-                  />
-                  <p className="mt-2 text-[12px] text-[#50575e] break-all">
-                    {item.featured_media.url}
-                    {item.featured_media.width && item.featured_media.height && (
-                      <>
-                        {" "}
-                        ({item.featured_media.width}×
-                        {item.featured_media.height})
-                      </>
-                    )}
-                  </p>
-                </div>
-              </div>
-            )}
-
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
               <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                 <span>Body</span>
@@ -148,60 +140,6 @@ export default async function EditItemPage({
               </div>
             </div>
 
-            {migratedBody && (
-              <details className="rounded-sm border border-[#c3c4c7] bg-white" open>
-                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  Migrated WP body (read-only) —{" "}
-                  {item.scraped_body_html
-                    ? "controlled crawl"
-                    : "WP REST content.rendered"}
-                </summary>
-                <HtmlViewer html={migratedBody} />
-              </details>
-            )}
-
-            {item.content_raw && item.content_raw !== item.content_rendered && (
-              <details className="rounded-sm border border-[#c3c4c7] bg-white">
-                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  Raw content (with shortcodes)
-                </summary>
-                <HtmlViewer html={item.content_raw} />
-              </details>
-            )}
-
-            {item.elementor_data != null && (
-              <details className="rounded-sm border border-[#c3c4c7] bg-white">
-                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  Elementor data (read-only JSON)
-                </summary>
-                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
-                  {JSON.stringify(item.elementor_data, null, 2)}
-                </pre>
-              </details>
-            )}
-
-            {item.acf != null && (
-              <details className="rounded-sm border border-[#c3c4c7] bg-white">
-                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  ACF fields (read-only JSON)
-                </summary>
-                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
-                  {JSON.stringify(item.acf, null, 2)}
-                </pre>
-              </details>
-            )}
-
-            {item.post_meta != null && (
-              <details className="rounded-sm border border-[#c3c4c7] bg-white">
-                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  WP post meta (read-only JSON)
-                </summary>
-                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
-                  {JSON.stringify(item.post_meta, null, 2)}
-                </pre>
-              </details>
-            )}
-
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
               <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                 Excerpt
@@ -220,17 +158,8 @@ export default async function EditItemPage({
                   propertyId: item.property_id ?? null,
                   field: "excerpt",
                 }}
-                className="block w-full resize-y border-0 bg-white px-3 py-2 text-[13px] text-[#1d2327] focus:outline-none"
+                className="block w-full resize-y rounded-b-sm border-0 bg-white px-3 py-2 text-[13px] text-[#1d2327] focus:outline-none"
               />
-              {item.excerpt_rendered &&
-                item.excerpt_rendered !== item.excerpt && (
-                  <p className="rounded-b-sm border-t border-[#dcdcde] bg-[#f6f7f7] px-3 py-2 text-[12px] text-[#50575e]">
-                    Migrated rendered excerpt:{" "}
-                    <span className="text-[#1d2327]">
-                      {item.excerpt_rendered}
-                    </span>
-                  </p>
-                )}
             </div>
 
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
@@ -352,6 +281,166 @@ export default async function EditItemPage({
                 </label>
               </div>
             </div>
+
+            {hasMigratedData && (
+              <details
+                open
+                className="rounded-sm border border-[#c3c4c7] bg-white"
+              >
+                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  Migrated from WordPress
+                  <span className="ml-2 text-[12px] font-normal text-[#50575e]">
+                    Read-only audit data — collapse once this page is rebuilt
+                  </span>
+                </summary>
+                <div className="space-y-4 px-3 py-3">
+                  {item.featured_media?.url && (
+                    <section>
+                      <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                        Featured image
+                      </h4>
+                      <Image
+                        src={item.featured_media.url}
+                        alt={item.featured_media.alt ?? ""}
+                        width={item.featured_media.width ?? 1200}
+                        height={item.featured_media.height ?? 800}
+                        className="h-auto max-w-full rounded-sm border border-[#dcdcde]"
+                        unoptimized
+                      />
+                      <p className="mt-2 break-all text-[12px] text-[#50575e]">
+                        {item.featured_media.url}
+                        {item.featured_media.width &&
+                          item.featured_media.height && (
+                            <>
+                              {" "}
+                              ({item.featured_media.width}×
+                              {item.featured_media.height})
+                            </>
+                          )}
+                      </p>
+                    </section>
+                  )}
+
+                  {item.excerpt_rendered && (
+                    <section>
+                      <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                        Rendered excerpt
+                      </h4>
+                      <p className="text-[13px] text-[#1d2327]">
+                        {item.excerpt_rendered}
+                      </p>
+                    </section>
+                  )}
+
+                  {migratedBody && (
+                    <section>
+                      <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                        Body —{" "}
+                        {item.scraped_body_html
+                          ? "controlled crawl"
+                          : "WP REST content.rendered"}
+                      </h4>
+                      <div className="overflow-hidden rounded-sm border border-[#dcdcde]">
+                        <HtmlViewer html={migratedBody} />
+                      </div>
+                    </section>
+                  )}
+
+                  {item.content_raw &&
+                    item.content_raw !== item.content_rendered && (
+                      <details className="overflow-hidden rounded-sm border border-[#dcdcde]">
+                        <summary className="cursor-pointer bg-[#f6f7f7] px-3 py-2 text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                          Raw content (with shortcodes)
+                        </summary>
+                        <HtmlViewer html={item.content_raw} />
+                      </details>
+                    )}
+
+                  {item.elementor_data != null && (
+                    <details className="overflow-hidden rounded-sm border border-[#dcdcde]">
+                      <summary className="cursor-pointer bg-[#f6f7f7] px-3 py-2 text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                        Elementor data (JSON)
+                      </summary>
+                      <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
+                        {JSON.stringify(item.elementor_data, null, 2)}
+                      </pre>
+                    </details>
+                  )}
+
+                  {item.acf != null && (
+                    <details className="overflow-hidden rounded-sm border border-[#dcdcde]">
+                      <summary className="cursor-pointer bg-[#f6f7f7] px-3 py-2 text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                        ACF fields (JSON)
+                      </summary>
+                      <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
+                        {JSON.stringify(item.acf, null, 2)}
+                      </pre>
+                    </details>
+                  )}
+
+                  {item.post_meta != null && (
+                    <details className="overflow-hidden rounded-sm border border-[#dcdcde]">
+                      <summary className="cursor-pointer bg-[#f6f7f7] px-3 py-2 text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                        WP post meta (JSON)
+                      </summary>
+                      <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
+                        {JSON.stringify(item.post_meta, null, 2)}
+                      </pre>
+                    </details>
+                  )}
+
+                  {hasMigrationProvenance && (
+                    <section>
+                      <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                        Provenance
+                      </h4>
+                      <div className="space-y-1 text-[12px] text-[#50575e]">
+                        {item.wp_id != null && (
+                          <div>
+                            WP post ID:{" "}
+                            <code className="text-[#1d2327]">
+                              {item.wp_id}
+                            </code>
+                          </div>
+                        )}
+                        {item.wp_template && (
+                          <div>
+                            WP template:{" "}
+                            <code className="text-[#1d2327]">
+                              {item.wp_template}
+                            </code>
+                          </div>
+                        )}
+                        {item.menu_order != null && (
+                          <div>
+                            Menu order:{" "}
+                            <span className="text-[#1d2327]">
+                              {item.menu_order}
+                            </span>
+                          </div>
+                        )}
+                        {item.parent_wp_id != null && (
+                          <div>
+                            Parent WP ID:{" "}
+                            <code className="text-[#1d2327]">
+                              {item.parent_wp_id}
+                            </code>
+                          </div>
+                        )}
+                        {item.scraped_at && (
+                          <div>
+                            Last scraped:{" "}
+                            <span className="text-[#1d2327]">
+                              {formatDateTime(item.scraped_at)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              </details>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -551,50 +640,6 @@ export default async function EditItemPage({
                 </div>
               ));
             })()}
-
-            {(item.wp_id || item.wp_template || item.menu_order != null || item.scraped_at) && (
-              <div className="rounded-sm border border-[#c3c4c7] bg-white">
-                <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  Migration source
-                </div>
-                <div className="space-y-1 px-3 py-3 text-[12px] text-[#50575e]">
-                  {item.wp_id != null && (
-                    <div>
-                      WP post ID:{" "}
-                      <code className="text-[#1d2327]">{item.wp_id}</code>
-                    </div>
-                  )}
-                  {item.wp_template && (
-                    <div>
-                      WP template:{" "}
-                      <code className="text-[#1d2327]">{item.wp_template}</code>
-                    </div>
-                  )}
-                  {item.menu_order != null && (
-                    <div>
-                      Menu order:{" "}
-                      <span className="text-[#1d2327]">{item.menu_order}</span>
-                    </div>
-                  )}
-                  {item.parent_wp_id != null && (
-                    <div>
-                      Parent WP ID:{" "}
-                      <code className="text-[#1d2327]">
-                        {item.parent_wp_id}
-                      </code>
-                    </div>
-                  )}
-                  {item.scraped_at && (
-                    <div>
-                      Last scraped:{" "}
-                      <span className="text-[#1d2327]">
-                        {formatDateTime(item.scraped_at)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {properties.length > 0 ? (
               <div className="rounded-sm border border-[#c3c4c7] bg-white">
