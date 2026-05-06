@@ -36,7 +36,7 @@ export default function HtmlViewer({
       </div>
       {mode === "visual" ? (
         <div
-          className="prose-anamaya max-w-none overflow-auto px-3 py-3 text-[14px] text-[#1d2327]"
+          className="prose-anamaya prose-anamaya-block overflow-auto px-3 py-3 text-[14px] text-[#1d2327]"
           style={{ maxHeight: 480, minHeight }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
