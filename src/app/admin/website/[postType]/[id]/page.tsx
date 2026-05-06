@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPostTypeBySlug } from "@/lib/website-builder/post-types";
@@ -98,6 +99,34 @@ export default async function EditItemPage({
               </div>
             </div>
 
+            {item.featured_media?.url && (
+              <div className="rounded-sm border border-[#c3c4c7] bg-white">
+                <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  Featured image
+                </div>
+                <div className="px-3 py-3 text-[13px]">
+                  <Image
+                    src={item.featured_media.url}
+                    alt={item.featured_media.alt ?? ""}
+                    width={item.featured_media.width ?? 1200}
+                    height={item.featured_media.height ?? 800}
+                    className="h-auto max-w-full rounded-sm border border-[#dcdcde]"
+                    unoptimized
+                  />
+                  <p className="mt-2 text-[12px] text-[#50575e] break-all">
+                    {item.featured_media.url}
+                    {item.featured_media.width && item.featured_media.height && (
+                      <>
+                        {" "}
+                        ({item.featured_media.width}×
+                        {item.featured_media.height})
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
               <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                 <span>Body (CMS HTML)</span>
@@ -127,10 +156,57 @@ export default async function EditItemPage({
             {migratedBody && (
               <details className="rounded-sm border border-[#c3c4c7] bg-white">
                 <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  Migrated WP HTML (read-only)
+                  Migrated WP HTML (read-only) —{" "}
+                  {item.scraped_body_html
+                    ? "controlled crawl"
+                    : "WP REST content.rendered"}
                 </summary>
                 <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
                   {migratedBody}
+                </pre>
+              </details>
+            )}
+
+            {item.content_raw && item.content_raw !== item.content_rendered && (
+              <details className="rounded-sm border border-[#c3c4c7] bg-white">
+                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  Raw content (with shortcodes)
+                </summary>
+                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
+                  {item.content_raw}
+                </pre>
+              </details>
+            )}
+
+            {item.elementor_data != null && (
+              <details className="rounded-sm border border-[#c3c4c7] bg-white">
+                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  Elementor data (read-only JSON)
+                </summary>
+                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
+                  {JSON.stringify(item.elementor_data, null, 2)}
+                </pre>
+              </details>
+            )}
+
+            {item.acf != null && (
+              <details className="rounded-sm border border-[#c3c4c7] bg-white">
+                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  ACF fields (read-only JSON)
+                </summary>
+                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
+                  {JSON.stringify(item.acf, null, 2)}
+                </pre>
+              </details>
+            )}
+
+            {item.post_meta != null && (
+              <details className="rounded-sm border border-[#c3c4c7] bg-white">
+                <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  WP post meta (read-only JSON)
+                </summary>
+                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
+                  {JSON.stringify(item.post_meta, null, 2)}
                 </pre>
               </details>
             )}
@@ -144,8 +220,18 @@ export default async function EditItemPage({
                 defaultValue={item.excerpt ?? ""}
                 rows={3}
                 aria-label="Excerpt"
-                className="block w-full resize-y rounded-b-sm border-0 bg-white px-3 py-2 text-[13px] text-[#1d2327] focus:outline-none"
+                placeholder={item.excerpt_rendered ?? ""}
+                className="block w-full resize-y border-0 bg-white px-3 py-2 text-[13px] text-[#1d2327] focus:outline-none"
               />
+              {item.excerpt_rendered &&
+                item.excerpt_rendered !== item.excerpt && (
+                  <p className="rounded-b-sm border-t border-[#dcdcde] bg-[#f6f7f7] px-3 py-2 text-[12px] text-[#50575e]">
+                    Migrated rendered excerpt:{" "}
+                    <span className="text-[#1d2327]">
+                      {item.excerpt_rendered}
+                    </span>
+                  </p>
+                )}
             </div>
 
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
@@ -168,9 +254,19 @@ export default async function EditItemPage({
                     name="meta_title"
                     type="text"
                     defaultValue={item.meta_title ?? ""}
-                    placeholder={item.title ?? ""}
+                    placeholder={
+                      item.migrated_seo?.meta_title ?? item.title ?? ""
+                    }
                     className="h-7 w-full rounded-sm border border-[#8c8f94] bg-white px-2"
                   />
+                  {item.migrated_seo?.meta_title && (
+                    <p className="mt-1 text-[12px] text-[#50575e]">
+                      Migrated from WP:{" "}
+                      <span className="text-[#1d2327]">
+                        {item.migrated_seo.meta_title}
+                      </span>
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label
@@ -184,8 +280,17 @@ export default async function EditItemPage({
                     name="meta_description"
                     defaultValue={item.meta_description ?? ""}
                     rows={3}
+                    placeholder={item.migrated_seo?.meta_description ?? ""}
                     className="block w-full rounded-sm border border-[#8c8f94] bg-white px-2 py-1"
                   />
+                  {item.migrated_seo?.meta_description && (
+                    <p className="mt-1 text-[12px] text-[#50575e]">
+                      Migrated from WP:{" "}
+                      <span className="text-[#1d2327]">
+                        {item.migrated_seo.meta_description}
+                      </span>
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label
@@ -199,9 +304,17 @@ export default async function EditItemPage({
                     name="og_image_url"
                     type="text"
                     defaultValue={item.og_image_url ?? ""}
-                    placeholder="https://…"
+                    placeholder={item.migrated_seo?.og_image ?? "https://…"}
                     className="h-7 w-full rounded-sm border border-[#8c8f94] bg-white px-2"
                   />
+                  {item.migrated_seo?.og_image && (
+                    <p className="mt-1 break-all text-[12px] text-[#50575e]">
+                      Migrated from WP:{" "}
+                      <span className="text-[#1d2327]">
+                        {item.migrated_seo.og_image}
+                      </span>
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label
@@ -276,9 +389,16 @@ export default async function EditItemPage({
                   </div>
                   <div>
                     Author:{" "}
-                    <span className="text-[#1d2327]">
-                      {item.author?.display_name ?? "—"}
-                    </span>
+                    {item.author ? (
+                      <Link
+                        href="/admin/website/authors"
+                        className="text-[#2271b1] hover:text-[#135e96] hover:underline"
+                      >
+                        {item.author.display_name ?? "—"}
+                      </Link>
+                    ) : (
+                      <span className="text-[#1d2327]">—</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center justify-between border-t border-[#dcdcde] pt-3">
@@ -340,6 +460,134 @@ export default async function EditItemPage({
                 </p>
               </div>
             </div>
+
+            {(() => {
+              const categories = item.terms.filter(
+                (t) => t.taxonomy === "category",
+              );
+              if (categories.length === 0) return null;
+              return (
+                <div className="rounded-sm border border-[#c3c4c7] bg-white">
+                  <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                    Categories
+                  </div>
+                  <ul className="space-y-1 px-3 py-3 text-[13px]">
+                    {categories.map((t) => (
+                      <li key={t.slug}>
+                        <Link
+                          href="/admin/website/taxonomies/category"
+                          className="text-[#2271b1] hover:text-[#135e96] hover:underline"
+                        >
+                          {t.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const tags = item.terms.filter((t) => t.taxonomy === "post_tag");
+              if (tags.length === 0) return null;
+              return (
+                <div className="rounded-sm border border-[#c3c4c7] bg-white">
+                  <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                    Tags
+                  </div>
+                  <div className="flex flex-wrap gap-1 px-3 py-3 text-[13px]">
+                    {tags.map((t) => (
+                      <Link
+                        key={t.slug}
+                        href="/admin/website/taxonomies/post_tag"
+                        className="rounded-sm border border-[#dcdcde] bg-[#f6f7f7] px-2 py-0.5 text-[#2271b1] hover:bg-[#fff] hover:text-[#135e96]"
+                      >
+                        {t.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const otherTerms = item.terms.filter(
+                (t) => t.taxonomy !== "category" && t.taxonomy !== "post_tag",
+              );
+              if (otherTerms.length === 0) return null;
+              const grouped = new Map<string, typeof otherTerms>();
+              for (const t of otherTerms) {
+                const arr = grouped.get(t.taxonomy) ?? [];
+                arr.push(t);
+                grouped.set(t.taxonomy, arr);
+              }
+              return Array.from(grouped.entries()).map(([taxonomy, list]) => (
+                <div
+                  key={taxonomy}
+                  className="rounded-sm border border-[#c3c4c7] bg-white"
+                >
+                  <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327] capitalize">
+                    {taxonomy.replace(/_/g, " ")}
+                  </div>
+                  <ul className="space-y-1 px-3 py-3 text-[13px]">
+                    {list.map((t) => (
+                      <li key={t.slug}>
+                        <Link
+                          href={`/admin/website/taxonomies/${encodeURIComponent(taxonomy)}`}
+                          className="text-[#2271b1] hover:text-[#135e96] hover:underline"
+                        >
+                          {t.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ));
+            })()}
+
+            {(item.wp_id || item.wp_template || item.menu_order != null || item.scraped_at) && (
+              <div className="rounded-sm border border-[#c3c4c7] bg-white">
+                <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                  Migration source
+                </div>
+                <div className="space-y-1 px-3 py-3 text-[12px] text-[#50575e]">
+                  {item.wp_id != null && (
+                    <div>
+                      WP post ID:{" "}
+                      <code className="text-[#1d2327]">{item.wp_id}</code>
+                    </div>
+                  )}
+                  {item.wp_template && (
+                    <div>
+                      WP template:{" "}
+                      <code className="text-[#1d2327]">{item.wp_template}</code>
+                    </div>
+                  )}
+                  {item.menu_order != null && (
+                    <div>
+                      Menu order:{" "}
+                      <span className="text-[#1d2327]">{item.menu_order}</span>
+                    </div>
+                  )}
+                  {item.parent_wp_id != null && (
+                    <div>
+                      Parent WP ID:{" "}
+                      <code className="text-[#1d2327]">
+                        {item.parent_wp_id}
+                      </code>
+                    </div>
+                  )}
+                  {item.scraped_at && (
+                    <div>
+                      Last scraped:{" "}
+                      <span className="text-[#1d2327]">
+                        {formatDateTime(item.scraped_at)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {properties.length > 0 ? (
               <div className="rounded-sm border border-[#c3c4c7] bg-white">

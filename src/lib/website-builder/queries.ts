@@ -364,14 +364,39 @@ export type EditorItem = {
   property_id: string | null;
   cms_body_html: string | null;
   content_rendered: string | null;
+  content_raw: string | null;
   scraped_body_html: string | null;
-  author: { id: string; display_name: string | null } | null;
+  excerpt_rendered: string | null;
+  elementor_data: unknown | null;
+  acf: unknown | null;
+  post_meta: unknown | null;
+  scraped_at: string | null;
+  // Migration provenance from url_inventory.
+  wp_id: number | null;
+  wp_template: string | null;
+  menu_order: number | null;
+  parent_wp_id: number | null;
+  featured_media: {
+    url: string | null;
+    alt: string | null;
+    width: number | null;
+    height: number | null;
+  } | null;
+  author: { id: string; display_name: string | null; slug: string | null } | null;
+  // Migrated SEO (from seo_meta) — read-only, used as placeholders / fallbacks.
+  migrated_seo: {
+    meta_title: string | null;
+    meta_description: string | null;
+    og_image: string | null;
+  } | null;
   // SEO overrides — null falls back to title / site_settings.default_meta.
   meta_title: string | null;
   meta_description: string | null;
   canonical_url: string | null;
   og_image_url: string | null;
   noindex: boolean;
+  // Taxonomy terms (categories, tags, event_category, etc.).
+  terms: Array<{ taxonomy: string; name: string; slug: string }>;
   // AI provenance — populated by the future AI rewrite phase.
   ai_last_model: string | null;
   ai_last_edit_at: string | null;
@@ -385,9 +410,9 @@ export async function getItemForEdit(
   const sb = supabaseServerOrNull();
   if (!sb) return null;
 
-  // Mirror listByPostType: use select("*") so the query doesn't silently
-  // 404 when a referenced column is missing from PostgREST's schema cache
-  // (same failure mode that 3f7d8a2 fixed for the list view).
+  // Use select("*") on both tables so a column missing from PostgREST's
+  // schema cache doesn't silently 404 the page (3f7d8a2 fixed the same
+  // failure mode in the list view).
   const { data: rowRaw, error } = await sb
     .from("url_inventory")
     .select("*")
@@ -406,8 +431,12 @@ export async function getItemForEdit(
     excerpt: string | null;
     cms_template_id: string | null;
     property_id: string | null;
-    scraped_body_html: string | null;
     author_id: string | null;
+    wp_id: number | null;
+    wp_template: string | null;
+    menu_order: number | null;
+    parent_wp_id: number | null;
+    featured_media_wp_id: number | null;
     meta_title: string | null;
     meta_description: string | null;
     canonical_url: string | null;
@@ -415,20 +444,74 @@ export async function getItemForEdit(
     noindex: boolean | null;
   };
 
-  const { data: content } = await sb
-    .from("content_items")
-    .select("content_rendered, cms_body_html, ai_last_model, ai_last_edit_at, ai_last_kind")
-    .eq("url_inventory_id", id)
-    .maybeSingle();
+  const [
+    { data: contentRaw },
+    { data: seoRaw },
+    { data: termsRaw },
+    featured_media,
+  ] = await Promise.all([
+    sb.from("content_items").select("*").eq("url_inventory_id", id).maybeSingle(),
+    sb.from("seo_meta").select("*").eq("url_inventory_id", id).maybeSingle(),
+    sb
+      .from("post_terms")
+      .select("taxonomy_terms(taxonomy, name, slug)")
+      .eq("url_inventory_id", id),
+    resolveFeaturedMedia(sb, row.featured_media_wp_id ?? null),
+  ]);
+  const content = contentRaw as
+    | {
+        content_rendered: string | null;
+        content_raw: string | null;
+        excerpt_rendered: string | null;
+        cms_body_html: string | null;
+        scraped_body_html: string | null;
+        elementor_data: unknown | null;
+        acf: unknown | null;
+        post_meta: unknown | null;
+        scraped_at: string | null;
+        ai_last_model: string | null;
+        ai_last_edit_at: string | null;
+        ai_last_kind: string | null;
+      }
+    | null;
+  const seo = seoRaw as
+    | {
+        meta_title: string | null;
+        meta_description: string | null;
+        og_image: string | null;
+      }
+    | null;
 
   let author: EditorItem["author"] = null;
   if (row.author_id) {
     const { data: a } = await sb
       .from("authors")
-      .select("id, display_name")
+      .select("id, display_name, slug")
       .eq("id", row.author_id)
       .maybeSingle();
-    if (a) author = { id: a.id, display_name: a.display_name };
+    if (a) {
+      author = { id: a.id, display_name: a.display_name, slug: a.slug ?? null };
+    }
+  }
+
+  type RawTermRow = {
+    taxonomy_terms:
+      | { taxonomy: string; name: string; slug: string }
+      | { taxonomy: string; name: string; slug: string }[]
+      | null;
+  };
+  const terms: EditorItem["terms"] = [];
+  for (const r of (termsRaw ?? []) as unknown as RawTermRow[]) {
+    const tt = r.taxonomy_terms;
+    if (!tt) continue;
+    const list = Array.isArray(tt) ? tt : [tt];
+    for (const t of list) {
+      terms.push({
+        taxonomy: t.taxonomy,
+        name: decodeEntities(t.name ?? ""),
+        slug: t.slug,
+      });
+    }
   }
 
   return {
@@ -443,16 +526,62 @@ export async function getItemForEdit(
     property_id: row.property_id ?? null,
     cms_body_html: content?.cms_body_html ?? null,
     content_rendered: content?.content_rendered ?? null,
-    scraped_body_html: row.scraped_body_html ?? null,
+    content_raw: content?.content_raw ?? null,
+    scraped_body_html: content?.scraped_body_html ?? null,
+    excerpt_rendered: content?.excerpt_rendered ?? null,
+    elementor_data: content?.elementor_data ?? null,
+    acf: content?.acf ?? null,
+    post_meta: content?.post_meta ?? null,
+    scraped_at: content?.scraped_at ?? null,
+    wp_id: row.wp_id ?? null,
+    wp_template: row.wp_template ?? null,
+    menu_order: row.menu_order ?? null,
+    parent_wp_id: row.parent_wp_id ?? null,
+    featured_media,
     author,
+    migrated_seo: seo
+      ? {
+          meta_title: seo.meta_title ?? null,
+          meta_description: seo.meta_description ?? null,
+          og_image: seo.og_image ?? null,
+        }
+      : null,
     meta_title: row.meta_title ?? null,
     meta_description: row.meta_description ?? null,
     canonical_url: row.canonical_url ?? null,
     og_image_url: row.og_image_url ?? null,
     noindex: !!row.noindex,
+    terms,
     ai_last_model: content?.ai_last_model ?? null,
     ai_last_edit_at: content?.ai_last_edit_at ?? null,
     ai_last_kind: content?.ai_last_kind ?? null,
+  };
+}
+
+async function resolveFeaturedMedia(
+  sb: NonNullable<ReturnType<typeof supabaseServerOrNull>>,
+  wpId: number | null,
+): Promise<EditorItem["featured_media"]> {
+  if (!wpId) return null;
+  const { data } = await sb
+    .from("media_items")
+    .select("source_url, storage_url, alt_text, width, height")
+    .eq("source_site", SOURCE_SITE)
+    .eq("wp_id", wpId)
+    .maybeSingle();
+  if (!data) return null;
+  const m = data as {
+    source_url: string | null;
+    storage_url: string | null;
+    alt_text: string | null;
+    width: number | null;
+    height: number | null;
+  };
+  return {
+    url: m.storage_url ?? m.source_url ?? null,
+    alt: m.alt_text ?? null,
+    width: m.width ?? null,
+    height: m.height ?? null,
   };
 }
 
