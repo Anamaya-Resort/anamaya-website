@@ -8,6 +8,8 @@ import {
 } from "@/lib/website-builder/queries";
 import { getOrganizationContext } from "@/lib/ai/organization";
 import AiTextarea from "@/components/ai/AiTextarea";
+import BodyEditor from "@/components/admin/website/BodyEditor";
+import HtmlViewer from "@/components/admin/website/HtmlViewer";
 import PageHeader from "../../_components/PageHeader";
 import { updateItem, trashItem, restoreItem } from "./actions";
 
@@ -129,41 +131,32 @@ export default async function EditItemPage({
 
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
               <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                <span>Body (CMS HTML)</span>
+                <span>Body</span>
                 <span className="text-[12px] font-normal text-[#50575e]">
                   {item.cms_body_html
                     ? "Overrides migrated WP content"
                     : "Empty — migrated WP HTML will be used"}
                 </span>
               </div>
-              <AiTextarea
-                name="cms_body_html"
-                defaultValue={item.cms_body_html ?? ""}
-                rows={20}
-                placeholder="Leave blank to keep using the migrated WP HTML below."
-                aria-label="Body HTML"
-                pageContext={{
-                  postType: pt.postType,
-                  postId: item.id,
-                  title: item.title ?? "",
-                  urlPath: item.url_path ?? "",
-                  propertyId: item.property_id ?? null,
-                }}
-                className="block w-full resize-y rounded-b-sm border-0 bg-white px-3 py-2 font-mono text-[12px] leading-relaxed text-[#1d2327] focus:outline-none"
-              />
+              <div className="px-2 pb-2 pt-2">
+                <BodyEditor
+                  name="cms_body_html"
+                  defaultValue={item.cms_body_html ?? ""}
+                  placeholder="Leave blank to keep using the migrated WP HTML below."
+                  minHeight={360}
+                />
+              </div>
             </div>
 
             {migratedBody && (
-              <details className="rounded-sm border border-[#c3c4c7] bg-white">
+              <details className="rounded-sm border border-[#c3c4c7] bg-white" open>
                 <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                  Migrated WP HTML (read-only) —{" "}
+                  Migrated WP body (read-only) —{" "}
                   {item.scraped_body_html
                     ? "controlled crawl"
                     : "WP REST content.rendered"}
                 </summary>
-                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
-                  {migratedBody}
-                </pre>
+                <HtmlViewer html={migratedBody} />
               </details>
             )}
 
@@ -172,9 +165,7 @@ export default async function EditItemPage({
                 <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                   Raw content (with shortcodes)
                 </summary>
-                <pre className="max-h-96 overflow-auto px-3 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#50575e]">
-                  {item.content_raw}
-                </pre>
+                <HtmlViewer html={item.content_raw} />
               </details>
             )}
 
@@ -215,12 +206,20 @@ export default async function EditItemPage({
               <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                 Excerpt
               </div>
-              <textarea
+              <AiTextarea
                 name="excerpt"
                 defaultValue={item.excerpt ?? ""}
                 rows={3}
                 aria-label="Excerpt"
                 placeholder={item.excerpt_rendered ?? ""}
+                pageContext={{
+                  postType: pt.postType,
+                  postId: item.id,
+                  title: item.title ?? "",
+                  urlPath: item.url_path ?? "",
+                  propertyId: item.property_id ?? null,
+                  field: "excerpt",
+                }}
                 className="block w-full resize-y border-0 bg-white px-3 py-2 text-[13px] text-[#1d2327] focus:outline-none"
               />
               {item.excerpt_rendered &&
@@ -275,12 +274,20 @@ export default async function EditItemPage({
                   >
                     Meta description
                   </label>
-                  <textarea
+                  <AiTextarea
                     id="meta_description"
                     name="meta_description"
                     defaultValue={item.meta_description ?? ""}
                     rows={3}
                     placeholder={item.migrated_seo?.meta_description ?? ""}
+                    pageContext={{
+                      postType: pt.postType,
+                      postId: item.id,
+                      title: item.title ?? "",
+                      urlPath: item.url_path ?? "",
+                      propertyId: item.property_id ?? null,
+                      field: "meta_description",
+                    }}
                     className="block w-full rounded-sm border border-[#8c8f94] bg-white px-2 py-1"
                   />
                   {item.migrated_seo?.meta_description && (
