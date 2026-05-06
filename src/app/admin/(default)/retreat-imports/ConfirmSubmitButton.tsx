@@ -1,7 +1,8 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import ConfirmDialog from "@/components/admin/dialogs/ConfirmDialog";
 
 export function ConfirmSubmitButton({
   className,
@@ -15,7 +16,8 @@ export function ConfirmSubmitButton({
   children: React.ReactNode;
 }) {
   const { pending } = useFormStatus();
-  const [confirmed, setConfirmed] = useState(false);
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   if (pending) {
     return (
@@ -25,19 +27,32 @@ export function ConfirmSubmitButton({
     );
   }
 
+  function fireSubmit() {
+    setOpen(false);
+    // Walk up to the enclosing form and submit programmatically. Using
+    // requestSubmit() so the form's action runs through React's
+    // server-action pipeline (and useFormStatus flips to pending).
+    triggerRef.current?.closest("form")?.requestSubmit();
+  }
+
   return (
-    <button
-      type="submit"
-      className={className}
-      onClick={(e) => {
-        if (!confirmed && !window.confirm(confirmMessage)) {
-          e.preventDefault();
-          return;
-        }
-        setConfirmed(true);
-      }}
-    >
-      {children}
-    </button>
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={className}
+        onClick={() => setOpen(true)}
+      >
+        {children}
+      </button>
+      <ConfirmDialog
+        open={open}
+        title="Are you sure?"
+        message={confirmMessage}
+        confirmLabel="Continue"
+        onConfirm={fireSubmit}
+        onCancel={() => setOpen(false)}
+      />
+    </>
   );
 }

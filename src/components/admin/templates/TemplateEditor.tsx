@@ -12,6 +12,7 @@ import {
   setBlockLocked,
 } from "@/app/admin/(default)/templates/actions";
 import LivePreviewButton from "./LivePreviewButton";
+import ConfirmDialog from "@/components/admin/dialogs/ConfirmDialog";
 
 type OverlayAnchor = "top" | "right" | "bottom" | "left" | "fullscreen";
 type OverlayTrigger = "always" | "on-menu" | "on-scroll";
@@ -90,6 +91,7 @@ export default function TemplateEditor({
   const [activeInfoRowId, setActiveInfoRowId] = useState<string | null>(null);
   const [inserterAt, setInserterAt] =
     useState<null | { beforeRowId?: string; afterAll?: boolean }>(null);
+  const [removingRowId, setRemovingRowId] = useState<string | null>(null);
 
   if (!variant) {
     return (
@@ -128,7 +130,12 @@ export default function TemplateEditor({
     });
   }
   function handleRemove(rowId: string) {
-    if (!confirm("Remove this block from the template?")) return;
+    setRemovingRowId(rowId);
+  }
+  function confirmRemove() {
+    const rowId = removingRowId;
+    if (!rowId) return;
+    setRemovingRowId(null);
     startTransition(async () => {
       await removeBlockFromVariant(rowId);
       refresh();
@@ -218,6 +225,15 @@ export default function TemplateEditor({
           onClose={() => setInserterAt(null)}
         />
       )}
+      <ConfirmDialog
+        open={removingRowId !== null}
+        title="Remove block?"
+        message="Remove this block from the template?"
+        confirmLabel="Remove"
+        destructive
+        onConfirm={confirmRemove}
+        onCancel={() => setRemovingRowId(null)}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
+import PromptDialog from "@/components/admin/dialogs/PromptDialog";
 import {
   Bold,
   Italic,
@@ -63,6 +64,16 @@ export default function Toolbar({
   onOpenAi: (kind: AiKind) => void;
 }) {
   const [showEmoji, setShowEmoji] = useState(false);
+  // Captured at click time so the link command can re-apply the
+  // selection after the prompt modal has stolen DOM focus. The
+  // ProseMirror selection model survives blur, but re-running
+  // setTextSelection({from, to}) makes the chained commands
+  // unambiguous regardless of where DOM focus returns from.
+  const [linkPrompt, setLinkPrompt] = useState<{
+    from: number;
+    to: number;
+    previous: string;
+  } | null>(null);
 
   const currentFontSize = readFontSizePx(editor);
   const currentFontFamily = (editor.getAttributes("textStyle").fontFamily as string | undefined) ?? "";
@@ -136,7 +147,50 @@ export default function Toolbar({
       .run();
   }
 
+  function applyLink(url: string) {
+    if (!linkPrompt) return;
+    const { from, to } = linkPrompt;
+    const hasSelection = from !== to;
+    const trimmed = url.trim();
+    setLinkPrompt(null);
+
+    if (trimmed === "") {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection({ from, to })
+        .extendMarkRange("link")
+        .unsetLink()
+        .run();
+      return;
+    }
+    if (hasSelection) {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection({ from, to })
+        .extendMarkRange("link")
+        .setLink({ href: trimmed })
+        .run();
+    } else {
+      // No selection — insert the URL as clickable text. Use
+      // ProseMirror node JSON (not an HTML string) so the URL
+      // can't break attribute quoting or inject stray markup.
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(from)
+        .insertContent({
+          type: "text",
+          text: trimmed,
+          marks: [{ type: "link", attrs: { href: trimmed } }],
+        })
+        .run();
+    }
+  }
+
   return (
+    <>
     <div
       className="flex flex-wrap items-center gap-0.5 py-1"
       // Preserve the editor's selection when clicking a toolbar button.
@@ -354,30 +408,9 @@ export default function Toolbar({
         title="Add link"
         onClick={() => {
           const { from, to } = editor.state.selection;
-          const hasSelection = from !== to;
-          const previous = editor.getAttributes("link").href as string | undefined;
-          const url = window.prompt("Link URL", previous ?? "https://");
-          if (url === null) return; // user cancelled
-          if (url === "") {
-            editor.chain().focus().extendMarkRange("link").unsetLink().run();
-            return;
-          }
-          if (hasSelection) {
-            editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
-          } else {
-            // No selection — insert the URL as clickable text. Use
-            // ProseMirror node JSON (not an HTML string) so the URL
-            // can't break attribute quoting or inject stray markup.
-            editor
-              .chain()
-              .focus()
-              .insertContent({
-                type: "text",
-                text: url,
-                marks: [{ type: "link", attrs: { href: url } }],
-              })
-              .run();
-          }
+          const previous =
+            (editor.getAttributes("link").href as string | undefined) ?? "";
+          setLinkPrompt({ from, to, previous });
         }}
         className={btn(editor.isActive("link"))}
       >
@@ -457,6 +490,18 @@ export default function Toolbar({
         <Languages size={14} />
       </button>
     </div>
+    <PromptDialog
+      open={linkPrompt !== null}
+      title={linkPrompt?.previous ? "Edit link" : "Add link"}
+      label="URL"
+      defaultValue={linkPrompt?.previous ?? "https://"}
+      placeholder="https://example.com"
+      helpText="Leave empty and press OK to remove the link."
+      confirmLabel={linkPrompt?.previous ? "Update" : "Add"}
+      onConfirm={applyLink}
+      onCancel={() => setLinkPrompt(null)}
+    />
+    </>
   );
 }
 

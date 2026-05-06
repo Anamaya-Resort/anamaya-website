@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteBlock, duplicateBlock } from "./actions";
+import ConfirmDialog from "@/components/admin/dialogs/ConfirmDialog";
 
 type Block = {
   id: string;
@@ -22,6 +23,7 @@ export default function BlockCard({ block }: { block: Block }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   function onDuplicate() {
     startTransition(async () => {
@@ -31,7 +33,7 @@ export default function BlockCard({ block }: { block: Block }) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Failed to duplicate";
         setError(msg);
-        if (typeof window !== "undefined") window.alert(`Duplicate failed: ${msg}`);
+        setDuplicateError(msg);
       }
     });
   }
@@ -189,6 +191,16 @@ export default function BlockCard({ block }: { block: Block }) {
           </footer>
         </form>
       </dialog>
+
+      <ConfirmDialog
+        open={duplicateError !== null}
+        title="Duplicate failed"
+        message={duplicateError ?? ""}
+        confirmLabel="OK"
+        hideCancel
+        onConfirm={() => setDuplicateError(null)}
+        onCancel={() => setDuplicateError(null)}
+      />
     </div>
   );
 }

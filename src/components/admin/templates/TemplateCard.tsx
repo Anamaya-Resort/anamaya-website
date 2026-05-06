@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteTemplate, duplicateTemplate } from "@/app/admin/(default)/templates/actions";
+import ConfirmDialog from "@/components/admin/dialogs/ConfirmDialog";
 
 export type TemplateCardBlock = {
   id: string;
@@ -25,6 +26,7 @@ export default function TemplateCard({
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +49,10 @@ export default function TemplateCard({
   }
   function handleDelete() {
     setMenuOpen(false);
-    if (!confirm(`Delete template "${name}"? This cannot be undone.`)) return;
+    setDeleteOpen(true);
+  }
+  function confirmDelete() {
+    setDeleteOpen(false);
     startTransition(async () => {
       await deleteTemplate(id);
       router.refresh();
@@ -55,6 +60,7 @@ export default function TemplateCard({
   }
 
   return (
+    <>
     <article
       className="relative flex w-[300px] flex-col overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-md"
       style={{ maxHeight: 1200 }}
@@ -148,5 +154,21 @@ export default function TemplateCard({
         )}
       </Link>
     </article>
+    <ConfirmDialog
+      open={deleteOpen}
+      title="Delete template?"
+      message={
+        <>
+          <span className="font-semibold text-anamaya-charcoal">{name}</span>{" "}
+          will be removed. This cannot be undone.
+        </>
+      }
+      confirmLabel="Delete"
+      destructive
+      busy={pending}
+      onConfirm={confirmDelete}
+      onCancel={() => setDeleteOpen(false)}
+    />
+    </>
   );
 }

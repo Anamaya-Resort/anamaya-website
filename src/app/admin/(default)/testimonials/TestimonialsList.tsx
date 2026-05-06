@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { playClick } from "@/lib/click-sound";
+import ConfirmDialog from "@/components/admin/dialogs/ConfirmDialog";
 import {
   deleteTestimonialFromForm,
   setAssignmentVisibilityFromForm,
@@ -356,23 +357,33 @@ function VisibleToggle({
 }
 
 function DeleteButton({ id }: { id: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [open, setOpen] = useState(false);
   return (
-    <form
-      action={deleteTestimonialFromForm}
-      onSubmit={(e) => {
-        if (!confirm("Delete this testimonial? This cannot be undone.")) {
-          e.preventDefault();
-        }
-      }}
-    >
-      <input type="hidden" name="id" value={id} />
-      <button
-        type="submit"
-        className="rounded-full border border-red-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
-      >
-        Delete
-      </button>
-    </form>
+    <>
+      <form ref={formRef} action={deleteTestimonialFromForm}>
+        <input type="hidden" name="id" value={id} />
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="rounded-full border border-red-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50"
+        >
+          Delete
+        </button>
+      </form>
+      <ConfirmDialog
+        open={open}
+        title="Delete testimonial?"
+        message="This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          setOpen(false);
+          formRef.current?.requestSubmit();
+        }}
+        onCancel={() => setOpen(false)}
+      />
+    </>
   );
 }
 
