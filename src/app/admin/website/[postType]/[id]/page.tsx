@@ -9,6 +9,7 @@ import {
 import { getOrganizationContext } from "@/lib/ai/organization";
 import AiTextarea from "@/components/ai/AiTextarea";
 import BodyEditor from "@/components/admin/website/BodyEditor";
+import EditablePermalink from "@/components/admin/website/EditablePermalink";
 import HtmlViewer from "@/components/admin/website/HtmlViewer";
 import PageHeader from "../../_components/PageHeader";
 import { updateItem, trashItem, restoreItem } from "./actions";
@@ -515,12 +516,7 @@ export default async function EditItemPage({
                     </>
                   )}
                 </div>
-                <div className="border-t border-[#dcdcde] pt-2 text-[12px] text-[#50575e]">
-                  Permalink:{" "}
-                  <code className="break-all text-[#2271b1]">
-                    {item.url_path}
-                  </code>
-                </div>
+                <EditablePermalink defaultValue={item.url_path} />
               </div>
             </div>
 

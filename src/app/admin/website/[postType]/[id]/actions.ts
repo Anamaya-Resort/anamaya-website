@@ -28,6 +28,15 @@ export async function updateItem(formData: FormData) {
   const propertyRaw = String(formData.get("property_id") ?? "");
   const cmsBodyRaw = formData.get("cms_body_html");
   const excerpt = String(formData.get("excerpt") ?? "");
+  const urlPathRaw = formData.get("url_path");
+  const url_path =
+    urlPathRaw == null
+      ? null
+      : (() => {
+          const t = String(urlPathRaw).trim();
+          if (!t) return null;
+          return t.startsWith("/") ? t : `/${t}`;
+        })();
 
   // SEO overrides — empty string persists as null so AI/UI fall back
   // to the title / site_settings.default_meta defaults.
@@ -50,21 +59,26 @@ export async function updateItem(formData: FormData) {
   const property_id = propertyRaw === "" ? null : propertyRaw;
 
   const sb = supabaseServer();
+  const update: Record<string, unknown> = {
+    title: title || null,
+    wp_status: status,
+    cms_template_id,
+    property_id,
+    excerpt: excerpt || null,
+    meta_title,
+    meta_description,
+    canonical_url,
+    og_image_url,
+    noindex,
+    date_modified: new Date().toISOString(),
+  };
+  // Only touch url_path if it actually changed — keeps the unique
+  // (source_site, url_path) index from churning, and avoids surprises
+  // for rows where the editor doesn't render an EditablePermalink.
+  if (url_path) update.url_path = url_path;
   const { error: invErr } = await sb
     .from("url_inventory")
-    .update({
-      title: title || null,
-      wp_status: status,
-      cms_template_id,
-      property_id,
-      excerpt: excerpt || null,
-      meta_title,
-      meta_description,
-      canonical_url,
-      og_image_url,
-      noindex,
-      date_modified: new Date().toISOString(),
-    })
+    .update(update)
     .eq("id", id)
     .eq("post_type", pt.postType)
     .eq("source_site", SOURCE_SITE);
