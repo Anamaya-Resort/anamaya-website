@@ -385,16 +385,35 @@ export async function getItemForEdit(
   const sb = supabaseServerOrNull();
   if (!sb) return null;
 
-  const { data: row, error } = await sb
+  // Mirror listByPostType: use select("*") so the query doesn't silently
+  // 404 when a referenced column is missing from PostgREST's schema cache
+  // (same failure mode that 3f7d8a2 fixed for the list view).
+  const { data: rowRaw, error } = await sb
     .from("url_inventory")
-    .select(
-      "id, title, url_path, wp_status, date_published, date_modified, excerpt, cms_template_id, property_id, scraped_body_html, author_id, meta_title, meta_description, canonical_url, og_image_url, noindex",
-    )
+    .select("*")
     .eq("id", id)
     .eq("source_site", SOURCE_SITE)
     .eq("post_type", postType)
     .maybeSingle();
-  if (error || !row) return null;
+  if (error || !rowRaw) return null;
+  const row = rowRaw as unknown as {
+    id: string;
+    title: string | null;
+    url_path: string | null;
+    wp_status: string | null;
+    date_published: string | null;
+    date_modified: string | null;
+    excerpt: string | null;
+    cms_template_id: string | null;
+    property_id: string | null;
+    scraped_body_html: string | null;
+    author_id: string | null;
+    meta_title: string | null;
+    meta_description: string | null;
+    canonical_url: string | null;
+    og_image_url: string | null;
+    noindex: boolean | null;
+  };
 
   const { data: content } = await sb
     .from("content_items")
@@ -415,7 +434,7 @@ export async function getItemForEdit(
   return {
     id: row.id,
     title: row.title ? decodeEntities(row.title) : null,
-    url_path: row.url_path,
+    url_path: row.url_path ?? "",
     wp_status: row.wp_status,
     date_published: row.date_published,
     date_modified: row.date_modified,
