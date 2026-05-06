@@ -108,20 +108,6 @@ export default async function EditItemPage({
             />
 
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
-              <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                Permalink
-              </div>
-              <div className="px-3 py-2 text-[13px]">
-                <code className="break-all text-[#2271b1]">
-                  {item.url_path}
-                </code>
-                <p className="mt-1 text-[12px] text-[#50575e]">
-                  Permalinks mirror the migrated WP URL — read-only in Phase 3.
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-sm border border-[#c3c4c7] bg-white">
               <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                 <span>Body</span>
                 <span className="text-[12px] font-normal text-[#50575e]">
@@ -140,10 +126,10 @@ export default async function EditItemPage({
               </div>
             </div>
 
-            <div className="rounded-sm border border-[#c3c4c7] bg-white">
-              <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+            <details open className="rounded-sm border border-[#c3c4c7] bg-white">
+              <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                 Excerpt
-              </div>
+              </summary>
               <AiTextarea
                 name="excerpt"
                 defaultValue={item.excerpt ?? ""}
@@ -160,15 +146,15 @@ export default async function EditItemPage({
                 }}
                 className="block w-full resize-y rounded-b-sm border-0 bg-white px-3 py-2 text-[13px] text-[#1d2327] focus:outline-none"
               />
-            </div>
+            </details>
 
-            <div className="rounded-sm border border-[#c3c4c7] bg-white">
-              <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
-                <span>SEO &amp; Social</span>
-                <span className="text-[12px] font-normal text-[#50575e]">
+            <details open className="rounded-sm border border-[#c3c4c7] bg-white">
+              <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                SEO &amp; Social
+                <span className="ml-2 text-[12px] font-normal text-[#50575e]">
                   Per-page overrides; blank = use site defaults
                 </span>
-              </div>
+              </summary>
               <div className="space-y-3 px-3 py-3 text-[13px]">
                 <div>
                   <label
@@ -280,7 +266,7 @@ export default async function EditItemPage({
                   </span>
                 </label>
               </div>
-            </div>
+            </details>
 
             {hasMigratedData && (
               <details
@@ -528,6 +514,12 @@ export default async function EditItemPage({
                       </button>
                     </>
                   )}
+                </div>
+                <div className="border-t border-[#dcdcde] pt-2 text-[12px] text-[#50575e]">
+                  Permalink:{" "}
+                  <code className="break-all text-[#2271b1]">
+                    {item.url_path}
+                  </code>
                 </div>
               </div>
             </div>
