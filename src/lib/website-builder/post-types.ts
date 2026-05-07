@@ -158,6 +158,20 @@ export const POST_TYPES: PostTypeConfig[] = [
     taxonomies: [],
     icon: "Quote",
   },
+  {
+    // WooCommerce products from v2. Surfaced so a single-product
+    // template can be authored before the snapshot launch — without
+    // this entry the 9 product URLs aren't visible in the admin.
+    slug: "products",
+    postType: "product",
+    label: "Product",
+    pluralLabel: "Products",
+    templateSlug: "single-product",
+    hierarchical: false,
+    columns: ["title", "date"],
+    taxonomies: [],
+    icon: "ShoppingBag",
+  },
 ];
 
 export function getPostTypeBySlug(slug: string): PostTypeConfig | null {
