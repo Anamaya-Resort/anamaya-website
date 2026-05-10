@@ -19,7 +19,8 @@
     "scrape:retreats": "tsx scripts/extractor/scrape-retreat-bodies.ts",
     "extract:all": "npm run extract:authors && npm run extract:terms && npm run extract:urls && npm run extract:sitemap",
     "scan:tracking": "tsx scripts/extractor/scan-tracking.ts",
-    "compare": "tsx scripts/extractor/compare-v1-v2.ts"
+    "compare": "tsx scripts/extractor/compare-v1-v2.ts",
+    "snapshot:discover": "tsx scripts/snapshot/phase-a-discover.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",

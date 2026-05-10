@@ -42,3 +42,7 @@ next-env.d.ts
 
 # Local staging folder for raw images before we optimize + move to public/
 /img
+
+# Snapshot output (Phase A/B/C migration runs — raw HTML + per-page asset
+# JSON; thousands of files, regenerable from the staging WP site).
+/migration/snapshot/
