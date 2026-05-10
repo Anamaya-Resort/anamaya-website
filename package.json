@@ -21,7 +21,8 @@
     "scan:tracking": "tsx scripts/extractor/scan-tracking.ts",
     "compare": "tsx scripts/extractor/compare-v1-v2.ts",
     "snapshot:discover": "tsx scripts/snapshot/phase-a-discover.ts",
-    "snapshot:download": "tsx scripts/snapshot/phase-b-download.ts"
+    "snapshot:download": "tsx scripts/snapshot/phase-b-download.ts",
+    "snapshot:rewrite": "tsx scripts/snapshot/phase-c-rewrite.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",
