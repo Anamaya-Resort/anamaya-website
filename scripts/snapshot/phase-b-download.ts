@@ -145,10 +145,9 @@ async function ensureBucket(): Promise<void> {
   const { data: buckets } = await c.storage.listBuckets();
   const exists = buckets?.some((b) => b.name === BUCKET);
   if (exists) return;
-  const { error } = await c.storage.createBucket(BUCKET, {
-    public: true,
-    fileSizeLimit: 100 * 1024 * 1024, // 100 MB ceiling per asset
-  });
+  // Don't pass fileSizeLimit — let it inherit the project default.
+  // Supabase rejects per-bucket caps higher than the project ceiling.
+  const { error } = await c.storage.createBucket(BUCKET, { public: true });
   if (error) throw new Error(`createBucket: ${error.message}`);
   console.log(`  created bucket "${BUCKET}" (public)`);
 }
