@@ -710,16 +710,18 @@ export default async function EditItemPage({
                     ← All {pt.pluralLabel}
                   </Link>
                 </li>
-                <li>
-                  <a
-                    href={`/snapshot/${item.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[#2271b1] hover:text-[#135e96] hover:underline"
-                  >
-                    View WP snapshot ↗
-                  </a>
-                </li>
+                {item.url_path && (
+                  <li>
+                    <a
+                      href={`/snapshot${item.url_path.startsWith("/") ? item.url_path : `/${item.url_path}`}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#2271b1] hover:text-[#135e96] hover:underline"
+                    >
+                      View WP snapshot ↗
+                    </a>
+                  </li>
+                )}
               </ul>
             </div>
           </aside>

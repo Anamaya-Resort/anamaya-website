@@ -242,7 +242,7 @@ export default function ListShell({
                                     URL serving still goes through the
                                     main catch-all. */}
                                 <a
-                                  href={`/snapshot/${row.id}`}
+                                  href={`/snapshot${row.url_path.startsWith("/") ? row.url_path : `/${row.url_path}`}`}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-[#2271b1] hover:text-[#135e96] hover:underline"
