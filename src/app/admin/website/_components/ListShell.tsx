@@ -236,8 +236,13 @@ export default function ListShell({
                             {row.url_path && (
                               <>
                                 <span>|</span>
+                                {/* Preview the WP snapshot exactly as
+                                    captured (full HTML, all original
+                                    styles). Admin-only path; the public
+                                    URL serving still goes through the
+                                    main catch-all. */}
                                 <a
-                                  href={row.url_path}
+                                  href={`/snapshot/${row.id}`}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-[#2271b1] hover:text-[#135e96] hover:underline"
