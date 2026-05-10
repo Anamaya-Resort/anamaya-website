@@ -202,8 +202,15 @@ function rewriteHtml(
   html = html.replace(/<img\b([^>]*)>/gi, (match, rawAttrs) => {
     let next = rawAttrs as string;
 
+    // \b alone treats every hyphen as a word boundary, so /\bsrc=/
+    // also matches inside data-src= and nitro-lazy-src=. Use a
+    // lookbehind that requires the previous char to not be a word
+    // char or hyphen — that gives us a real attribute boundary.
+    const attrBoundary = (attr: string) =>
+      `(?<![\\w-])${attr}\\s*=\\s*(["'])([^"']*)\\1`;
+
     for (const attr of IMG_URL_ATTRS) {
-      const re = new RegExp(`\\b${attr}\\s*=\\s*(["'])([^"']*)\\1`, "gi");
+      const re = new RegExp(attrBoundary(attr), "gi");
       next = next.replace(
         re,
         (m, q, v) =>
@@ -211,7 +218,7 @@ function rewriteHtml(
       );
     }
     for (const attr of IMG_SRCSET_ATTRS) {
-      const re = new RegExp(`\\b${attr}\\s*=\\s*(["'])([^"']*)\\1`, "gi");
+      const re = new RegExp(attrBoundary(attr), "gi");
       next = next.replace(
         re,
         (m, q, v) =>
@@ -222,18 +229,20 @@ function rewriteHtml(
     // NitroPack swap: if a real lazy URL exists, force it into src/srcset
     // so browser loads it without depending on the lazy-loader JS firing.
     const lazySrc = next.match(
-      /\b(?:nitro-lazy-src|data-lazy-src|data-original|data-orig-file)\s*=\s*(["'])([^"']+)\1/i,
+      /(?<![\w-])(?:nitro-lazy-src|data-lazy-src|data-original|data-orig-file)\s*=\s*(["'])([^"']+)\1/i,
     )?.[2];
     const lazySrcset = next.match(
-      /\b(?:nitro-lazy-srcset|data-lazy-srcset)\s*=\s*(["'])([^"']+)\1/i,
+      /(?<![\w-])(?:nitro-lazy-srcset|data-lazy-srcset)\s*=\s*(["'])([^"']+)\1/i,
     )?.[2];
-    const srcVal = next.match(/\bsrc\s*=\s*(["'])([^"']*)\1/i)?.[2];
+    const srcVal = next.match(
+      /(?<![\w-])src\s*=\s*(["'])([^"']*)\1/i,
+    )?.[2];
     const isPlaceholder = !!srcVal && srcVal.startsWith("data:");
     const wasPromoted = !!lazySrc && (!srcVal || isPlaceholder);
     if (wasPromoted && lazySrc) {
       if (srcVal !== undefined) {
         next = next.replace(
-          /\bsrc\s*=\s*(["'])[^"']*\1/i,
+          /(?<![\w-])src\s*=\s*(["'])[^"']*\1/i,
           (m, q) => `src=${q}${lazySrc}${q}`,
         );
       } else {
@@ -241,10 +250,10 @@ function rewriteHtml(
       }
     }
     if (lazySrcset) {
-      const hadSrcset = /\bsrcset\s*=/i.test(next);
+      const hadSrcset = /(?<![\w-])srcset\s*=/i.test(next);
       if (hadSrcset) {
         next = next.replace(
-          /\bsrcset\s*=\s*(["'])[^"']*\1/i,
+          /(?<![\w-])srcset\s*=\s*(["'])[^"']*\1/i,
           (m, q) => `srcset=${q}${lazySrcset}${q}`,
         );
       } else {
@@ -256,12 +265,16 @@ function rewriteHtml(
     // that visibly hide elements while .nitro-lazy is on them; the JS
     // swapper would normally remove the class once the image is in
     // view. Since we've already pre-loaded the real URL into src, the
-    // class just hides a perfectly-loaded image — drop it. Same for
-    // the related nitro-lazy-empty marker and data-nitro-empty-id /
-    // nitro-lazy-empty boolean attributes.
+    // class just hides a perfectly-loaded image — drop it.
+    //
+    // Also REMOVE the nitro-lazy-src / -srcset attributes themselves.
+    // NitroPack's inline JS scans for [nitro-lazy-src] on page load
+    // and re-adds the nitro-lazy class to anything it finds, undoing
+    // our strip. Removing the attributes leaves the JS with nothing
+    // to act on.
     if (wasPromoted || lazySrcset) {
       next = next.replace(
-        /\bclass\s*=\s*(["'])([^"']*)\1/i,
+        /(?<![\w-])class\s*=\s*(["'])([^"']*)\1/i,
         (m, q, classes: string) => {
           const cleaned = classes
             .split(/\s+/)
@@ -277,9 +290,15 @@ function rewriteHtml(
           return `class=${q}${cleaned}${q}`;
         },
       );
-      next = next.replace(/\bnitro-lazy-empty\b(?!=)/gi, "");
+      next = next.replace(/(?<![\w-])nitro-lazy-empty\b(?!=)/gi, "");
       next = next.replace(
-        /\bdata-nitro-empty-id\s*=\s*(["'])[^"']*\1/gi,
+        /(?<![\w-])data-nitro-empty-id\s*=\s*(["'])[^"']*\1/gi,
+        "",
+      );
+      // Drop the lazy-src attributes themselves so NitroPack's JS
+      // doesn't re-apply the .nitro-lazy class on page load.
+      next = next.replace(
+        /(?<![\w-])(?:nitro-lazy-src|nitro-lazy-srcset|data-lazy-src|data-lazy-srcset)\s*=\s*(["'])[^"']*\1/gi,
         "",
       );
     }
