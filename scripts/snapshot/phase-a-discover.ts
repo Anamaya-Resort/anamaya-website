@@ -208,29 +208,39 @@ function extractAssets(html: string, pageUrl: string): Asset[] {
     if (url) pushUnique(assets, { url, source: "script" });
   }
 
-  // <img src="..." srcset="...">
+  // <img src="..." srcset="..."> — plus all the lazy-load variants
+  // WP performance plugins use to defer image loading. NitroPack
+  // stuffs the real URL in nitro-lazy-src and replaces src with a
+  // data-URI placeholder, so a regex looking only at src misses
+  // every real image on a NitroPack-optimised page.
+  const IMG_URL_ATTRS = [
+    "src",
+    "data-src",
+    "nitro-lazy-src",
+    "data-lazy-src",
+    "data-original",
+    "data-orig-file",
+  ];
+  const IMG_SRCSET_ATTRS = [
+    "srcset",
+    "data-srcset",
+    "nitro-lazy-srcset",
+    "data-lazy-srcset",
+  ];
   for (const m of html.matchAll(/<img\b([^>]*)>/gi)) {
     const attrs = m[1];
-    const src = attrs.match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1];
-    if (src) {
-      const url = resolveUrl(src, pageUrl);
+    for (const attr of IMG_URL_ATTRS) {
+      const re = new RegExp(`\\b${attr}\\s*=\\s*["']([^"']+)["']`, "i");
+      const v = attrs.match(re)?.[1];
+      if (!v) continue;
+      const url = resolveUrl(v, pageUrl);
       if (url) pushUnique(assets, { url, source: "image" });
     }
-    const srcset = attrs.match(/\bsrcset\s*=\s*["']([^"']+)["']/i)?.[1];
-    if (srcset) {
-      for (const s of parseSrcset(srcset)) {
-        const url = resolveUrl(s, pageUrl);
-        if (url) pushUnique(assets, { url, source: "image-srcset" });
-      }
-    }
-    const dataSrc = attrs.match(/\bdata-src\s*=\s*["']([^"']+)["']/i)?.[1];
-    if (dataSrc) {
-      const url = resolveUrl(dataSrc, pageUrl);
-      if (url) pushUnique(assets, { url, source: "image" });
-    }
-    const dataSrcset = attrs.match(/\bdata-srcset\s*=\s*["']([^"']+)["']/i)?.[1];
-    if (dataSrcset) {
-      for (const s of parseSrcset(dataSrcset)) {
+    for (const attr of IMG_SRCSET_ATTRS) {
+      const re = new RegExp(`\\b${attr}\\s*=\\s*["']([^"']+)["']`, "i");
+      const v = attrs.match(re)?.[1];
+      if (!v) continue;
+      for (const s of parseSrcset(v)) {
         const url = resolveUrl(s, pageUrl);
         if (url) pushUnique(assets, { url, source: "image-srcset" });
       }
@@ -293,30 +303,51 @@ async function processPage(row: PageRow): Promise<PageResult> {
   const htmlPath = resolve(HTML_DIR, `${row.id}.html`);
   const assetsPath = resolve(PAGE_ASSETS_DIR, `${row.id}.json`);
 
-  if (existsSync(htmlPath) && existsSync(assetsPath)) {
-    // Resumable: trust prior fetch.
+  // Resume strategy: cached HTML is reused, but assets are ALWAYS
+  // re-extracted from disk so improvements to the parser take effect
+  // without re-fetching every page. (Previously skipped both fetch
+  // and parse, which meant a parser fix needed a full re-fetch.)
+  let html: string;
+  let cached = false;
+  if (existsSync(htmlPath)) {
+    const { readFile } = await import("fs/promises");
+    html = await readFile(htmlPath, "utf8");
+    cached = true;
+  } else {
+    const res = await fetchHtml(row.url);
+    if (!res.ok || !res.html) {
+      return {
+        id: row.id,
+        url: row.url,
+        status: "error",
+        http_status: res.status,
+        error: res.error ?? `HTTP ${res.status}`,
+      };
+    }
+    html = res.html;
+    await writeFile(htmlPath, html, "utf8");
+  }
+
+  const assets = extractAssets(html, row.url);
+  if (cached) {
+    await writeFile(
+      assetsPath,
+      JSON.stringify(
+        { id: row.id, url: row.url, url_path: row.url_path, assets },
+        null,
+        2,
+      ),
+      "utf8",
+    );
     const st = await stat(htmlPath);
     return {
       id: row.id,
       url: row.url,
       status: "skipped-existing",
       html_bytes: st.size,
+      asset_count: assets.length,
     };
   }
-
-  const res = await fetchHtml(row.url);
-  if (!res.ok || !res.html) {
-    return {
-      id: row.id,
-      url: row.url,
-      status: "error",
-      http_status: res.status,
-      error: res.error ?? `HTTP ${res.status}`,
-    };
-  }
-
-  const assets = extractAssets(res.html, row.url);
-  await writeFile(htmlPath, res.html, "utf8");
   await writeFile(
     assetsPath,
     JSON.stringify(
@@ -331,8 +362,8 @@ async function processPage(row: PageRow): Promise<PageResult> {
     id: row.id,
     url: row.url,
     status: "ok",
-    http_status: res.status,
-    html_bytes: res.html.length,
+    http_status: 200,
+    html_bytes: html.length,
     asset_count: assets.length,
   };
 }

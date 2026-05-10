@@ -178,33 +178,81 @@ function rewriteHtml(
     },
   );
 
-  // <img src="...">, srcset="...", data-src=, data-srcset=
-  html = html.replace(
-    /<img\b([^>]*)>/gi,
-    (match, attrs) => {
-      let next = attrs as string;
+  // <img src/srcset/data-src/data-srcset/nitro-lazy-src/...>
+  // Two responsibilities:
+  //   1. Rewrite every URL-bearing attribute to point at Storage.
+  //   2. If the tag is a NitroPack-style lazy image (src is a data-URI
+  //      placeholder + nitro-lazy-src holds the real URL), promote
+  //      nitro-lazy-src → src so the browser loads the image without
+  //      having to execute NitroPack's JS swapper. Same for srcset.
+  const IMG_URL_ATTRS = [
+    "src",
+    "data-src",
+    "nitro-lazy-src",
+    "data-lazy-src",
+    "data-original",
+    "data-orig-file",
+  ];
+  const IMG_SRCSET_ATTRS = [
+    "srcset",
+    "data-srcset",
+    "nitro-lazy-srcset",
+    "data-lazy-srcset",
+  ];
+  html = html.replace(/<img\b([^>]*)>/gi, (match, rawAttrs) => {
+    let next = rawAttrs as string;
+
+    for (const attr of IMG_URL_ATTRS) {
+      const re = new RegExp(`\\b${attr}\\s*=\\s*(["'])([^"']*)\\1`, "gi");
       next = next.replace(
-        /\bsrc\s*=\s*(["'])([^"']*)\1/gi,
-        (m, q, v) => `src=${q}${rewriteUrl(v, pageUrl, assets, counters)}${q}`,
-      );
-      next = next.replace(
-        /\bdata-src\s*=\s*(["'])([^"']*)\1/gi,
+        re,
         (m, q, v) =>
-          `data-src=${q}${rewriteUrl(v, pageUrl, assets, counters)}${q}`,
+          `${attr}=${q}${rewriteUrl(v, pageUrl, assets, counters)}${q}`,
       );
+    }
+    for (const attr of IMG_SRCSET_ATTRS) {
+      const re = new RegExp(`\\b${attr}\\s*=\\s*(["'])([^"']*)\\1`, "gi");
       next = next.replace(
-        /\bsrcset\s*=\s*(["'])([^"']*)\1/gi,
+        re,
         (m, q, v) =>
-          `srcset=${q}${rewriteSrcset(v, pageUrl, assets, counters)}${q}`,
+          `${attr}=${q}${rewriteSrcset(v, pageUrl, assets, counters)}${q}`,
       );
-      next = next.replace(
-        /\bdata-srcset\s*=\s*(["'])([^"']*)\1/gi,
-        (m, q, v) =>
-          `data-srcset=${q}${rewriteSrcset(v, pageUrl, assets, counters)}${q}`,
-      );
-      return `<img${next}>`;
-    },
-  );
+    }
+
+    // NitroPack swap: if a real lazy URL exists, force it into src/srcset
+    // so browser loads it without depending on the lazy-loader JS firing.
+    const lazySrc = next.match(
+      /\b(?:nitro-lazy-src|data-lazy-src|data-original|data-orig-file)\s*=\s*(["'])([^"']+)\1/i,
+    )?.[2];
+    const lazySrcset = next.match(
+      /\b(?:nitro-lazy-srcset|data-lazy-srcset)\s*=\s*(["'])([^"']+)\1/i,
+    )?.[2];
+    const srcVal = next.match(/\bsrc\s*=\s*(["'])([^"']*)\1/i)?.[2];
+    const isPlaceholder = !!srcVal && srcVal.startsWith("data:");
+    if (lazySrc && (!srcVal || isPlaceholder)) {
+      if (srcVal !== undefined) {
+        next = next.replace(
+          /\bsrc\s*=\s*(["'])[^"']*\1/i,
+          (m, q) => `src=${q}${lazySrc}${q}`,
+        );
+      } else {
+        next = `${next.trimEnd()} src="${lazySrc}"`;
+      }
+    }
+    if (lazySrcset) {
+      const hadSrcset = /\bsrcset\s*=/i.test(next);
+      if (hadSrcset) {
+        next = next.replace(
+          /\bsrcset\s*=\s*(["'])[^"']*\1/i,
+          (m, q) => `srcset=${q}${lazySrcset}${q}`,
+        );
+      } else {
+        next = `${next.trimEnd()} srcset="${lazySrcset}"`;
+      }
+    }
+
+    return `<img${next}>`;
+  });
 
   // <source src=, srcset=>
   html = html.replace(/<source\b([^>]*)>/gi, (match, attrs) => {
