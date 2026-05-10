@@ -229,7 +229,8 @@ function rewriteHtml(
     )?.[2];
     const srcVal = next.match(/\bsrc\s*=\s*(["'])([^"']*)\1/i)?.[2];
     const isPlaceholder = !!srcVal && srcVal.startsWith("data:");
-    if (lazySrc && (!srcVal || isPlaceholder)) {
+    const wasPromoted = !!lazySrc && (!srcVal || isPlaceholder);
+    if (wasPromoted && lazySrc) {
       if (srcVal !== undefined) {
         next = next.replace(
           /\bsrc\s*=\s*(["'])[^"']*\1/i,
@@ -249,6 +250,38 @@ function rewriteHtml(
       } else {
         next = `${next.trimEnd()} srcset="${lazySrcset}"`;
       }
+    }
+
+    // Strip lazy-loader marker classes/attrs. NitroPack ships CSS rules
+    // that visibly hide elements while .nitro-lazy is on them; the JS
+    // swapper would normally remove the class once the image is in
+    // view. Since we've already pre-loaded the real URL into src, the
+    // class just hides a perfectly-loaded image — drop it. Same for
+    // the related nitro-lazy-empty marker and data-nitro-empty-id /
+    // nitro-lazy-empty boolean attributes.
+    if (wasPromoted || lazySrcset) {
+      next = next.replace(
+        /\bclass\s*=\s*(["'])([^"']*)\1/i,
+        (m, q, classes: string) => {
+          const cleaned = classes
+            .split(/\s+/)
+            .filter(
+              (cls) =>
+                cls &&
+                cls !== "nitro-lazy" &&
+                cls !== "nitro-lazy-empty" &&
+                cls !== "lazyload" &&
+                cls !== "lazy",
+            )
+            .join(" ");
+          return `class=${q}${cleaned}${q}`;
+        },
+      );
+      next = next.replace(/\bnitro-lazy-empty\b(?!=)/gi, "");
+      next = next.replace(
+        /\bdata-nitro-empty-id\s*=\s*(["'])[^"']*\1/gi,
+        "",
+      );
     }
 
     return `<img${next}>`;
