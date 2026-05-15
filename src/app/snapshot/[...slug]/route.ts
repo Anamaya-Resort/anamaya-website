@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { applySnapshotTransforms } from "@/lib/snapshot/transforms";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,11 @@ const SOURCE_SITE = "v2";
  *
  * Returns the captured HTML exactly as Phase C wrote it — full
  * <html>/<head>/<body> with all asset URLs rewritten to point at
- * Supabase Storage. Used by the admin VIEW link; public-facing
- * serving at the original URL is a separate piece (middleware
- * rewrite into here, so the URL bar shows /retreats/foo/ instead
- * of /snapshot/retreats/foo/).
+ * Supabase Storage — then run through `applySnapshotTransforms` so
+ * Swarmify keeps working post-WP and dead comment forms are stripped.
+ * Used both by the admin VIEW link AND by `proxy.ts`, which rewrites
+ * public visits to /retreats/foo/ into /snapshot/retreats/foo/ so the
+ * URL bar still reads /retreats/foo/.
  */
 export async function GET(
   _req: Request,
@@ -63,12 +65,14 @@ export async function GET(
     );
   }
 
-  return new Response(content.frozen_html, {
+  return new Response(applySnapshotTransforms(content.frozen_html), {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
-      "cache-control": "private, max-age=300",
-      "x-robots-tag": "noindex",
+      // Public-cacheable: brief shared cache so repeated visits are
+      // fast, longer stale-while-revalidate so a redeploy or content
+      // edit lands within a request after invalidation.
+      "cache-control": "public, s-maxage=300, stale-while-revalidate=86400",
     },
   });
 }
