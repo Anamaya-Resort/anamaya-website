@@ -11,34 +11,25 @@ const SWARMIFY_SNIPPET =
   `theme:{primaryColor:"#ffde17"},iframeReplacement:"iframe"};</script>` +
   `<script src="https://assets.swarmcdn.com/cross/swarmdetect.js"></script>`;
 
+// Hide WP comment UI via CSS rather than deleting nodes. WP comment
+// markup is deeply nested (#comments > .ast-comment-list > li > article
+// > div > div …); a regex strip can't balance the closing </div> and
+// would either leave the comment list behind or emit an unbalanced tag
+// that corrupts page layout. display:none on the well-known ids/classes
+// is bulletproof and DOM-safe. Trade-off: the (old, low-value) comment
+// text stays in the HTML source — acceptable vs. breaking the page.
+const COMMENT_HIDE_STYLE =
+  `<style id="anamaya-snapshot-overrides">` +
+  `#comments,#respond,#commentform,.comments-area,.comment-respond,` +
+  `.comments-title,.comment-list,.ast-comment-list{display:none!important}` +
+  `</style>`;
+
 export function applySnapshotTransforms(html: string): string {
-  let out = html;
-  out = injectSwarmify(out);
-  out = stripCommentForms(out);
-  return out;
-}
-
-function injectSwarmify(html: string): string {
-  if (html.includes("swarmcdn.com/cross/swarmdetect.js")) return html;
   if (!/<\/head>/i.test(html)) return html;
-  return html.replace(/<\/head>/i, `${SWARMIFY_SNIPPET}</head>`);
-}
-
-// WP themes wrap blog comments in a #comments container with a #respond
-// (comment form) inside. Strip the whole block. Also strip orphan
-// #commentform forms in case a theme rendered them outside #comments.
-function stripCommentForms(html: string): string {
-  return html
-    .replace(
-      /<(div|section|aside)\b[^>]*\bid=["']comments["'][^>]*>[\s\S]*?<\/\1>/gi,
-      "",
-    )
-    .replace(
-      /<(div|section)\b[^>]*\bid=["']respond["'][^>]*>[\s\S]*?<\/\1>/gi,
-      "",
-    )
-    .replace(
-      /<form\b[^>]*\bid=["']commentform["'][^>]*>[\s\S]*?<\/form>/gi,
-      "",
-    );
+  // Single <head> rewrite: prepend whatever isn't already present.
+  let inject = COMMENT_HIDE_STYLE;
+  if (!html.includes("swarmcdn.com/cross/swarmdetect.js")) {
+    inject += SWARMIFY_SNIPPET;
+  }
+  return html.replace(/<\/head>/i, `${inject}</head>`);
 }

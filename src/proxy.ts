@@ -85,15 +85,19 @@ export async function proxy(request: NextRequest) {
         new Set([pathname, pathname + "/", pathname.replace(/\/$/, "")]),
       );
 
-  const { data: row } = await sb
+  // .limit(1) (not .maybeSingle): if a slash-variant ever produced two
+  // matching rows, maybeSingle would error → data null → the page would
+  // silently fall through to a 404. Taking the first match degrades
+  // gracefully instead.
+  const { data: rows } = await sb
     .from("url_inventory")
     .select("id, content_items!inner(url_inventory_id)")
     .eq("source_site", SOURCE_SITE)
     .in("url_path", variants)
     .not("content_items.frozen_html", "is", null)
-    .maybeSingle();
+    .limit(1);
 
-  if (!row) return NextResponse.next();
+  if (!rows?.length) return NextResponse.next();
 
   const url = request.nextUrl.clone();
   url.pathname = `/snapshot${pathname.startsWith("/") ? pathname : "/" + pathname}`;
