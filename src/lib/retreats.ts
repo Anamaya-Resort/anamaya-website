@@ -92,7 +92,11 @@ export async function listRetreats(): Promise<RetreatCard[]> {
     // exclude the archive URLs themselves
     .neq("url", "https://anamayastg.wpenginepowered.com/retreats/")
     .neq("url", "https://anamaya.com/retreats/")
-    .order("date_modified", { ascending: false })
+    // Newest first; on an equal date_modified, prefer v2 (the fully-built
+    // baseline) so a tie never lands on a v1 row that isn't strictly newer.
+    // nullsFirst:false keeps a date-less row from hijacking a slug.
+    .order("date_modified", { ascending: false, nullsFirst: false })
+    .order("source_site", { ascending: false })
     .limit(400);
   if (error || !rows) return [];
 
@@ -204,7 +208,11 @@ export async function getRetreatBySlug(slug: string): Promise<RetreatDetail | nu
     .in("source_site", ["v1", "v2"])
     .eq("post_type", "retreat")
     .ilike("url", `%/retreat/${slug}/%`)
+    // Newest first; on an equal date_modified prefer v2 (fully-built path)
+    // so the winner is deterministic and a tie never picks a v1 row that
+    // isn't strictly newer than v2.
     .order("date_modified", { ascending: false, nullsFirst: false })
+    .order("source_site", { ascending: false })
     .limit(2);
   const row = rows?.[0];
   if (!row) return null;

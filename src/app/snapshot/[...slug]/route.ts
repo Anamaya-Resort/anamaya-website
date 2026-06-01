@@ -49,7 +49,11 @@ export async function GET(
     .select("id, source_site, date_modified, content_items!inner(frozen_html)")
     .in("url_path", candidates)
     .not("content_items.frozen_html", "is", null)
+    // Newest first; prefer v2 on an equal date so the choice is
+    // deterministic (today only the strictly-newer / v1-only pages have a
+    // v1 capture, so this is belt-and-braces against future captures).
     .order("date_modified", { ascending: false, nullsFirst: false })
+    .order("source_site", { ascending: false })
     .limit(1);
 
   if (rowErr) {
