@@ -74,6 +74,28 @@ function pageTitle(html: string): string | null {
   return html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null;
 }
 
+// og:title / meta description come out of the HTML HTML-encoded (e.g.
+// "Leslie &amp; Colleen"). They're stored as plain text and re-encoded by
+// the React template's metadata, so decode here to avoid double-encoding
+// ("&amp;amp;") in the browser <title> / SEO description.
+function decodeEntities(s: string | null): string | null {
+  if (s == null) return null;
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&#8211;/g, "–")
+    .replace(/&#8212;/g, "—")
+    .replace(/&#8217;/g, "’")
+    .replace(/&#8216;/g, "‘")
+    .replace(/&#8220;/g, "“")
+    .replace(/&#8221;/g, "”")
+    .replace(/&#8230;/g, "…")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 function firstBodyImg(bodyHtml: string): string | null {
   // Already-rewritten Storage URL is preferred (capture rewrote <img src>).
   return bodyHtml.match(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/i)?.[1] ?? null;
@@ -145,13 +167,16 @@ async function main() {
     }
     const body = cleanHtml(container);
 
-    const metaDesc =
+    const metaDesc = decodeEntities(
       metaContent(frozen, "description", "name") ||
-      metaContent(frozen, "og:description", "property");
+        metaContent(frozen, "og:description", "property"),
+    );
     const ogImageOrig =
       metaContent(frozen, "og:image", "property");
     const ogImage = toStorage(ogImageOrig) || firstBodyImg(body);
-    const title = metaContent(frozen, "og:title", "property") || pageTitle(frozen) || row.title;
+    const title = decodeEntities(
+      metaContent(frozen, "og:title", "property") || pageTitle(frozen) || row.title,
+    );
     const canonical = row.url as string;
 
     const { error: ciErr } = await c.from("content_items").upsert(
