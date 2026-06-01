@@ -40,8 +40,6 @@ const HARDCODED_PUBLIC: RegExp[] = [
   /^\/auth(\/.*)?$/,
 ];
 
-const SOURCE_SITE = "v2";
-
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -73,6 +71,12 @@ export async function proxy(request: NextRequest) {
   //    (via a column like cms_template_id), this is the place to add
   //    "if owned by new framework → fall through" — for now, hand-built
   //    React pages are listed in HARDCODED_PUBLIC above instead.
+  //
+  //    Source-agnostic: a frozen snapshot from EITHER site (v1 prod or
+  //    v2 staging) qualifies. The /snapshot route resolves which one to
+  //    actually serve (newest by date_modified). We only need to know
+  //    here whether *any* captured snapshot exists for this path, so
+  //    v1-only production pages get routed to /snapshot too.
   const sb = supabaseServerOrNull();
   if (!sb) return NextResponse.next();
 
@@ -92,7 +96,6 @@ export async function proxy(request: NextRequest) {
   const { data: rows } = await sb
     .from("url_inventory")
     .select("id, content_items!inner(url_inventory_id)")
-    .eq("source_site", SOURCE_SITE)
     .in("url_path", variants)
     .not("content_items.frozen_html", "is", null)
     .limit(1);

@@ -4,18 +4,23 @@ import { applySnapshotTransforms } from "@/lib/snapshot/transforms";
 
 export const dynamic = "force-dynamic";
 
-const SOURCE_SITE = "v2";
-
 /**
  * Serves the frozen WP snapshot for a given URL path. The catch-all
  * slug becomes the url_inventory.url_path lookup so the URL stays
  * human-readable: /snapshot/retreats/foo/ shows the snapshot of the
- * page that lived at /retreats/foo/ on staging.
+ * page that lived at /retreats/foo/.
  *
- * Returns the captured HTML exactly as Phase C wrote it — full
- * <html>/<head>/<body> with all asset URLs rewritten to point at
- * Supabase Storage — then run through `applySnapshotTransforms` so
- * Swarmify keeps working post-WP and dead comment forms are stripped.
+ * Source-agnostic / newest-wins: a page can have a captured snapshot
+ * from staging (v2) and/or production (v1). We serve whichever was
+ * modified most recently — that's how the v1↔v2 reconciliation ("show
+ * the most recent version of each page") is actually enforced at
+ * request time. Most pages only have a v2 capture (→ v2 served); the
+ * ~79 pages where production is newer or production-only were captured
+ * from v1 and win here by date_modified.
+ *
+ * Returns the captured HTML — full <html>/<head>/<body> with asset URLs
+ * rewritten to Supabase Storage — run through `applySnapshotTransforms`
+ * so Swarmify keeps working post-WP and dead comment forms are stripped.
  * Used both by the admin VIEW link AND by `proxy.ts`, which rewrites
  * public visits to /retreats/foo/ into /snapshot/retreats/foo/ so the
  * URL bar still reads /retreats/foo/.
@@ -28,44 +33,37 @@ export async function GET(
 
   // url_inventory.url_path is stored with a leading slash and
   // (for most WP rows) a trailing slash, e.g. "/retreats/foo/".
-  // Try the trailing-slash form first since that's the canonical
-  // shape; fall back to the no-trailing-slash form so authors
-  // can paste either.
+  // Both v1 and v2 store the same url_path string, so matching the
+  // slash variants finds candidate rows from either site.
   const joined = slug.map((s) => decodeURIComponent(s)).join("/");
   const candidates = [`/${joined}/`, `/${joined}`];
   if (joined === "") candidates.push("/");
 
   const sb = supabaseServer();
-  const { data: row, error: rowErr } = await sb
+  // Pull every captured row (any site) for this path, newest first.
+  // !inner + the frozen_html-not-null filter restricts to rows that
+  // actually have a snapshot; ordering by date_modified picks the most
+  // recent version. nullsFirst:false keeps a dateless row from winning.
+  const { data: rows, error: rowErr } = await sb
     .from("url_inventory")
-    .select("id")
-    .eq("source_site", SOURCE_SITE)
+    .select("id, source_site, date_modified, content_items!inner(frozen_html)")
     .in("url_path", candidates)
-    .maybeSingle();
+    .not("content_items.frozen_html", "is", null)
+    .order("date_modified", { ascending: false, nullsFirst: false })
+    .limit(1);
 
   if (rowErr) {
     return NextResponse.json({ error: rowErr.message }, { status: 500 });
   }
-  if (!row) {
-    return notFoundHtml(`No row in url_inventory for ${candidates[0]}`);
+  const row = rows?.[0] as
+    | { content_items: { frozen_html: string } | { frozen_html: string }[] }
+    | undefined;
+  const ci = row ? (Array.isArray(row.content_items) ? row.content_items[0] : row.content_items) : null;
+  if (!ci?.frozen_html) {
+    return notFoundHtml(`No snapshot captured for ${candidates[0]}.`);
   }
 
-  const { data: content, error: contentErr } = await sb
-    .from("content_items")
-    .select("frozen_html, frozen_at")
-    .eq("url_inventory_id", row.id)
-    .maybeSingle();
-
-  if (contentErr) {
-    return NextResponse.json({ error: contentErr.message }, { status: 500 });
-  }
-  if (!content?.frozen_html) {
-    return notFoundHtml(
-      `No snapshot captured for ${candidates[0]} yet — run snapshot:rewrite once Phase A/B finish for it.`,
-    );
-  }
-
-  return new Response(applySnapshotTransforms(content.frozen_html), {
+  return new Response(applySnapshotTransforms(ci.frozen_html), {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",

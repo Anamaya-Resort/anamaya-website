@@ -46,3 +46,6 @@ next-env.d.ts
 # Snapshot output (Phase A/B/C migration runs — raw HTML + per-page asset
 # JSON; thousands of files, regenerable from the staging WP site).
 /migration/snapshot/
+# v1 targeted-capture output (capture-v1: raw HTML + asset map for the
+# ~79 production pages that win the v1↔v2 reconciliation; regenerable).
+/migration/snapshot-v1/

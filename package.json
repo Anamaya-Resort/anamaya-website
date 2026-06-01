@@ -23,7 +23,10 @@
     "snapshot:discover": "tsx scripts/snapshot/phase-a-discover.ts",
     "snapshot:download": "tsx scripts/snapshot/phase-b-download.ts",
     "snapshot:rewrite": "tsx scripts/snapshot/phase-c-rewrite.ts",
-    "snapshot:scan-special": "tsx scripts/snapshot/scan-special.ts"
+    "snapshot:scan-special": "tsx scripts/snapshot/scan-special.ts",
+    "snapshot:capture-v1": "tsx scripts/snapshot/capture-v1.ts",
+    "snapshot:populate-v1-retreats": "tsx scripts/snapshot/populate-v1-retreats.ts",
+    "snapshot:fix-v1-residual": "tsx scripts/snapshot/fix-v1-residual-assets.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",
