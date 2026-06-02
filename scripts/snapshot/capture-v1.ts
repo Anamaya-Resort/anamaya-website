@@ -69,6 +69,8 @@ type DiffFile = { diffs: DiffRow[]; v1_only: DiffRow[] };
 type InvRow = { id: string; url: string; url_path: string; post_type: string };
 
 // ---------------------------------------------------------------
+const FORM_TARGETS_PATH = resolve(OUT_DIR, "form-targets.json");
+
 function computeTargets(): Target[] {
   const diff = JSON.parse(readFileSync(DIFF_PATH, "utf8")) as DiffFile;
   const targets: Target[] = [];
@@ -80,6 +82,16 @@ function computeTargets(): Target[] {
   for (const r of diff.v1_only) {
     if (r.post_type && r.post_type !== "attachment") {
       targets.push({ url_path: r.url_path, post_type: r.post_type, reason: "only" });
+    }
+  }
+  // Form-bearing pages: production (v1) replaced WordPress FluentForms with
+  // GHL/Sereenly embeds, so we capture v1 for every page that still serves a
+  // (dead) FluentForm from v2 and force it to serve v1 (see form-targets.json,
+  // built from the v2 FluentForm scan ∩ pages that have a v1 equivalent).
+  if (existsSync(FORM_TARGETS_PATH)) {
+    const formPaths = JSON.parse(readFileSync(FORM_TARGETS_PATH, "utf8")) as string[];
+    for (const p of formPaths) {
+      targets.push({ url_path: p, post_type: "form-page", reason: "only" });
     }
   }
   // De-dup by url_path (a path can't be both newer and only, but be safe).

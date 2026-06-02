@@ -40,20 +40,22 @@ export async function GET(
   if (joined === "") candidates.push("/");
 
   const sb = supabaseServer();
-  // Pull every captured row (any site) for this path, newest first.
-  // !inner + the frozen_html-not-null filter restricts to rows that
-  // actually have a snapshot; ordering by date_modified picks the most
-  // recent version. nullsFirst:false keeps a dateless row from winning.
+  // Pull every captured row (any site) for this path.
+  //
+  // Prefer v1 (production) whenever a v1 capture exists. We only capture v1
+  // deliberately — for pages where production is the newest/only version OR
+  // where production carries the live GHL/Sereenly form embed (the WordPress
+  // FluentForms on staging die at cutover). So "a v1 capture exists" IS the
+  // decision that v1 should win; everything else has only a v2 capture and
+  // serves v2. source_site asc puts "v1" before "v2"; the date order is a
+  // harmless tiebreak (there is at most one captured row per site per path).
   const { data: rows, error: rowErr } = await sb
     .from("url_inventory")
     .select("id, source_site, date_modified, content_items!inner(frozen_html)")
     .in("url_path", candidates)
     .not("content_items.frozen_html", "is", null)
-    // Newest first; prefer v2 on an equal date so the choice is
-    // deterministic (today only the strictly-newer / v1-only pages have a
-    // v1 capture, so this is belt-and-braces against future captures).
+    .order("source_site", { ascending: true })
     .order("date_modified", { ascending: false, nullsFirst: false })
-    .order("source_site", { ascending: false })
     .limit(1);
 
   if (rowErr) {
