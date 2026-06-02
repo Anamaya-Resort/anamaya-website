@@ -100,6 +100,22 @@ export async function updateItem(formData: FormData) {
     if (bodyErr) throw new Error(bodyErr.message);
   }
 
+  // Per-page tracking code (head + footer), only rendered for this page.
+  if (formData.get("tracking_head_html") !== null) {
+    const tracking_head_html = String(formData.get("tracking_head_html") ?? "");
+    const tracking_body_html = String(formData.get("tracking_body_html") ?? "");
+    const { error: trackErr } = await sb.from("page_tracking").upsert(
+      {
+        url_inventory_id: id,
+        head_html: tracking_head_html,
+        body_html: tracking_body_html,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "url_inventory_id" },
+    );
+    if (trackErr) throw new Error(trackErr.message);
+  }
+
   revalidatePath(`/admin/website/${pt.slug}`);
   revalidatePath(`/admin/website/${pt.slug}/${id}`);
 }

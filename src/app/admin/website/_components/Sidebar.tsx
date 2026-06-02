@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   Image as ImageIcon,
   ArrowRightLeft,
+  Code2,
   Settings,
 } from "lucide-react";
 import { POST_TYPES } from "@/lib/website-builder/post-types";
@@ -70,6 +71,11 @@ export default function Sidebar() {
     })),
     { label: "Media", href: "/admin/website/media", icon: ImageIcon },
     { label: "Authors", href: "/admin/website/authors", icon: Users },
+    {
+      label: "Tracking Code",
+      href: "/admin/website/tracking",
+      icon: Code2,
+    },
     {
       label: "Redirects",
       href: "/admin/website/redirects",

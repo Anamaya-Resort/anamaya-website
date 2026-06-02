@@ -7,6 +7,13 @@ import {
   listPageTemplates,
 } from "@/lib/website-builder/queries";
 import { getOrganizationContext } from "@/lib/ai/organization";
+import {
+  getGlobalTracking,
+  getPageTracking,
+  getTemplateTracking,
+  globalTagSummary,
+  templateLabel,
+} from "@/lib/website-builder/tracking";
 import AiTextarea from "@/components/ai/AiTextarea";
 import BodyEditor from "@/components/admin/website/BodyEditor";
 import EditablePermalink from "@/components/admin/website/EditablePermalink";
@@ -44,11 +51,15 @@ export default async function EditItemPage({
   const pt = getPostTypeBySlug(postTypeSlug);
   if (!pt) notFound();
 
-  const [item, templates, orgCtx] = await Promise.all([
-    getItemForEdit(pt.postType, id),
-    listPageTemplates(),
-    getOrganizationContext(),
-  ]);
+  const [item, templates, orgCtx, pageTracking, templateTracking, globalTracking] =
+    await Promise.all([
+      getItemForEdit(pt.postType, id),
+      listPageTemplates(),
+      getOrganizationContext(),
+      getPageTracking(id),
+      getTemplateTracking(pt.templateSlug),
+      getGlobalTracking(),
+    ]);
   if (!item) notFound();
   const properties = orgCtx?.properties ?? [];
 
@@ -147,6 +158,78 @@ export default async function EditItemPage({
                 }}
                 className="block w-full resize-y rounded-b-sm border-0 bg-white px-3 py-2 text-[13px] text-[#1d2327] focus:outline-none"
               />
+            </details>
+
+            <details className="rounded-sm border border-[#c3c4c7] bg-white">
+              <summary className="cursor-pointer border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
+                Tracking Code
+                <span className="ml-2 text-[12px] font-normal text-[#50575e]">
+                  This page only — stacks on top of template &amp; global
+                </span>
+              </summary>
+              <div className="space-y-3 px-3 py-3 text-[13px]">
+                <div>
+                  <label htmlFor="tracking_head_html" className="mb-1 block font-semibold text-[#1d2327]">
+                    Head code (this page)
+                  </label>
+                  <textarea
+                    id="tracking_head_html"
+                    name="tracking_head_html"
+                    defaultValue={pageTracking.head_html}
+                    rows={4}
+                    className="block w-full rounded-sm border border-[#8c8f94] bg-white px-2 py-1 font-mono text-[13px]"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="tracking_body_html" className="mb-1 block font-semibold text-[#1d2327]">
+                    Footer code (this page)
+                  </label>
+                  <textarea
+                    id="tracking_body_html"
+                    name="tracking_body_html"
+                    defaultValue={pageTracking.body_html}
+                    rows={4}
+                    className="block w-full rounded-sm border border-[#8c8f94] bg-white px-2 py-1 font-mono text-[13px]"
+                  />
+                </div>
+
+                <div className="rounded-sm border border-[#dcdcde] bg-[#f6f7f7] px-3 py-2">
+                  <p className="mb-2 text-[12px] font-semibold text-[#50575e]">
+                    Also active on this page (read-only):
+                  </p>
+                  <p className="text-[12px] text-[#50575e]">
+                    <strong>{templateLabel(pt.templateSlug)}</strong> template ·{" "}
+                    <Link
+                      href={`/admin/website/tracking?tab=templates&template=${encodeURIComponent(pt.templateSlug)}`}
+                      className="text-[#2271b1] hover:underline"
+                    >
+                      edit template →
+                    </Link>
+                  </p>
+                  {(templateTracking.head_html || templateTracking.body_html) && (
+                    <textarea
+                      readOnly
+                      value={[templateTracking.head_html, templateTracking.body_html].filter(Boolean).join("\n")}
+                      rows={3}
+                      className="mt-1 block w-full rounded-sm border border-[#dcdcde] bg-[#f0f0f1] px-2 py-1 font-mono text-[12px] text-[#50575e]"
+                    />
+                  )}
+                  <p className="mt-2 text-[12px] text-[#50575e]">
+                    <strong>Global</strong> · {globalTagSummary(globalTracking)} ·{" "}
+                    <Link href="/admin/website/tracking?tab=global" className="text-[#2271b1] hover:underline">
+                      edit global →
+                    </Link>
+                  </p>
+                  {(globalTracking.custom_head_html || globalTracking.custom_body_html) && (
+                    <textarea
+                      readOnly
+                      value={[globalTracking.custom_head_html, globalTracking.custom_body_html].filter(Boolean).join("\n")}
+                      rows={3}
+                      className="mt-1 block w-full rounded-sm border border-[#dcdcde] bg-[#f0f0f1] px-2 py-1 font-mono text-[12px] text-[#50575e]"
+                    />
+                  )}
+                </div>
+              </div>
             </details>
 
             <details open className="rounded-sm border border-[#c3c4c7] bg-white">
