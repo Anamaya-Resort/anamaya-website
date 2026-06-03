@@ -1,9 +1,17 @@
 import Link from "next/link";
 import PageHeader from "../_components/PageHeader";
 import AiGenerate from "@/components/admin/AiGenerate";
+import ImageSlot from "@/components/admin/ImageSlot";
 import { updateSettingsSection } from "../settings/actions";
 import { updateTemplateTracking } from "../tracking/actions";
-import { updateRobots, updateSitemapConfig, updateSchema } from "./actions";
+import {
+  updateRobots,
+  updateSitemapConfig,
+  updateSchema,
+  updateVerification,
+  updateSecurityHeaders,
+  updateSharing,
+} from "./actions";
 import { getAllSettings } from "@/lib/website-builder/settings";
 import {
   getGlobalTracking,
@@ -16,6 +24,10 @@ import {
   getRobotsConfig,
   getSitemapConfig,
   getSchemaConfig,
+  getVerificationConfig,
+  getSecurityHeadersConfig,
+  getSharingConfig,
+  SHARING_IMAGE_SLOTS,
   SITE_BASE_URL,
   TECHNICAL_DOCS,
   type TechnicalDocId,
@@ -105,6 +117,9 @@ export default async function TechnicalPage({
       {doc === "sitemap" && <SitemapDoc />}
       {doc === "schema" && <SchemaDoc />}
       {doc === "meta" && <MetaDoc />}
+      {doc === "verification" && <VerificationDoc />}
+      {doc === "security" && <SecurityDoc />}
+      {doc === "sharing" && <SharingDoc />}
     </div>
   );
 }
@@ -273,19 +288,119 @@ async function SchemaDoc() {
   );
 }
 
-// ── Default Meta & OG ──────────────────────────────────────────────────
+// ── Default Meta ───────────────────────────────────────────────────────
 async function MetaDoc() {
   const s = await getAllSettings();
   return (
     <form action={updateSettingsSection}>
       <input type="hidden" name="section" value="default_meta" />
-      <Card title="Default Meta & Open Graph">
+      {/* Preserve the legacy OG URL (now a fallback); the share image is
+          uploaded under Social & Icons. */}
+      <input type="hidden" name="og_image_url" value={s.default_meta.og_image_url} />
+      <Card title="Default Meta">
         <Field label="Default meta description" hint="Used when a page has no SEO override.">
           <textarea id="meta_desc" name="meta_description" defaultValue={s.default_meta.meta_description} rows={3} className={taCls} />
           <AiGenerate docType="meta" targetId="meta_desc" placeholder="e.g. clifftop wellness resort, Montezuma" />
         </Field>
-        <Field label="Default OG image">
-          <input type="text" name="og_image_url" defaultValue={s.default_meta.og_image_url} placeholder="https://…" className={inputCls} />
+        <Field label="Default share image">
+          <Link href="/admin/website/technical?doc=sharing" className="text-[13px] text-[#2271b1] hover:underline">
+            Upload it under Social &amp; Icons →
+          </Link>
+        </Field>
+      </Card>
+      <SaveBar />
+    </form>
+  );
+}
+
+// ── Site Verification ──────────────────────────────────────────────────
+async function VerificationDoc() {
+  const v = await getVerificationConfig();
+  return (
+    <form action={updateVerification}>
+      <Card title="Site Verification">
+        <Field label="Google Search Console" hint="The content value of the google-site-verification meta tag.">
+          <input type="text" name="google" defaultValue={v.google} className={inputCls} />
+        </Field>
+        <Field label="Bing Webmaster" hint="msvalidate.01 content value.">
+          <input type="text" name="bing" defaultValue={v.bing} className={inputCls} />
+        </Field>
+        <Field label="Pinterest" hint="p:domain_verify content value.">
+          <input type="text" name="pinterest" defaultValue={v.pinterest} className={inputCls} />
+        </Field>
+        <Field label="Facebook domain" hint="facebook-domain-verification content value.">
+          <input type="text" name="facebook" defaultValue={v.facebook} className={inputCls} />
+        </Field>
+        <Field label="Other head verification" hint="Any extra raw verification tags to drop in <head>.">
+          <textarea name="custom_head" defaultValue={v.custom_head} rows={4} className={taCls} />
+        </Field>
+      </Card>
+      <SaveBar />
+    </form>
+  );
+}
+
+// ── Security Headers ───────────────────────────────────────────────────
+async function SecurityDoc() {
+  const h = await getSecurityHeadersConfig();
+  return (
+    <form action={updateSecurityHeaders}>
+      <Card title="Security Headers">
+        <Field label="Content-Security-Policy" hint="Must allow the Sereenly booking iframe + analytics/pixels. Use AI to draft one that fits this site's embeds.">
+          <textarea id="csp" name="csp" defaultValue={h.csp} rows={6} className={taCls} placeholder="default-src 'self'; frame-src https://link.sereenly.com; …" />
+          <AiGenerate docType="csp" targetId="csp" placeholder="e.g. allow Sereenly, GA, Meta Pixel, YouTube, Supabase" />
+        </Field>
+        <Field label="HSTS" hint="Send Strict-Transport-Security (force HTTPS for a year).">
+          <label className="flex items-center gap-2 text-[13px]">
+            <input type="checkbox" name="hsts" defaultChecked={!!h.hsts} /> Enable HSTS
+          </label>
+        </Field>
+        <Field label="Referrer-Policy">
+          <input type="text" name="referrer_policy" defaultValue={h.referrer_policy} placeholder="strict-origin-when-cross-origin" className={inputCls} />
+        </Field>
+        <Field label="Permissions-Policy">
+          <input type="text" name="permissions_policy" defaultValue={h.permissions_policy} placeholder="geolocation=(), microphone=()" className={inputCls} />
+        </Field>
+        <Field label="X-Frame-Options">
+          <input type="text" name="x_frame_options" defaultValue={h.x_frame_options} placeholder="SAMEORIGIN" className={inputCls} />
+        </Field>
+      </Card>
+      <SaveBar />
+    </form>
+  );
+}
+
+// ── Social & Icons ─────────────────────────────────────────────────────
+async function SharingDoc() {
+  const s = await getSharingConfig();
+  return (
+    <form action={updateSharing}>
+      <Card title="Social Share & App Icons">
+        <Field label="App name" hint="Used in the web app manifest / install prompt.">
+          <input type="text" name="app_name" defaultValue={s.app_name} placeholder="Anamaya Resort" className={inputCls} />
+        </Field>
+        <Field label="Short name" hint="Home-screen label (≤12 chars).">
+          <input type="text" name="short_name" defaultValue={s.short_name} placeholder="Anamaya" className={inputCls} />
+        </Field>
+        <Field label="Theme color">
+          <input type="text" name="theme_color" defaultValue={s.theme_color} placeholder="#A0BF52" className={inputCls} />
+        </Field>
+        <Field label="Background color">
+          <input type="text" name="background_color" defaultValue={s.background_color} placeholder="#ffffff" className={inputCls} />
+        </Field>
+        <Field label="Images" hint="One Open Graph image covers Facebook, WhatsApp, Telegram, LinkedIn, X, iMessage, Slack & Discord — they all read it. Instagram shows no link previews.">
+          <div>
+            {SHARING_IMAGE_SLOTS.map((slot) => (
+              <ImageSlot
+                key={slot.field}
+                name={slot.field}
+                label={slot.label}
+                recommended={slot.recommended}
+                note={slot.note}
+                value={s[slot.field]}
+              />
+            ))}
+          </div>
         </Field>
       </Card>
       <SaveBar />

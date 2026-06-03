@@ -50,6 +50,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://i.ytimg.com" />
         <link rel="dns-prefetch" href="https://link.sereenly.com" />
         <link rel="dns-prefetch" href="https://link.msgsndr.com" />
+        {/* PWA manifest — generated from Admin → Technical → Social & Icons. */}
+        <link rel="manifest" href="/site.webmanifest" />
       </head>
       <body className="min-h-full bg-white text-anamaya-charcoal font-sans">
         {children}

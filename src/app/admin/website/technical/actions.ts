@@ -36,3 +36,45 @@ export async function updateSchema(formData: FormData) {
   revalidatePath("/", "layout");
   redirect("/admin/website/technical?doc=schema");
 }
+
+export async function updateVerification(formData: FormData) {
+  await saveSetting("verification", {
+    google: String(formData.get("google") ?? "").trim(),
+    bing: String(formData.get("bing") ?? "").trim(),
+    pinterest: String(formData.get("pinterest") ?? "").trim(),
+    facebook: String(formData.get("facebook") ?? "").trim(),
+    custom_head: String(formData.get("custom_head") ?? ""),
+  });
+  revalidatePath("/", "layout");
+  redirect("/admin/website/technical?doc=verification");
+}
+
+export async function updateSecurityHeaders(formData: FormData) {
+  // hsts is a checkbox → stored as a string flag for the JSON value.
+  await saveSetting("security_headers", {
+    csp: String(formData.get("csp") ?? ""),
+    hsts: formData.get("hsts") === "on" ? "true" : "",
+    referrer_policy: String(formData.get("referrer_policy") ?? "").trim(),
+    permissions_policy: String(formData.get("permissions_policy") ?? "").trim(),
+    x_frame_options: String(formData.get("x_frame_options") ?? "").trim(),
+  });
+  redirect("/admin/website/technical?doc=security");
+}
+
+export async function updateSharing(formData: FormData) {
+  await saveSetting("sharing", {
+    app_name: String(formData.get("app_name") ?? "").trim(),
+    short_name: String(formData.get("short_name") ?? "").trim(),
+    theme_color: String(formData.get("theme_color") ?? "").trim(),
+    background_color: String(formData.get("background_color") ?? "").trim(),
+    og_image: String(formData.get("og_image") ?? "").trim(),
+    square_image: String(formData.get("square_image") ?? "").trim(),
+    favicon: String(formData.get("favicon") ?? "").trim(),
+    icon_192: String(formData.get("icon_192") ?? "").trim(),
+    icon_512: String(formData.get("icon_512") ?? "").trim(),
+    apple_touch: String(formData.get("apple_touch") ?? "").trim(),
+  });
+  revalidatePath("/site.webmanifest");
+  revalidatePath("/", "layout");
+  redirect("/admin/website/technical?doc=sharing");
+}

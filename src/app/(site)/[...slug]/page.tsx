@@ -9,6 +9,7 @@ import ProseHtml from "@/components/ProseHtml";
 import TemplateRenderer from "@/components/templates/TemplateRenderer";
 import { resolveContentPath, bumpRedirectHit } from "@/lib/website-builder/resolver";
 import { getAllSettings } from "@/lib/website-builder/settings";
+import { getSharingConfig } from "@/lib/website-builder/technical";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,10 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const [resolution, settings] = await Promise.all([
+  const [resolution, settings, sharing] = await Promise.all([
     resolveContentPath(slug),
     getAllSettings(),
+    getSharingConfig(),
   ]);
 
   if (resolution.kind !== "content") {
@@ -36,7 +38,10 @@ export async function generateMetadata({
     r.excerpt ||
     settings.default_meta.meta_description ||
     undefined;
-  const ogImage = r.og_image_url || settings.default_meta.og_image_url || undefined;
+  // Default share image now lives in Technical → Social & Icons; fall back
+  // to the legacy default_meta value for back-compat.
+  const ogImage =
+    r.og_image_url || sharing.og_image || settings.default_meta.og_image_url || undefined;
 
   return {
     title,

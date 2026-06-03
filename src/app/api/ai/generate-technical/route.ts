@@ -24,6 +24,8 @@ const GUIDANCE: Record<string, string> = {
     "List any additional absolute URLs (one per line) that should be in the sitemap beyond the auto-discovered pages. Plain text, one URL per line.",
   tracking:
     "Produce only the raw HTML snippet(s) requested for the site <head> or footer. No explanation.",
+  csp:
+    "Produce a single Content-Security-Policy header VALUE on one line (no header name). Allow the site's own origin plus the third parties this site uses: Sereenly/HighLevel (link.sereenly.com, link.msgsndr.com), Google Tag Manager + Analytics, Meta/Facebook Pixel (connect.facebook.net, www.facebook.com), Supabase Storage (*.supabase.co), YouTube (youtube.com, ytimg.com), Google Maps & Fonts, and reCAPTCHA. Be permissive enough not to break those embeds. Output only the policy value.",
 };
 
 export async function POST(req: Request) {
