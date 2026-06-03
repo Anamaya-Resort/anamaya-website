@@ -200,7 +200,7 @@ export default async function EditItemPage({
                   <p className="text-[12px] text-[#50575e]">
                     <strong>{templateLabel(pt.templateSlug)}</strong> template ·{" "}
                     <Link
-                      href={`/admin/website/tracking?tab=templates&template=${encodeURIComponent(pt.templateSlug)}`}
+                      href={`/admin/website/technical?doc=tracking&tab=templates&template=${encodeURIComponent(pt.templateSlug)}`}
                       className="text-[#2271b1] hover:underline"
                     >
                       edit template →
@@ -216,7 +216,7 @@ export default async function EditItemPage({
                   )}
                   <p className="mt-2 text-[12px] text-[#50575e]">
                     <strong>Global</strong> · {globalTagSummary(globalTracking)} ·{" "}
-                    <Link href="/admin/website/tracking?tab=global" className="text-[#2271b1] hover:underline">
+                    <Link href="/admin/website/technical?doc=tracking&tab=global" className="text-[#2271b1] hover:underline">
                       edit global →
                     </Link>
                   </p>

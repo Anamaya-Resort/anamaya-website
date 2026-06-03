@@ -72,8 +72,8 @@ export default function Sidebar() {
     { label: "Media", href: "/admin/website/media", icon: ImageIcon },
     { label: "Authors", href: "/admin/website/authors", icon: Users },
     {
-      label: "Tracking Code",
-      href: "/admin/website/tracking",
+      label: "Technical",
+      href: "/admin/website/technical",
       icon: Code2,
     },
     {

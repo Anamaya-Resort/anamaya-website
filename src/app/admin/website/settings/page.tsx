@@ -130,11 +130,12 @@ export default async function SettingsPage() {
       </SettingsCard>
 
       <div className="mb-6 rounded-sm border border-[#c3c4c7] bg-white px-4 py-3 text-[13px] text-[#1d2327]">
-        Analytics &amp; pixels have moved to{" "}
-        <Link href="/admin/website/tracking" className="text-[#2271b1] hover:underline">
-          Tracking Code
-        </Link>{" "}
-        (global, per-template, and per-page).
+        Analytics, pixels, robots.txt, sitemap, schema &amp; default meta have
+        moved to{" "}
+        <Link href="/admin/website/technical" className="text-[#2271b1] hover:underline">
+          Technical
+        </Link>
+        .
       </div>
     </div>
   );

@@ -20,8 +20,8 @@ export async function updateTemplateTracking(formData: FormData) {
   );
   if (error) throw new Error(error.message);
 
-  revalidatePath("/admin/website/tracking");
+  revalidatePath("/admin/website/technical");
   // Template tracking changes affect every page of that template.
   revalidatePath("/", "layout");
-  redirect(`/admin/website/tracking?tab=templates&template=${encodeURIComponent(template_slug)}`);
+  redirect(`/admin/website/technical?doc=tracking&tab=templates&template=${encodeURIComponent(template_slug)}`);
 }
