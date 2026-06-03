@@ -35,9 +35,21 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     </tr>
   );
 }
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({
+  title,
+  children,
+  attached = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  // attached = a SaveBar follows directly (square bottom, no margin);
+  // standalone = fully rounded with its own bottom margin.
+  attached?: boolean;
+}) {
   return (
-    <div className="mb-0 rounded-t-sm border border-[#c3c4c7] bg-white">
+    <div
+      className={`border border-[#c3c4c7] bg-white ${attached ? "mb-0 rounded-t-sm" : "mb-6 rounded-sm"}`}
+    >
       <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-4 py-2.5">
         <h2 className="text-[14px] font-semibold text-[#1d2327]">{title}</h2>
       </div>
@@ -179,12 +191,11 @@ async function TrackingTemplates({ selected }: { selected: string }) {
             </Card>
             <SaveBar />
           </form>
-          <Card title="Also active here: Global (read-only)">
+          <Card title="Also active here: Global (read-only)" attached={false}>
             <Field label="Structured tags"><span className="text-[13px] text-[#50575e]">{globalTagSummary(global)}</span></Field>
             <Field label="Global head"><textarea readOnly value={global.custom_head_html} rows={3} className={taCls + " bg-[#f0f0f1] text-[#50575e]"} /></Field>
             <Field label=""><Link href="/admin/website/technical?doc=tracking&tab=global" className="text-[13px] text-[#2271b1] hover:underline">Edit global tracking →</Link></Field>
           </Card>
-          <div className="mb-6" />
         </>
       )}
     </>

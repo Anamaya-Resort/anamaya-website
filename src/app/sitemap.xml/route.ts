@@ -81,7 +81,9 @@ export async function GET() {
   return new Response(xml, {
     headers: {
       "content-type": "application/xml; charset=utf-8",
-      "cache-control": "public, max-age=3600",
+      // Modest TTL: edits/new pages appear within a few minutes, while
+      // still shielding the per-request DB scan from crawler bursts.
+      "cache-control": "public, max-age=300",
     },
   });
 }

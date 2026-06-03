@@ -24,7 +24,9 @@ export async function GET() {
   return new Response(body, {
     headers: {
       "content-type": "text/plain; charset=utf-8",
-      "cache-control": "public, max-age=3600",
+      // Short TTL so admin edits in Technical → robots.txt show promptly
+      // (the file is tiny; a long CDN cache would hide edits for an hour).
+      "cache-control": "public, max-age=60",
     },
   });
 }
