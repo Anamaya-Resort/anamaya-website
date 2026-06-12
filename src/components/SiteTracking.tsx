@@ -1,6 +1,7 @@
 import Script from "next/script";
 import { getTrackingSettings } from "@/lib/website-builder/settings";
 import CustomTrackingCode from "@/components/CustomTrackingCode";
+import ConversionTracking from "@/components/ConversionTracking";
 
 // Global analytics for the NATIVE (React-rendered) pages — homepage,
 // /retreats, /retreat/[slug], and any CMS catch-all page. The frozen WP
@@ -110,6 +111,9 @@ fbq('track', 'PageView');`}
       {(t.custom_head_html.trim() || t.custom_body_html.trim()) && (
         <CustomTrackingCode head={t.custom_head_html} body={t.custom_body_html} />
       )}
+
+      {/* Conversion events: booking clicks, pricing views, form leads. */}
+      <ConversionTracking />
     </>
   );
 }

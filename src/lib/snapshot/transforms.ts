@@ -24,12 +24,37 @@ const COMMENT_HIDE_STYLE =
   `.comments-title,.comment-list,.ast-comment-list{display:none!important}` +
   `</style>`;
 
+// Conversion tracking for snapshot pages. GA4 (gtag) + Meta Pixel (fbq)
+// are already loaded by the page's baked-in tags, so this just emits the
+// same conversion EVENTS the native ConversionTracking component fires —
+// booking-CTA clicks, pricing-page views, and (best-effort) form leads —
+// keeping snapshot + native pages on one consistent event stream.
+const CONVERSION_SNIPPET =
+  `<script id="anamaya-conversions">(function(){` +
+  `function ga(e,p){if(window.gtag)window.gtag('event',e,p||{})}` +
+  `function fb(e,p){if(window.fbq)window.fbq('track',e,p||{})}` +
+  `try{if(/(^|\\/)(rates?|pricing|prices?)(\\/|$)/i.test(location.pathname)){` +
+  `ga('view_pricing',{label:document.title});fb('ViewContent',{content_type:'pricing'})}}catch(e){}` +
+  `document.addEventListener('click',function(e){` +
+  `var a=e.target&&e.target.closest&&e.target.closest('a');if(!a)return;` +
+  `var h=a.getAttribute('href')||'';if(/\\/rg-calendar|retreat\\.guru/i.test(h)){` +
+  `ga('booking_click',{label:(a.textContent||'').trim().slice(0,80)||h});` +
+  `fb('InitiateCheckout',{content_category:'retreat_booking'})}},true);` +
+  `var L=false;window.addEventListener('message',function(e){if(L)return;` +
+  `if(!/sereenly\\.com|msgsndr\\.com/i.test(e.origin||''))return;` +
+  `var d=typeof e.data==='string'?e.data:JSON.stringify(e.data||'');` +
+  `if(/\\b(form[_-]?submit|submitted|onFormSubmit|lead)\\b/i.test(d)){L=true;ga('generate_lead',{});fb('Lead',{})}},false);` +
+  `})();</script>`;
+
 export function applySnapshotTransforms(html: string): string {
   if (!/<\/head>/i.test(html)) return html;
   // Single <head> rewrite: prepend whatever isn't already present.
   let inject = COMMENT_HIDE_STYLE;
   if (!html.includes("swarmcdn.com/cross/swarmdetect.js")) {
     inject += SWARMIFY_SNIPPET;
+  }
+  if (!html.includes('id="anamaya-conversions"')) {
+    inject += CONVERSION_SNIPPET;
   }
   return html.replace(/<\/head>/i, `${inject}</head>`);
 }
