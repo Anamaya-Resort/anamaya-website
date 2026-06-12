@@ -1,4 +1,5 @@
 import AppShell from "@/components/AppShell";
+import SiteTracking from "@/components/SiteTracking";
 import { getSessionUser } from "@/lib/session";
 
 // Wraps all public marketing pages with Header + Footer + SideMenu.
@@ -20,6 +21,9 @@ export default async function SiteLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <AppShell user={user}>{children}</AppShell>
+      {/* Global analytics (GA4 + Meta Pixels + Crazy Egg) for native pages.
+          Snapshot pages already carry these baked into their frozen HTML. */}
+      <SiteTracking />
     </div>
   );
 }

@@ -19,6 +19,39 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "8mb",
     },
   },
+
+  // Baseline security headers applied to every response (native pages,
+  // snapshot route, and assets). Deliberately conservative: NO strict
+  // Content-Security-Policy, because the site embeds many third-party
+  // origins (Sereenly/GHL forms, YouTube, Stripe, Google Maps, GA4, Meta
+  // Pixel, Crazy Egg, Swarmify) and a wrong CSP would silently break them.
+  // A per-rule CSP can be layered on later from Admin → Technical →
+  // Security once the embed allow-list is pinned down.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          // Force HTTPS for 2 years incl. subdomains (site is HTTPS-only).
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          // Stop MIME-type sniffing.
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // Don't let other sites frame our pages (clickjacking).
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          // Send only the origin on cross-site navigations.
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // Lock down powerful APIs we don't use.
+          {
+            key: "Permissions-Policy",
+            value: "browsing-topics=(), interest-cohort=()",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
