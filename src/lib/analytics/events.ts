@@ -9,12 +9,19 @@ declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
     fbq?: (...args: unknown[]) => void;
+    dataLayer?: unknown[];
   }
 }
 
+// Fire once: prefer direct GA4 (gtag) when present; otherwise fall back to
+// the GTM dataLayer (snapshot pages load GA through a GTM container that
+// may not expose window.gtag). Never both, so there's no double count.
 function ga(event: string, params?: Record<string, unknown>) {
-  if (typeof window !== "undefined" && typeof window.gtag === "function") {
+  if (typeof window === "undefined") return;
+  if (typeof window.gtag === "function") {
     window.gtag("event", event, params ?? {});
+  } else if (Array.isArray(window.dataLayer)) {
+    window.dataLayer.push({ event, ...(params ?? {}) });
   }
 }
 function meta(event: string, params?: Record<string, unknown>) {

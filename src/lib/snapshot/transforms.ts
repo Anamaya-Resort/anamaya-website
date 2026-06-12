@@ -31,7 +31,8 @@ const COMMENT_HIDE_STYLE =
 // keeping snapshot + native pages on one consistent event stream.
 const CONVERSION_SNIPPET =
   `<script id="anamaya-conversions">(function(){` +
-  `function ga(e,p){if(window.gtag)window.gtag('event',e,p||{})}` +
+  `function ga(e,p){if(window.gtag)window.gtag('event',e,p||{});` +
+  `else if(window.dataLayer&&window.dataLayer.push){var o={event:e};for(var k in (p||{}))o[k]=p[k];window.dataLayer.push(o)}}` +
   `function fb(e,p){if(window.fbq)window.fbq('track',e,p||{})}` +
   `try{if(/(^|\\/)(rates?|pricing|prices?)(\\/|$)/i.test(location.pathname)){` +
   `ga('view_pricing',{label:document.title});fb('ViewContent',{content_type:'pricing'})}}catch(e){}` +
