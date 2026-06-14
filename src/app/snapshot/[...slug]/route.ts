@@ -69,7 +69,7 @@ export async function GET(
     return notFoundHtml(`No snapshot captured for ${candidates[0]}.`);
   }
 
-  return new Response(applySnapshotTransforms(ci.frozen_html), {
+  return new Response(applySnapshotTransforms(ci.frozen_html, `/${joined}`), {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",

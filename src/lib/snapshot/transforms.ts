@@ -47,7 +47,32 @@ const CONVERSION_SNIPPET =
   `if(/\\b(form[_-]?submit|submitted|onFormSubmit|lead)\\b/i.test(d)){L=true;ga('generate_lead',{});fb('Lead',{})}},false);` +
   `})();</script>`;
 
-export function applySnapshotTransforms(html: string): string {
+// Pages whose old WordPress checkout/login is dynamic (WooCommerce /
+// MemberPress) and does NOT work on the static site. We still serve the
+// page, topped with an "under construction" notice, until the shop is
+// rebuilt. Normalized (no trailing slash). Remove an entry here to drop
+// the banner once that page's new flow is live.
+const UNDER_CONSTRUCTION = new Set<string>([
+  "/anamaya-gift-certificates",
+  "/cookbook-membership",
+  "/cookbook-membership-dashboard",
+]);
+
+const UNDER_CONSTRUCTION_BANNER =
+  `<div style="background:#A0BF52;color:#fff;text-align:center;` +
+  `padding:14px 20px;font-family:system-ui,-apple-system,sans-serif;` +
+  `font-size:16px;font-weight:600;line-height:1.45;position:relative;` +
+  `z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.15)">` +
+  `🚧 This page is under construction — online purchasing is temporarily ` +
+  `unavailable. Please <a href="/contact/" style="color:#fff;` +
+  `text-decoration:underline">contact us</a> and we'll be glad to help.</div>`;
+
+function normPath(p: string): string {
+  const s = (p || "/").split("?")[0].split("#")[0].replace(/\/+$/, "");
+  return s || "/";
+}
+
+export function applySnapshotTransforms(html: string, path?: string): string {
   if (!/<\/head>/i.test(html)) return html;
   // Single <head> rewrite: prepend whatever isn't already present.
   let inject = COMMENT_HIDE_STYLE;
@@ -57,5 +82,12 @@ export function applySnapshotTransforms(html: string): string {
   if (!html.includes('id="anamaya-conversions"')) {
     inject += CONVERSION_SNIPPET;
   }
-  return html.replace(/<\/head>/i, `${inject}</head>`);
+  let out = html.replace(/<\/head>/i, `${inject}</head>`);
+
+  // Under-construction banner: insert right after <body> so it sits at the
+  // very top of the page, above all content.
+  if (path && UNDER_CONSTRUCTION.has(normPath(path)) && /<body[^>]*>/i.test(out)) {
+    out = out.replace(/(<body[^>]*>)/i, `$1${UNDER_CONSTRUCTION_BANNER}`);
+  }
+  return out;
 }
