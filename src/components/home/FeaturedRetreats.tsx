@@ -35,7 +35,7 @@ const RETREATS: Retreat[] = [
     dates: "October 31 – November 7, 2026",
     description:
       "You've been running on empty. What if seven days could change that? Through the L.O.V.E. framework with Kim & Scott Goyette, you'll silence your inner critic, reconnect to your intuition, and step into the fullness of who you were always meant to be.",
-    href: "/retreat/a-sensory-awakening-retreat-kim-scott-goyette/",
+    href: "/retreat/sensory-awakening-retreat-kim-and-scott-goyette/",
   },
   {
     title: "The Primal Return Special Retreat",

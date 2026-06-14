@@ -173,6 +173,7 @@ async function main() {
       featured_media_wp_id: p.featured_media || null,
       excerpt: excerptText,
       status: "discovered",
+      wp_status: "publish", // so the row is included in sitemap.xml
     };
     const { data: up, error: invErr } = await c
       .from("url_inventory")

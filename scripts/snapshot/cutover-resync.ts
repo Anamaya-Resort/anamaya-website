@@ -234,7 +234,7 @@ async function main() {
           const { data: up, error } = await c.from("url_inventory").upsert({
             url: live.url, url_path: live.path, url_kind: "content", post_type: t.postType, source_site: "v1",
             title: live.title, wp_id: live.wpId, date_published: live.datePub || null, date_modified: live.modified || null,
-            featured_media_wp_id: live.featured || null, excerpt: live.excerpt, status: "discovered",
+            featured_media_wp_id: live.featured || null, excerpt: live.excerpt, status: "discovered", wp_status: "publish",
           }, { onConflict: "source_site,url" }).select("id").single();
           if (error || !up) { console.log(`    ✗ inventory: ${error?.message}`); continue; }
           await writeItem(c, t, live, up.id, manifest);
