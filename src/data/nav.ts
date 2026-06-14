@@ -66,9 +66,9 @@ const EXPERIENCE: FooterGroup = {
     { label: "Cuisine",                href: "/cuisine" },
     { label: "Map of Anamaya",         href: "/property-map/" },
     { label: "Pool",                   href: "/infinity-pool/" },
-    { label: "Spa & Massages",         href: "/spa-massage/" },
+    { label: "Spa & Massages",         href: "/spa-massage-costa-rica/" },
     { label: "Waterfall & Trails Map", href: "/waterfall-and-trails-map/" },
-    { label: "Yoga Decks",             href: "/photo-gallery/yoga-deck/" },
+    { label: "Yoga Decks",             href: "/photo-galleries/" },
     { label: "Bird Watching",          href: "/costa-rica-birdwatching/" },
   ],
 };
@@ -96,7 +96,7 @@ const COMPANY: FooterGroup = {
     { label: "Contact Us",               href: "/contact/" },
     { label: "Featured Blog & Articles", href: "/yoga-blog-articles/" },
     { label: "Press Coverage",           href: "/news-coverage-anamaya" },
-    { label: "Testimonials",             href: "/testimonials/" },
+    { label: "Testimonials",             href: "/testimonials-guest-blogs-about-anamaya/" },
   ],
 };
 
