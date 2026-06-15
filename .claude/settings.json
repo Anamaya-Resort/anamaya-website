@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Edit(.env*)",
+      "Write(.env*)",
+      "Read(.env*)",
+      "Edit(.npmrc)",
+      "Write(.npmrc)",
+      "Edit(next.config.ts)",
+      "Write(next.config.ts)",
+      "Edit(src/proxy.ts)",
+      "Write(src/proxy.ts)",
+      "Edit(src/config/sso.ts)",
+      "Edit(src/lib/session*.ts)",
+      "Edit(src/lib/supabase-server.ts)",
+      "Edit(src/app/api/auth/**)",
+      "Write(src/app/api/auth/**)",
+      "Edit(scripts/**)",
+      "Write(scripts/**)",
+      "Edit(.claude/**)",
+      "Write(.claude/**)",
+      "Edit(.github/**)",
+      "Write(.github/**)",
+      "Edit(package.json)",
+      "Edit(package-lock.json)",
+      "Bash(git push:*)",
+      "Bash(rm -rf:*)",
+      "Bash(vercel:*)",
+      "Bash(wrangler:*)",
+      "Bash(supabase db push:*)",
+      "Bash(npm publish:*)",
+      "Bash(npm i -g:*)",
+      "Bash(npm install -g:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/guard.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}
