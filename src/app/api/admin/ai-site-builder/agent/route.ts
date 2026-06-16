@@ -10,11 +10,11 @@ import { isAdminRole } from "@/lib/session-shared";
  * the production database ref is never exposed to this route.
  *
  * Status: SCAFFOLD. The chat UI and auth are wired and testable today. The
- * agent runtime (Claude Agent SDK running inside a Cloudflare Sandbox against
- * a branch + staging content) is the final step and needs two owner-provided
- * credentials — see `src/app/admin/website/ai-site-builder/README.md`:
- *   • ANTHROPIC_API_KEY      — the shared business key
- *   • CC_SANDBOX_* / CF token — Cloudflare Sandbox runtime
+ * agent runtime (Claude Agent SDK running inside a Vercel Sandbox against a
+ * fresh branch + staging content) is the final step. It needs ONE credential —
+ * `ANTHROPIC_API_KEY` in the Vercel env — plus the two runtime deps installed
+ * (@vercel/sandbox + the Agent SDK). Everything runs on Vercel; Cloudflare is
+ * not involved. See `src/app/admin/website/ai-site-builder/README.md`.
  * Until ANTHROPIC_API_KEY is set, this returns a friendly setup message so the
  * tool is fully demoable without making real changes.
  */
@@ -53,15 +53,15 @@ export async function POST(request: Request) {
   }
 
   // ── Agent runtime integration point ──────────────────────────────────────
-  // With ANTHROPIC_API_KEY present, hand the conversation to a sandboxed Claude
-  // Agent SDK run scoped to a fresh branch + staging env. Not imported until
-  // the dependency + Cloudflare Sandbox are provisioned (keeps the build
+  // With ANTHROPIC_API_KEY present, hand the conversation to a Vercel Sandbox
+  // running the Claude Agent SDK, scoped to a fresh branch + staging env. Not
+  // imported until the runtime deps are installed (keeps the build
   // dependency-free). Wiring steps live in the README beside this tool.
   return NextResponse.json({
     configured: true,
     reply:
-      "The shared AI key is connected, but the sandbox runtime that runs me " +
-      "against a branch isn't deployed yet (the last setup step). See the " +
+      "The shared AI key is connected, but the Vercel Sandbox runtime that runs " +
+      "me against a branch isn't deployed yet (the last setup step). See the " +
       "README beside the AI Site Builder tool.",
   });
 }

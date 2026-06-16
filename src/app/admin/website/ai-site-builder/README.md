@@ -19,14 +19,19 @@ page; the same SSO means no second login (just a brief redirect the first time).
   until the AI runtime is connected, returns a clear setup message so the tool
   is fully demoable now.
 
-## The two setup steps left (need the owner)
+## Setup left (need the owner) — everything runs on Vercel
 
-1. **Shared AI key** — add `ANTHROPIC_API_KEY` (the single business key) to the
-   website's server env (Vercel project env, **not** committed). The tool flips
-   from "Setup pending" to "Connected" automatically.
-2. **Sandbox runtime** — the piece that actually runs Claude against a branch.
-   Recommended: **Cloudflare Sandbox SDK** running the **Claude Agent SDK**.
-   Per session it:
+Hosting plan: the website runs on **Vercel**; the AI runtime runs in a **Vercel
+Sandbox** (isolated VM for the agent). **Cloudflare is not involved** — it stays
+your DNS only. So there's **one credential**, not two.
+
+1. **Shared AI key** — add `ANTHROPIC_API_KEY` (the single business key, same one
+   AnamayOS uses) to the website's **Vercel** env, **not** committed. The tool
+   flips from "Setup pending" to "Connected" automatically. (May already be set,
+   since the site's other AI features read the same variable.)
+2. **Runtime deps + wiring** — install `@vercel/sandbox` + the **Claude Agent
+   SDK**, then wire the integration point marked in the route. Per session the
+   sandbox:
    - checks out a fresh branch (never `main` / `production`),
    - points env at staging content, never the production ref
      `vytqdnwnqiqiwjhqctyi`,
@@ -34,9 +39,6 @@ page; the same SSO means no second login (just a brief redirect the first time).
      the rules and the safe block/template flows,
    - streams progress back to the route above,
    - on "done", pushes the branch and returns a **preview link** for review.
-
-   Wire it at the integration point marked in the route. Needs a **Cloudflare
-   API token**.
 
 ## Why it's safe
 
