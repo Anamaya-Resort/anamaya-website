@@ -19,6 +19,7 @@ import {
   Image as ImageIcon,
   ArrowRightLeft,
   Code2,
+  Sparkles,
   Settings,
 } from "lucide-react";
 import { POST_TYPES } from "@/lib/website-builder/post-types";
@@ -80,6 +81,11 @@ export default function Sidebar() {
       label: "Redirects",
       href: "/admin/website/redirects",
       icon: ArrowRightLeft,
+    },
+    {
+      label: "AI Site Builder",
+      href: "/admin/website/ai-site-builder",
+      icon: Sparkles,
     },
     { label: "Settings", href: "/admin/website/settings", icon: Settings },
   ];
