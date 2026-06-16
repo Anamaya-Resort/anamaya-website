@@ -85,6 +85,10 @@ if (tool === "Edit" || tool === "Write" || tool === "MultiEdit" || tool === "Not
 
 if (tool === "Bash") {
   const cmd = String(input.command || "");
+  // Catch `git push` even when dressed up, e.g. `git -c x=y push`, `git  push`.
+  if (/\bgit\b[\s\S]*\bpush\b/.test(cmd)) {
+    block("direct git push. Your branch is pushed for you through the review flow.");
+  }
   for (const bad of BLOCKED_BASH) {
     if (cmd.includes(bad)) {
       if (bad === PROD_SUPABASE_REF) block("this command references the PRODUCTION database. Collaborator sessions are staging-only.");
