@@ -18,7 +18,13 @@ import { DEFAULT_MODE, isBuilderMode } from "@/lib/ai-site-builder/presets";
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
-type Body = { messages?: { role: string; content: string }[]; mode?: string };
+type Body = {
+  messages?: { role: string; content: string }[];
+  mode?: string;
+  images?: { mediaType?: string; base64?: string }[];
+};
+
+const ALLOWED_IMG = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"]);
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -44,6 +50,10 @@ export async function POST(request: Request) {
     return Response.json({ error: "Tell me what to build or change." }, { status: 400 });
   }
   const mode = isBuilderMode(body.mode) ? body.mode : DEFAULT_MODE;
+  const images = (body.images ?? [])
+    .filter((im) => typeof im?.base64 === "string" && ALLOWED_IMG.has(String(im?.mediaType).toLowerCase()))
+    .slice(0, 4)
+    .map((im) => ({ mediaType: String(im.mediaType).toLowerCase(), base64: im.base64 as string }));
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -54,7 +64,7 @@ export async function POST(request: Request) {
         } catch {}
       };
       try {
-        await runBuilderTask({ instruction, mode, user: session.user, emit });
+        await runBuilderTask({ instruction, mode, images, user: session.user, emit });
       } catch (err) {
         emit({ type: "error", text: err instanceof Error ? err.message : String(err) });
       } finally {

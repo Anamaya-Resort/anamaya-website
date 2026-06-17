@@ -19,7 +19,7 @@ export default async function AiSiteBuilderPage() {
   const isSuperadmin = user?.role === "superadmin";
 
   return (
-    <div className="px-5 py-4">
+    <div className="mx-auto w-4/5 px-5 py-6 text-[15px]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <PageHeader title="AI Site Builder" />
         {isSuperadmin && (
@@ -40,11 +40,11 @@ export default async function AiSiteBuilderPage() {
         )}
       </div>
 
-      <p className="mb-4 max-w-3xl text-[13px] leading-relaxed text-[#50575e]">
+      <p className="mb-4 text-[15px] leading-relaxed text-[#50575e]">
         Describe a change in plain language — a new kind of block, a tweak to a
-        template, a fix — and the AI builds it with you. It works on its own
-        branch against the staging content, never the live site directly. When
-        it looks right, it hands the branch off for review before going live.
+        template, a fix — and the AI builds it with you. You can paste or upload a
+        reference image too. It works on its own branch, never the live site
+        directly, and hands the change off for review before it goes live.
       </p>
 
       <AiSiteBuilderConsole configured={configured} />

@@ -77,7 +77,7 @@ async function changedFiles(
     const arrow = path.indexOf(" -> ");
     if (arrow >= 0) path = path.slice(arrow + 4); // renamed → take the new path
     path = path.replace(/^"|"$/g, "");
-    if (SCRATCH.includes(path)) continue;
+    if (SCRATCH.includes(path) || path.startsWith(".ai-reference")) continue;
     entries.push({ path, untracked: code === "??" });
   }
   return entries;
@@ -173,13 +173,25 @@ async function openPullRequest(
   }
 }
 
+export type RefImage = { mediaType: string; base64: string };
+
+const IMG_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
 export async function runBuilderTask(opts: {
   instruction: string;
   mode: BuilderMode;
+  images?: RefImage[];
   user: Pick<SSOUser, "id" | "display_name" | "email">;
   emit: Emit;
 }): Promise<void> {
   const { instruction, mode, user, emit } = opts;
+  const images = opts.images ?? [];
   const anthropic = process.env.ANTHROPIC_API_KEY;
   const token = process.env.GITHUB_TOKEN;
   if (!anthropic) return emit({ type: "error", text: "The AI key isn't set on the server." });
@@ -226,9 +238,23 @@ export async function runBuilderTask(opts: {
       ],
     });
 
+    // Save any reference images into the workspace; the agent views them with Read.
+    const refFiles: string[] = [];
+    images.slice(0, 4).forEach((img, i) => {
+      const ext = IMG_EXT[img.mediaType.toLowerCase()] ?? "png";
+      refFiles.push(`.ai-reference-${i + 1}.${ext}`);
+    });
+    const refNote = refFiles.length
+      ? `\n\nReference image(s) are saved in this folder: ${refFiles.join(", ")}. Use the Read tool to view each one before building, and match what they show.`
+      : "";
+
     await sandbox.writeFiles([
-      { path: ".ai-task.txt", content: instruction },
+      { path: ".ai-task.txt", content: instruction + refNote },
       { path: "ai-runner.mjs", content: runnerSource() },
+      ...images.slice(0, 4).map((img, i) => ({
+        path: refFiles[i],
+        content: Buffer.from(img.base64, "base64") as Uint8Array,
+      })),
     ]);
 
     let code = await exec(
@@ -276,7 +302,7 @@ export async function runBuilderTask(opts: {
     }
 
     // Drop the scratch files so they don't get committed.
-    await sandbox.runCommand({ cmd: "rm", args: ["-f", ...SCRATCH] });
+    await sandbox.runCommand({ cmd: "rm", args: ["-f", ...SCRATCH, ...refFiles] });
 
     if (!outcome || outcome.remaining === 0) {
       return emit({
