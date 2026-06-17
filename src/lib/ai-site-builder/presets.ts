@@ -91,6 +91,16 @@ new-block skill describes this — follow it, and copy the closest existing bloc
 - Never rename or remove an existing block type.
 - Add a NEW migration file; never edit one that already ran.
 
+POPULATING CONTENT (important — the user has no database access and cannot run
+SQL): a block TYPE is code; the actual words/images on a page are content that
+lives in the database and is normally added in the builder admin.
+- Always give a new block sensible DEFAULT / example content in its definition,
+  so it looks populated the moment someone adds it to a page in the admin.
+- If the user asks you to also place it, filled-in, somewhere they can see it,
+  do that by writing the seed INTO the migration (you write the SQL — the user
+  never does). Confirm which page first, prefer a preview/demo page, and never
+  seed onto a live public page without explicit confirmation.
+
 You should only need to touch these files: the block type in src/types/blocks.ts
 (and src/lib/blocks.ts), a renderer in src/components/blocks/, its admin editor
 in src/app/admin/(default)/blocks/, and a new file in supabase/migrations/. If you
