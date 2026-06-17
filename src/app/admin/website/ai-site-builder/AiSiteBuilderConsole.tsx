@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MODES, DEFAULT_MODE, type BuilderMode } from "@/lib/ai-site-builder/presets";
 
 type RunResult = { text: string; prUrl: string | null; branch: string };
 type UserMsg = { role: "user"; content: string };
@@ -24,7 +25,10 @@ export default function AiSiteBuilderConsole({ configured }: { configured: boole
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<BuilderMode>(DEFAULT_MODE);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const modeBlurb = MODES.find((m) => m.id === mode)?.blurb ?? "";
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -54,7 +58,7 @@ export default function AiSiteBuilderConsole({ configured }: { configured: boole
       const res = await fetch("/api/admin/ai-site-builder/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content }] }),
+        body: JSON.stringify({ messages: [{ role: "user", content }], mode }),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
@@ -110,6 +114,26 @@ export default function AiSiteBuilderConsole({ configured }: { configured: boole
         >
           {configured ? "Connected" : "Setup pending"}
         </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 border-b border-[#c3c4c7] bg-white px-4 py-2 text-[13px]">
+        <label htmlFor="builder-mode" className="font-medium text-[#1d2327]">
+          Mode
+        </label>
+        <select
+          id="builder-mode"
+          value={mode}
+          disabled={busy}
+          onChange={(e) => setMode(e.target.value as BuilderMode)}
+          className="h-7 rounded-sm border border-[#8c8f94] bg-white px-2 text-[13px] text-[#1d2327] disabled:opacity-50"
+        >
+          {MODES.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-[12px] text-[#50575e]">{modeBlurb}</span>
       </div>
 
       {!configured && (

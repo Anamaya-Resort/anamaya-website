@@ -23,12 +23,20 @@ export default async function AiSiteBuilderPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <PageHeader title="AI Site Builder" />
         {isSuperadmin && (
-          <Link
-            href="/admin/website/ai-site-builder/access"
-            className="rounded-sm border border-[#2271b1] bg-white px-2 py-[2px] text-[13px] text-[#2271b1] hover:bg-[#f6fbfd]"
-          >
-            Manage access
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/website/ai-site-builder/presets"
+              className="rounded-sm border border-[#2271b1] bg-white px-2 py-[2px] text-[13px] text-[#2271b1] hover:bg-[#f6fbfd]"
+            >
+              AI rules
+            </Link>
+            <Link
+              href="/admin/website/ai-site-builder/access"
+              className="rounded-sm border border-[#2271b1] bg-white px-2 py-[2px] text-[13px] text-[#2271b1] hover:bg-[#f6fbfd]"
+            >
+              Manage access
+            </Link>
+          </div>
         )}
       </div>
 

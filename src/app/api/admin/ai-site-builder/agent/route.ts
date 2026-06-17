@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/session";
 import { isAdminRole } from "@/lib/session-shared";
 import { runBuilderTask, type RunEvent } from "@/lib/ai-site-builder/runtime";
+import { DEFAULT_MODE, isBuilderMode } from "@/lib/ai-site-builder/presets";
 
 /**
  * POST /api/admin/ai-site-builder/agent — runs an AI Site Builder task.
@@ -17,7 +18,7 @@ import { runBuilderTask, type RunEvent } from "@/lib/ai-site-builder/runtime";
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
-type Body = { messages?: { role: string; content: string }[] };
+type Body = { messages?: { role: string; content: string }[]; mode?: string };
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
   if (!instruction) {
     return Response.json({ error: "Tell me what to build or change." }, { status: 400 });
   }
+  const mode = isBuilderMode(body.mode) ? body.mode : DEFAULT_MODE;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
         } catch {}
       };
       try {
-        await runBuilderTask({ instruction, user: session.user, emit });
+        await runBuilderTask({ instruction, mode, user: session.user, emit });
       } catch (err) {
         emit({ type: "error", text: err instanceof Error ? err.message : String(err) });
       } finally {

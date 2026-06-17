@@ -1,6 +1,7 @@
 import "server-only";
 import { Sandbox } from "@vercel/sandbox";
 import type { SSOUser } from "@/types/sso";
+import { buildSystemAddition, type BuilderMode } from "./presets";
 
 /**
  * The AI Site Builder runtime. Runs entirely on Vercel:
@@ -64,14 +65,10 @@ function runnerSource(): string {
 import { readFileSync } from "node:fs";
 
 const instruction = readFileSync(new URL("./.ai-task.txt", import.meta.url), "utf8");
-
-const guidance = [
-  "You are the Anamaya AI Site Builder, editing the Anamaya website's code.",
-  "Follow CLAUDE.md and the .claude/skills exactly. Match existing patterns.",
-  "Make ONLY the change requested; keep it minimal and scoped. Don't refactor.",
-  "Do NOT run any git commands and do NOT push — that is handled for you.",
-  "When done, briefly state what you changed.",
-].join(" ");
+let guidance = "Follow CLAUDE.md and the .claude/skills. Keep changes minimal. Do not run git or push.";
+try {
+  guidance = readFileSync(new URL("./.ai-guidance.txt", import.meta.url), "utf8") || guidance;
+} catch {}
 
 const q = query({
   prompt: instruction,
@@ -127,10 +124,11 @@ async function openPullRequest(
 
 export async function runBuilderTask(opts: {
   instruction: string;
+  mode: BuilderMode;
   user: Pick<SSOUser, "id" | "display_name" | "email">;
   emit: Emit;
 }): Promise<void> {
-  const { instruction, user, emit } = opts;
+  const { instruction, mode, user, emit } = opts;
   const anthropic = process.env.ANTHROPIC_API_KEY;
   const token = process.env.GITHUB_TOKEN;
   if (!anthropic) return emit({ type: "error", text: "The AI key isn't set on the server." });
@@ -177,8 +175,11 @@ export async function runBuilderTask(opts: {
       ],
     });
 
-    await sandbox.writeFiles([{ path: ".ai-task.txt", content: instruction }]);
-    await sandbox.writeFiles([{ path: "ai-runner.mjs", content: runnerSource() }]);
+    await sandbox.writeFiles([
+      { path: ".ai-task.txt", content: instruction },
+      { path: ".ai-guidance.txt", content: buildSystemAddition(mode) },
+      { path: "ai-runner.mjs", content: runnerSource() },
+    ]);
 
     let code = await exec(
       sandbox,
@@ -194,7 +195,7 @@ export async function runBuilderTask(opts: {
     if (code !== 0) return emit({ type: "error", text: "The AI run didn't finish cleanly. See the log above." });
 
     // Drop the scratch files so they don't get committed.
-    await sandbox.runCommand({ cmd: "rm", args: ["-f", ".ai-task.txt", "ai-runner.mjs"] });
+    await sandbox.runCommand({ cmd: "rm", args: ["-f", ".ai-task.txt", ".ai-guidance.txt", "ai-runner.mjs"] });
 
     const status = await sandbox.runCommand({ cmd: "git", args: ["status", "--porcelain"] });
     if (!(await status.stdout()).trim()) {
