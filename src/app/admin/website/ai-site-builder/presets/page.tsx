@@ -18,8 +18,15 @@ export default async function AiSiteBuilderPresetsPage() {
   }
 
   return (
-    <div className="mx-auto w-4/5 px-5 py-6 text-[15px]">
-      <PageHeader title="AI Site Builder — AI rules" />
+    <div className="px-5 py-6">
+      <Link
+        href="/admin/website/ai-site-builder"
+        className="mb-5 inline-flex items-center gap-1.5 rounded-sm border border-[#2271b1] bg-white px-3.5 py-2 text-[15px] font-medium text-[#2271b1] hover:bg-[#f6fbfd] hover:text-[#135e96]"
+      >
+        ← Back to AI Site Builder
+      </Link>
+      <div className="mx-auto w-4/5 text-[15px]">
+        <PageHeader title="AI Site Builder — AI rules" />
 
       <p className="mb-4 text-[15px] leading-relaxed text-[#50575e]">
         These are the exact instructions added to the AI for each mode — a{" "}
@@ -46,10 +53,6 @@ export default async function AiSiteBuilderPresetsPage() {
         ))}
       </div>
 
-      <div className="mt-3">
-        <Link href="/admin/website/ai-site-builder" className="text-[13px] text-[#2271b1] hover:underline">
-          ← Back to AI Site Builder
-        </Link>
       </div>
     </div>
   );

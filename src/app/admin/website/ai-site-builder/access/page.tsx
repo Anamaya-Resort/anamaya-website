@@ -26,6 +26,12 @@ export default async function AiSiteBuilderAccessPage() {
 
   return (
     <div className="px-5 py-4">
+      <Link
+        href="/admin/website/ai-site-builder"
+        className="mb-5 inline-flex items-center gap-1.5 rounded-sm border border-[#2271b1] bg-white px-3.5 py-2 text-[15px] font-medium text-[#2271b1] hover:bg-[#f6fbfd] hover:text-[#135e96]"
+      >
+        ← Back to AI Site Builder
+      </Link>
       <PageHeader title="AI Site Builder — Access" />
 
       <p className="mb-4 max-w-3xl text-[13px] leading-relaxed text-[#50575e]">
@@ -82,14 +88,6 @@ export default async function AiSiteBuilderAccessPage() {
         </table>
       </div>
 
-      <div className="mt-3">
-        <Link
-          href="/admin/website/ai-site-builder"
-          className="text-[13px] text-[#2271b1] hover:underline"
-        >
-          ← Back to AI Site Builder
-        </Link>
-      </div>
     </div>
   );
 }
