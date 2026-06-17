@@ -89,7 +89,13 @@ new-block skill describes this — follow it, and copy the closest existing bloc
   behavior if the user clearly confirms they want that, knowing it affects all
   pages using that block.
 - Never rename or remove an existing block type.
-- Add a NEW migration file; never edit one that already ran.`;
+- Add a NEW migration file; never edit one that already ran.
+
+You should only need to touch these files: the block type in src/types/blocks.ts
+(and src/lib/blocks.ts), a renderer in src/components/blocks/, its admin editor
+in src/app/admin/(default)/blocks/, and a new file in supabase/migrations/. If you
+think you need anything else, stop and ask — changes outside these are undone
+automatically after the run.`;
 
 const TEMPLATE = `MODE: TEMPLATE BUILDING
 A "template" is a reusable arrangement of blocks for a type of page. Follow the
@@ -99,7 +105,13 @@ new-template skill.
   use. Changing a template in use restyles every page built from it.
 - If the user wants to change an existing template, confirm they understand it
   affects all pages on that template, and prefer a new template they can move
-  pages onto deliberately.`;
+  pages onto deliberately.
+
+You should only need to touch these files: src/components/templates/,
+src/components/admin/templates/, src/app/admin/(default)/templates/,
+src/lib/website-builder/post-types.ts, and a new file in supabase/migrations/. If
+you think you need anything else, stop and ask — changes outside these are undone
+automatically after the run.`;
 
 const PAGE = `MODE: PAGE / WEBSITE
 Most page content — the words, images, and which blocks are on a page — is edited
@@ -156,4 +168,56 @@ export function buildSystemAddition(mode: BuilderMode): string {
   const parts = [GLOBAL_PRESET, MODE_PRESETS[mode]];
   if (mode === "writing") parts.push(BRAND_CONTEXT);
   return parts.join("\n\n");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MECHANICAL SCOPE — enforced after the run by reverting changes, NOT a prompt.
+   These can't be talked around: any changed file matching GLOBAL_DENY aborts the
+   whole run (nothing saved); for a mode with a scope, files outside it are
+   reverted and the in-scope changes kept. Matched as path substrings.
+   ───────────────────────────────────────────────────────────────────────── */
+export const GLOBAL_DENY: string[] = [
+  ".env",
+  "next.config",
+  "src/proxy",
+  "src/config/sso",
+  "src/lib/session",
+  "src/lib/supabase-server",
+  "src/app/api/auth/",
+  "scripts/",
+  ".claude/",
+  ".github/",
+  "package.json",
+  "package-lock.json",
+];
+
+/** Files each mode may modify. Empty = no allowlist (GLOBAL_DENY still applies). */
+export const MODE_SCOPE: Record<BuilderMode, string[]> = {
+  general: [],
+  block: [
+    "src/types/blocks.ts",
+    "src/lib/blocks.ts",
+    "src/components/blocks/",
+    "src/app/admin/(default)/blocks/",
+    "supabase/migrations/",
+  ],
+  template: [
+    "src/components/templates/",
+    "src/components/admin/templates/",
+    "src/app/admin/(default)/templates/",
+    "src/lib/website-builder/post-types.ts",
+    "supabase/migrations/",
+  ],
+  page: [],
+  writing: [],
+};
+
+export type ChangeVerdict = "deny" | "out-of-scope" | "ok";
+
+export function classifyChange(path: string, mode: BuilderMode): ChangeVerdict {
+  const p = path.replace(/\\/g, "/");
+  if (GLOBAL_DENY.some((d) => p.includes(d))) return "deny";
+  const scope = MODE_SCOPE[mode];
+  if (scope.length > 0 && !scope.some((s) => p.includes(s))) return "out-of-scope";
+  return "ok";
 }

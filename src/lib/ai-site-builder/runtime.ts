@@ -1,7 +1,7 @@
 import "server-only";
 import { Sandbox } from "@vercel/sandbox";
 import type { SSOUser } from "@/types/sso";
-import { buildSystemAddition, type BuilderMode } from "./presets";
+import { buildSystemAddition, classifyChange, MODE_SCOPE, type BuilderMode } from "./presets";
 
 /**
  * The AI Site Builder runtime. Runs entirely on Vercel:
@@ -57,6 +57,57 @@ async function exec(
   }
   const done = await c.wait();
   return done.exitCode ?? 0;
+}
+
+const SCRATCH = [".ai-task.txt", ".ai-guidance.txt", "ai-runner.mjs"];
+
+type ScopeOutcome = { aborted: boolean; denyHits: string[]; reverted: string[]; remaining: number };
+
+/** Parse `git status --porcelain` into entries, excluding our scratch files. */
+async function changedFiles(
+  sandbox: Sbx,
+): Promise<{ path: string; untracked: boolean }[]> {
+  const status = await sandbox.runCommand({ cmd: "git", args: ["status", "--porcelain"] });
+  const out = await status.stdout();
+  const entries: { path: string; untracked: boolean }[] = [];
+  for (const raw of out.split("\n")) {
+    if (!raw.trim()) continue;
+    const code = raw.slice(0, 2);
+    let path = raw.slice(3).trim();
+    const arrow = path.indexOf(" -> ");
+    if (arrow >= 0) path = path.slice(arrow + 4); // renamed → take the new path
+    path = path.replace(/^"|"$/g, "");
+    if (SCRATCH.includes(path)) continue;
+    entries.push({ path, untracked: code === "??" });
+  }
+  return entries;
+}
+
+/**
+ * After a run, revert anything the AI shouldn't have touched. This is the
+ * mechanical guard (not a prompt): a GLOBAL_DENY hit reverts EVERYTHING and
+ * aborts; files outside the mode's scope are reverted individually while
+ * in-scope changes are kept.
+ */
+async function enforceScope(sandbox: Sbx, mode: BuilderMode, emit: Emit): Promise<ScopeOutcome> {
+  const changes = await changedFiles(sandbox);
+  const denyHits = changes.filter((c) => classifyChange(c.path, mode) === "deny").map((c) => c.path);
+  if (denyHits.length) {
+    emit({ type: "log", text: `Blocked protected files: ${denyHits.join(", ")}` });
+    await sandbox.runCommand({ cmd: "git", args: ["reset", "--hard", "HEAD"] });
+    await sandbox.runCommand({ cmd: "git", args: ["clean", "-fd"] });
+    return { aborted: true, denyHits, reverted: [], remaining: 0 };
+  }
+
+  const out = changes.filter((c) => classifyChange(c.path, mode) === "out-of-scope");
+  for (const c of out) {
+    if (c.untracked) await sandbox.runCommand({ cmd: "rm", args: ["-f", c.path] });
+    else await sandbox.runCommand({ cmd: "git", args: ["checkout", "--", c.path] });
+  }
+  if (out.length) emit({ type: "log", text: `Reverted out-of-scope changes: ${out.map((c) => c.path).join(", ")}` });
+
+  const remaining = (await changedFiles(sandbox)).length;
+  return { aborted: false, denyHits: [], reverted: out.map((c) => c.path), remaining };
 }
 
 /** The script that runs the agent inside the sandbox, written in at runtime. */
@@ -177,7 +228,6 @@ export async function runBuilderTask(opts: {
 
     await sandbox.writeFiles([
       { path: ".ai-task.txt", content: instruction },
-      { path: ".ai-guidance.txt", content: buildSystemAddition(mode) },
       { path: "ai-runner.mjs", content: runnerSource() },
     ]);
 
@@ -190,16 +240,54 @@ export async function runBuilderTask(opts: {
     );
     if (code !== 0) return emit({ type: "error", text: "Couldn't set up the workspace. Try again." });
 
-    emit({ type: "step", text: "The AI is building your change — this can take a few minutes…" });
-    code = await exec(sandbox, emit, "Working…", "node", ["ai-runner.mjs"]);
-    if (code !== 0) return emit({ type: "error", text: "The AI run didn't finish cleanly. See the log above." });
+    const scopeNote =
+      MODE_SCOPE[mode].length > 0
+        ? `\n\nIMPORTANT: only create or modify files under: ${MODE_SCOPE[mode].join(", ")}. Anything outside this is undone automatically.`
+        : "";
+
+    let outcome: ScopeOutcome | null = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const retryNote =
+        attempt === 2
+          ? `\n\nYour previous attempt only changed files OUTSIDE the allowed scope, and they were undone. This time make the change ONLY within the allowed files above.`
+          : "";
+      await sandbox.writeFiles([
+        { path: ".ai-guidance.txt", content: buildSystemAddition(mode) + scopeNote + retryNote },
+      ]);
+
+      emit({
+        type: "step",
+        text: attempt === 1 ? "The AI is building your change — this can take a few minutes…" : "Retrying within the allowed files…",
+      });
+      code = await exec(sandbox, emit, "Working…", "node", ["ai-runner.mjs"]);
+      if (code !== 0) return emit({ type: "error", text: "The AI run didn't finish cleanly. See the log above." });
+
+      emit({ type: "step", text: "Checking the changes are in scope…" });
+      outcome = await enforceScope(sandbox, mode, emit);
+      if (outcome.aborted) {
+        return emit({
+          type: "error",
+          text: `Blocked: the AI tried to change protected files (${outcome.denyHits.join(", ")}). Nothing was saved.`,
+        });
+      }
+      if (outcome.remaining > 0) break; // we have in-scope changes to keep
+      if (attempt === 1 && outcome.reverted.length > 0) continue; // worked out of scope → retry once
+      break;
+    }
 
     // Drop the scratch files so they don't get committed.
-    await sandbox.runCommand({ cmd: "rm", args: ["-f", ".ai-task.txt", ".ai-guidance.txt", "ai-runner.mjs"] });
+    await sandbox.runCommand({ cmd: "rm", args: ["-f", ...SCRATCH] });
 
-    const status = await sandbox.runCommand({ cmd: "git", args: ["status", "--porcelain"] });
-    if (!(await status.stdout()).trim()) {
-      return emit({ type: "result", branch, prUrl: null, text: "No changes were needed for that." });
+    if (!outcome || outcome.remaining === 0) {
+      return emit({
+        type: "result",
+        branch,
+        prUrl: null,
+        text:
+          outcome && outcome.reverted.length
+            ? "Everything the AI changed was outside what this mode is allowed to touch, so it was undone. Try General mode, or rephrase the request."
+            : "No changes were needed for that.",
+      });
     }
 
     await sandbox.runCommand({ cmd: "git", args: ["add", "-A"] });
@@ -214,21 +302,28 @@ export async function runBuilderTask(opts: {
     ]);
     if (code !== 0) return emit({ type: "error", text: "Couldn't save the branch. See the log above." });
 
+    const revertedNote =
+      outcome && outcome.reverted.length
+        ? `\n\n_Note: ${outcome.reverted.length} out-of-scope change(s) were automatically reverted: ${outcome.reverted.join(", ")}_`
+        : "";
+
     emit({ type: "step", text: "Opening it for review…" });
     const prUrl = await openPullRequest(
       token,
       branch,
       `AI Site Builder: ${instruction.slice(0, 70)}`,
-      `Requested by **${user.display_name || user.email}** via the AI Site Builder.\n\n> ${instruction}`,
+      `Requested by **${user.display_name || user.email}** via the AI Site Builder.\n\n> ${instruction}${revertedNote}`,
     );
 
     emit({
       type: "result",
       branch,
       prUrl,
-      text: prUrl
-        ? "Done! Your change is ready to review."
-        : `Done! Saved to branch \`${branch}\`. (Couldn't auto-open a review link — open a PR from that branch.)`,
+      text:
+        (prUrl
+          ? "Done! Your change is ready to review."
+          : `Done! Saved to branch \`${branch}\`. (Couldn't auto-open a review link — open a PR from that branch.)`) +
+        (revertedNote ? " Some out-of-scope edits were undone automatically." : ""),
     });
   } catch (err) {
     emit({ type: "error", text: err instanceof Error ? err.message : String(err) });
