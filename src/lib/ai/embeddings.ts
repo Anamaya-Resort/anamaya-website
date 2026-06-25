@@ -96,16 +96,31 @@ export async function embedBatch(texts: string[]): Promise<EmbeddingResult[]> {
   };
   const items = json.data ?? [];
   const totalTokens = json.usage?.prompt_tokens ?? 0;
-  // OpenAI guarantees order of `data` matches input order.
-  return items.map((d) => {
+  if (items.length !== texts.length) {
+    throw new Error(
+      `Embedding response count mismatch: got ${items.length}, expected ${texts.length}`,
+    );
+  }
+  // Place each embedding at its returned `index` rather than trusting the
+  // array order — callers pair results to inputs positionally, so an
+  // out-of-order or partial response would otherwise silently attach the
+  // wrong vector to the wrong input.
+  const out: EmbeddingResult[] = new Array(texts.length);
+  // OpenAI only returns total usage; spread it evenly so per-item
+  // accounting is approximate but consistent.
+  const perItemTokens = Math.round(totalTokens / items.length);
+  for (const d of items) {
     if (!Array.isArray(d.embedding) || d.embedding.length !== EMBEDDING_DIMENSIONS) {
       throw new Error("Embedding response shape unexpected");
     }
-    return {
-      embedding: d.embedding,
-      // OpenAI only returns total usage; spread it evenly so per-chunk
-      // accounting is approximate but consistent.
-      tokenCount: Math.round(totalTokens / items.length),
-    };
-  });
+    const idx = typeof d.index === "number" ? d.index : -1;
+    if (idx < 0 || idx >= texts.length) {
+      throw new Error(`Embedding response index out of range: ${idx}`);
+    }
+    out[idx] = { embedding: d.embedding, tokenCount: perItemTokens };
+  }
+  for (let i = 0; i < out.length; i++) {
+    if (!out[i]) throw new Error(`Embedding response missing index ${i}`);
+  }
+  return out;
 }
