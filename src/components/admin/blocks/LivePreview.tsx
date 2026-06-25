@@ -79,6 +79,7 @@ type Props = {
  *  preview via the /block-preview iframe instead of inline rendering. */
 const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set([
   "featured_retreats",
+  "featured_by_search",
   "testimonials",
 ]);
 
@@ -227,6 +228,13 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
       return (
         <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-xs italic text-anamaya-charcoal/60">
           Featured Retreats — preview at the page&rsquo;s public URL
+        </div>
+      );
+    case "featured_by_search":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
+          Featured by Search — save to see the iframe preview (page-content
+          mode only fills in on a real page)
         </div>
       );
     case "testimonials":

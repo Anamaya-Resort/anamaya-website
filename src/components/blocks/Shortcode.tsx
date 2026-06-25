@@ -24,6 +24,7 @@ import UiAgentBlock from "./UiAgentBlock";
 import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
+import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
 import TwoColumnBlock from "./TwoColumnBlock";
@@ -86,6 +87,10 @@ export default async function Shortcode({ slug }: { slug: string }) {
     case "ui_footer_main":    return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "featured_retreats": return <FeaturedRetreatsBlock content={content} />;
+    // No pageId via the shortcode path (block-preview iframe / direct use),
+    // so page-context mode falls back to its "no page to read" state; a
+    // typed search phrase still works.
+    case "featured_by_search": return <FeaturedBySearchBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text":  return <GoogleMapTextBlock content={content} />;
     case "two_column":     return <TwoColumnBlock content={content} />;
