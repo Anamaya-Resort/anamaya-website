@@ -221,12 +221,7 @@ export default function ListShell({
                           {badge && (
                             <span className="ml-1 text-[#1d2327]">{badge}</span>
                           )}
-                          {!row.has_template && (
-                            <span className="ml-2 text-[12px] text-[#996800]">
-                              (no template)
-                            </span>
-                          )}
-                          <div className="mt-1 flex gap-2 text-[12px] text-[#50575e]">
+                          <div className="mt-1 flex gap-2 text-[13px] text-[#50575e]">
                             <Link
                               href={`${basePath}/${row.id}`}
                               className="text-[#2271b1] hover:text-[#135e96] hover:underline"
@@ -323,16 +318,32 @@ export default function ListShell({
                     }
                     if (col === "date") {
                       return (
-                        <td
-                          key={col}
-                          className="px-3 py-2 text-right whitespace-pre-line text-[#50575e]"
-                        >
-                          {formatDate(
-                            row.wp_status === "draft"
-                              ? row.date_modified
-                              : row.date_published,
-                            row.wp_status,
-                          )}
+                        <td key={col} className="px-3 py-2 text-right align-top">
+                          <div className="whitespace-pre-line text-[14px] leading-snug text-[#50575e]">
+                            {formatDate(
+                              row.wp_status === "draft"
+                                ? row.date_modified
+                                : row.date_published,
+                              row.wp_status,
+                            )}
+                          </div>
+                          <div className="mt-1.5 flex justify-end">
+                            {row.has_template ? (
+                              <span
+                                title={`Renders the “${row.template_name ?? "template"}” template`}
+                                className="inline-flex max-w-[14rem] items-center gap-1 truncate rounded-sm bg-[#e6f4ea] px-2 py-0.5 text-[13px] font-semibold text-[#1e7e34]"
+                              >
+                                ✓ Template{row.template_name ? `: ${row.template_name}` : ""}
+                              </span>
+                            ) : (
+                              <span
+                                title="Still showing the original imported page — no template assigned yet"
+                                className="inline-flex items-center gap-1 rounded-sm bg-[#fbf0dc] px-2 py-0.5 text-[13px] font-semibold text-[#8a6d00]"
+                              >
+                                Legacy page
+                              </span>
+                            )}
+                          </div>
                         </td>
                       );
                     }

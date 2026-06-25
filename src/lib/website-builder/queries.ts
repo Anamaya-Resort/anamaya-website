@@ -19,6 +19,8 @@ export type ListRow = {
   author: { display_name: string | null; slug: string | null } | null;
   terms: { taxonomy: string; name: string; slug: string }[];
   has_template: boolean;
+  /** Name of the assigned CMS template, e.g. "Home Page v1". Null = legacy. */
+  template_name: string | null;
 };
 
 export type ListStatusCounts = {
@@ -168,6 +170,25 @@ export async function listByPostType(
     }
   }
 
+  // Resolve assigned-template names so the list can show "Template: <name>"
+  // instead of a bare flag. Empty (and a no-op) until rows actually carry a
+  // cms_template_id, so this is safe before the column exists.
+  const templateIds = [
+    ...new Set(
+      rawRows
+        .map((r) => r.cms_template_id)
+        .filter((x): x is string => Boolean(x)),
+    ),
+  ];
+  const templateMap = new Map<string, string>();
+  if (templateIds.length) {
+    const { data: tpls } = await sb
+      .from("page_templates")
+      .select("id, name")
+      .in("id", templateIds);
+    for (const t of tpls ?? []) templateMap.set(t.id, t.name);
+  }
+
   const statusCounts = await getStatusCountsForType(postType, opts.search);
 
   const rows: ListRow[] = rawRows.map((r) => ({
@@ -180,6 +201,9 @@ export async function listByPostType(
     author: r.author_id ? authorMap.get(r.author_id) ?? null : null,
     terms: termsByPost.get(r.id) ?? [],
     has_template: !!r.cms_template_id,
+    template_name: r.cms_template_id
+      ? templateMap.get(r.cms_template_id) ?? null
+      : null,
   }));
 
   return {
