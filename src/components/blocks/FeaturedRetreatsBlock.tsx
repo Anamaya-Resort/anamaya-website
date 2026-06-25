@@ -22,13 +22,16 @@ type AoRetreat = {
 };
 
 /**
- * Featured Retreats block — async server component. Pulls retreats
- * marked `is_featured = true` (and `is_public = true`, `is_active = true`,
- * `end_date >= today` so past retreats fall off automatically) from AO
- * at request time and renders one card per retreat.
+ * Featured Retreats block — async server component. Pulls retreats from
+ * AO at request time: every upcoming `is_featured = true` retreat first,
+ * then backfills empty slots with the soonest upcoming non-featured ones
+ * up to "Number to show" (so the section never looks sparse). All sets
+ * are gated to `is_public = true`, `is_active = true`, `end_date >= today`
+ * so past retreats fall off automatically.
  *
- * Cards are stacked horizontally on tablet+ (image left, text right)
- * and stack vertically on mobile. Both the image and the Register-Now
+ * Cards render two-across on tablet+ in a 2-column grid (each card is
+ * image-left / text-right) and stack to one column on mobile. Both the
+ * image and the Register-Now
  * button link to the retreat's page on the public site (URL pattern
  * "url_pattern" with `{slug}` replaced by AO's website_slug); when a
  * retreat has no website_slug, falls back to its registration_link
@@ -45,7 +48,7 @@ export default async function FeaturedRetreatsBlock({
   const c = content ?? {};
   const heading = c.heading ?? "Featured Retreats";
   const subheading = c.subheading ?? "";
-  const maxCount = Math.max(1, Math.min(50, c.max_count ?? 5));
+  const numberToShow = Math.max(1, Math.min(50, c.max_count ?? 6));
   const registerLabel = c.register_label ?? "Register Now";
   const urlPattern = c.url_pattern || "/retreats/{slug}/";
   const containerWidth = c.container_width_px ?? 1200;
@@ -65,7 +68,7 @@ export default async function FeaturedRetreatsBlock({
   const cardBorderWidth = clamp(c.card_border_width_px ?? 1, 0, 10);
   const cardRadius = clamp(c.card_corner_radius_px ?? 8, 0, 40);
 
-  const retreats = await fetchFeaturedRetreats(maxCount);
+  const retreats = await fetchFeaturedRetreats(numberToShow);
 
   return (
     <section
@@ -100,7 +103,7 @@ export default async function FeaturedRetreatsBlock({
             AnamayaOS to populate this section.
           </p>
         ) : (
-          <ul className="space-y-8">
+          <ul className="grid grid-cols-1 gap-8 md:grid-cols-2">
             {retreats.map((r) => {
               const href = retreatHref(r, urlPattern);
               const title = decodeEntities(r.name ?? "Untitled retreat");
@@ -125,7 +128,7 @@ export default async function FeaturedRetreatsBlock({
                     gains the freed width.
                   */}
                   <article
-                    className="grid grid-cols-1 gap-6 overflow-hidden border-solid border-anamaya-mint bg-white/40 md:h-[264px] md:grid-cols-[8fr_17fr]"
+                    className="grid grid-cols-1 gap-6 overflow-hidden border-solid border-anamaya-mint bg-white/40 md:h-[264px] md:grid-cols-[2fr_3fr]"
                     style={{
                       borderWidth: cardBorderWidth,
                       borderRadius: cardRadius,
@@ -190,28 +193,59 @@ export default async function FeaturedRetreatsBlock({
   );
 }
 
-async function fetchFeaturedRetreats(maxCount: number): Promise<AoRetreat[]> {
-  // Service-role on AO. Anon hits AO's RLS and sees zero retreats;
-  // we use service role here because the query is already locked down
-  // to `is_public = true AND is_active = true`, so even bypassing RLS
-  // we only return data that's intended for the public site. Server-
-  // only — the key never reaches the browser.
+const RETREAT_COLS =
+  "id, name, excerpt, description, start_date, end_date, feature_image_url, images, website_slug, registration_link, external_link, is_featured, is_public, is_active";
+
+/**
+ * Build the card list: all upcoming *featured* retreats first (curated —
+ * they always show, even if there are more than `numberToShow`), then
+ * backfill the remaining slots with the soonest upcoming *non-featured*
+ * retreats so the section stays full automatically. All sets share the
+ * same public/active/future-end gate.
+ *
+ * Service-role on AO. Anon hits AO's RLS and sees zero retreats; we use
+ * service role because the query is locked to `is_public = true AND
+ * is_active = true`, so even bypassing RLS we only return public data.
+ * Server-only — the key never reaches the browser.
+ */
+async function fetchFeaturedRetreats(numberToShow: number): Promise<AoRetreat[]> {
   const ao = aoSupabaseAdminOrNull();
   if (!ao) return [];
   const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await ao
+
+  // 1. Curated featured retreats — never cut off, so allow more than
+  //    numberToShow (capped at a sane 50).
+  const { data: featuredData, error: fErr } = await ao
     .from("retreats")
-    .select(
-      "id, name, excerpt, description, start_date, end_date, feature_image_url, images, website_slug, registration_link, external_link, is_featured, is_public, is_active",
-    )
+    .select(RETREAT_COLS)
     .eq("is_featured", true)
     .eq("is_public", true)
     .eq("is_active", true)
     .gte("end_date", today)
     .order("start_date", { ascending: true })
-    .limit(maxCount);
-  if (error || !data) return [];
-  return data as AoRetreat[];
+    .limit(50);
+  if (fErr) return [];
+  const featured = (featuredData ?? []) as AoRetreat[];
+
+  // 2. Backfill any empty slots with the soonest upcoming non-featured
+  //    retreats. Skip entirely when featured already fill the section.
+  const need = Math.max(0, numberToShow - featured.length);
+  if (need === 0) return featured;
+
+  const { data: fillData } = await ao
+    .from("retreats")
+    .select(RETREAT_COLS)
+    .or("is_featured.is.null,is_featured.eq.false")
+    .eq("is_public", true)
+    .eq("is_active", true)
+    .gte("end_date", today)
+    .order("start_date", { ascending: true })
+    .limit(need);
+  const fill = (fillData ?? []) as AoRetreat[];
+
+  // Defensive de-dup in case a row qualifies for both queries.
+  const seen = new Set(featured.map((r) => r.id));
+  return [...featured, ...fill.filter((r) => !seen.has(r.id))];
 }
 
 /**

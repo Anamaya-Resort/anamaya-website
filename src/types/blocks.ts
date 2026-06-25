@@ -965,7 +965,7 @@ export type UiSideMenuRightContent = OverlayMixin & {
 export type FeaturedRetreatsContent = {
   heading?: string;             // section heading; default "Featured Retreats"
   subheading?: string;          // optional sub-text under the heading
-  max_count?: number;           // max cards to show; default 5
+  max_count?: number;           // number of cards to show; default 6. Featured always show (even if more); empty slots backfill with soonest upcoming non-featured.
   register_label?: string;      // CTA button label; default "Register Now"
   /** Pattern for the per-retreat URL. `{slug}` is replaced with AO's
    *  website_slug; if a retreat has no website_slug the registration_link

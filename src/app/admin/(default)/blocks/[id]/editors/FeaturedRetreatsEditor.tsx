@@ -86,17 +86,23 @@ function Form({ state }: { state: BlockEditorState<FeaturedRetreatsContent> }) {
             />
           </label>
           <label className="block">
-            <span className={labelCls}>Max retreats</span>
+            <span className={labelCls}>Number to show</span>
             <input
               type="number"
               min={1}
               max={50}
               className={inputCls}
-              value={draft.max_count ?? 5}
+              value={draft.max_count ?? 6}
               onChange={(e) =>
-                patch({ max_count: Math.max(1, Math.min(50, Number(e.target.value) || 5)) })
+                patch({ max_count: Math.max(1, Math.min(50, Number(e.target.value) || 6)) })
               }
             />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              Featured retreats always appear; any empty slots fill
+              automatically with the soonest upcoming retreats. If you
+              feature more than this number, the section grows so none
+              are cut.
+            </p>
           </label>
           <label className="block">
             <span className={labelCls}>Register button label</span>
