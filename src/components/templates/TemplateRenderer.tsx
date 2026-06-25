@@ -128,7 +128,7 @@ export default async function TemplateRenderer({
             : row.block.content;
         return (
           <div key={row.id}>
-            {renderBlockByType(row.block.type_slug, content)}
+            {renderBlockByType(row.block.type_slug, content, { pageId })}
           </div>
         );
       })}

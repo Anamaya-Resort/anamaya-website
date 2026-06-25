@@ -982,6 +982,32 @@ export type FeaturedRetreatsContent = {
   container_width_px?: number;  // max-width of inner content; default 1200
 };
 
+/**
+ * Featured by Search — AI-recommended retreats. Same card design as
+ * FeaturedRetreatsContent, but instead of the is_featured flag it ranks
+ * upcoming retreats by semantic relevance to a context.
+ */
+export type FeaturedBySearchContent = {
+  heading?: string;             // section heading; default "Recommended Retreats"
+  subheading?: string;          // optional sub-text under the heading
+  max_count?: number;           // number of retreats to recommend; default 4
+  /** true (default) = use the current page/post's content as the context;
+   *  false = use the `search_terms` phrase the builder typed. */
+  use_page_context?: boolean;
+  search_terms?: string;        // the phrase to match when use_page_context = false
+  register_label?: string;      // CTA button label; default "Register Now"
+  url_pattern?: string;         // per-retreat URL; `{slug}` → AO website_slug; default "/retreats/{slug}/"
+  bg_color?: string;
+  text_color?: string;
+  heading_color?: string;
+  card_bg_color?: string;
+  card_border_color?: string;
+  card_border_width_px?: number;
+  card_corner_radius_px?: number;
+  padding_y_px?: number;
+  container_width_px?: number;
+};
+
 /** A single label+href pair used by both link and social groups. */
 export type FooterLinkItem = { label: string; href: string };
 
@@ -1086,6 +1112,7 @@ export type BlockTypeSlug =
   | "ui_footer_main"
   | "ui_footer_legal"
   | "featured_retreats"
+  | "featured_by_search"
   | "small_form_over_image"
   | "google_map_with_text"
   | "testimonials"

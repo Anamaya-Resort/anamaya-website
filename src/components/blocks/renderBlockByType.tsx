@@ -26,6 +26,7 @@ import UiAgentBlock from "./UiAgentBlock";
 import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
+import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
 import TestimonialsBlock from "./TestimonialsBlock";
@@ -46,6 +47,10 @@ export default function renderBlockByType(
   typeSlug: BlockTypeSlug | string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   content: any,
+  // Optional render context. `pageId` lets context-aware blocks (e.g.
+  // featured_by_search in "use page content" mode) read the page they're
+  // rendered on. Undefined in single-block preview surfaces.
+  ctx?: { pageId?: string },
 ): React.ReactNode {
   switch (typeSlug as BlockTypeSlug) {
     case "rich_text":             return <RichTextBlock content={content} />;
@@ -75,6 +80,7 @@ export default function renderBlockByType(
     case "ui_footer_main":        return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":       return <UiFooterLegalBlock content={content} />;
     case "featured_retreats":     return <FeaturedRetreatsBlock content={content} />;
+    case "featured_by_search":    return <FeaturedBySearchBlock content={content} pageId={ctx?.pageId} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text":  return <GoogleMapTextBlock content={content} />;
     case "testimonials":          return <TestimonialsBlock content={content} />;
