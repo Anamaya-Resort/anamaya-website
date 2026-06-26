@@ -51,7 +51,7 @@ export function RetreatCard({
       {/* Image-left / text-right card; fixed desktop height so both grid
           columns share the row height and the image fills its cell. */}
       <article
-        className="grid grid-cols-1 gap-6 overflow-hidden border-solid border-anamaya-mint bg-white/40 md:h-[264px] md:grid-cols-[2fr_3fr]"
+        className="grid grid-cols-1 gap-6 overflow-hidden border-solid border-anamaya-mint bg-white/40 md:h-[264px] md:grid-cols-[8fr_17fr]"
         style={{
           borderWidth: opts.cardBorderWidth,
           borderRadius: opts.cardRadius,
