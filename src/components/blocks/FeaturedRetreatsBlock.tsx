@@ -17,8 +17,11 @@ type AoRetreat = RetreatCardData & {
  * are gated to `is_public = true`, `is_active = true`, `end_date >= today`
  * so past retreats fall off automatically.
  *
- * Cards render two-across on tablet+ in a 2-column grid (each card is
- * image-left / text-right) and stack to one column on mobile.
+ * Cards are capped at 840px wide and centered. Two columns appear only
+ * on wide desktops (≥1760px, where two full cards fit side by side);
+ * tablets/iPads and typical laptops show a single wide card instead of
+ * two squished ones. This is intentionally a WIDE section — wider than
+ * the standard ~1200px centered content column.
  *
  * Silent on AO failures — if the env vars are missing or the query
  * fails, renders an inline empty state instead of crashing the page.
@@ -56,8 +59,9 @@ export default async function FeaturedRetreatsBlock({
         paddingBottom: padY,
       }}
     >
+      {/* Heading stays in the standard readable centered column. */}
       <div className="mx-auto w-full px-6" style={{ maxWidth: containerWidth }}>
-        <header className="mb-10 text-center">
+        <header className="text-center">
           {heading && (
             <h2
               className="font-heading text-3xl font-semibold tracking-wide sm:text-4xl"
@@ -72,14 +76,24 @@ export default async function FeaturedRetreatsBlock({
             </p>
           )}
         </header>
+      </div>
 
-        {retreats.length === 0 ? (
+      {retreats.length === 0 ? (
+        <div className="mx-auto mt-10 w-full px-6" style={{ maxWidth: containerWidth }}>
           <p className="rounded-md border border-dashed border-anamaya-charcoal/20 bg-white/40 p-8 text-center text-sm italic opacity-60">
             No featured retreats yet. Mark a retreat as Featured in
             AnamayaOS to populate this section.
           </p>
-        ) : (
-          <ul className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        </div>
+      ) : (
+        // Cards break out wider than the heading column. Each card is
+        // capped at 840px (50% wider than the old ~560px two-column card)
+        // and centered. Two columns engage only at ≥1760px (= 2×840 + 32
+        // gap + 48 padding), so iPad/tablet and typical laptops get one
+        // wide card instead of two squished ones. The 840 / 1760 literals
+        // in the grid classes must stay in sync with this maxWidth.
+        <div className="mx-auto mt-10 w-full px-6" style={{ maxWidth: 1760 }}>
+          <ul className="grid justify-center gap-8 [grid-template-columns:minmax(0,840px)] min-[1760px]:[grid-template-columns:repeat(2,minmax(0,840px))]">
             {retreats.map((r) => (
               <RetreatCard
                 key={r.id}
@@ -96,8 +110,8 @@ export default async function FeaturedRetreatsBlock({
               />
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
