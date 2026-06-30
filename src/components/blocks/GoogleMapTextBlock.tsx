@@ -20,8 +20,13 @@ const DEFAULT_ZOOM = 16;
  */
 export default function GoogleMapTextBlock({
   content,
+  previewStaticMap,
 }: {
   content: GoogleMapTextContent;
+  /** Admin preview only. Renders an OpenStreetMap tile mosaic behind the
+   *  live Google iframe so the block snapshot has a capturable map (the
+   *  cross-origin iframe can't be rasterised). Never set on public pages. */
+  previewStaticMap?: boolean;
 }) {
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";
   const color = resolveBrandColor(content?.text_color) ?? undefined;
@@ -87,10 +92,13 @@ export default function GoogleMapTextBlock({
           overflow: "hidden",
         }}
       >
+        {previewStaticMap && (
+          <StaticTileMap lat={lat} lng={lng} zoom={zoom} radius={radius} />
+        )}
         <iframe
           src={embedSrc}
           title={label ? `Map: ${label}` : `Map at ${lat}, ${lng}`}
-          className="block h-full w-full"
+          className="relative z-10 block h-full w-full"
           style={{ border: 0 }}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
@@ -149,6 +157,92 @@ export default function GoogleMapTextBlock({
 function clamp(n: number, lo: number, hi: number): number {
   if (!Number.isFinite(n)) return lo;
   return Math.max(lo, Math.min(hi, n));
+}
+
+/**
+ * A 3×3 mosaic of same-origin OpenStreetMap tiles, centred on the exact
+ * coordinate, with a pin at the centre. Used purely as the snapshot
+ * fallback for this block (see `previewStaticMap`). Tiles are proxied
+ * through /api/map-tile so html-to-image can rasterise them. Standard
+ * slippy-map tile math: world is 2^zoom tiles wide; the coordinate's
+ * fractional tile position gives both the centre tile and the sub-tile
+ * pixel offset used to centre the mosaic in the cell.
+ */
+function StaticTileMap({
+  lat,
+  lng,
+  zoom,
+  radius,
+}: {
+  lat: number;
+  lng: number;
+  zoom: number;
+  radius: number;
+}) {
+  const span = 2 ** zoom;
+  const xf = ((lng + 180) / 360) * span;
+  const latRad = (lat * Math.PI) / 180;
+  const yf = ((1 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2) * span;
+  const cxTile = Math.floor(xf);
+  const cyTile = Math.floor(yf);
+  // Pixel position of the coordinate within the 3×3 mosaic (origin = the
+  // top-left tile, i.e. cxTile-1 / cyTile-1). Always in [256, 512).
+  const px = (xf - (cxTile - 1)) * 256;
+  const py = (yf - (cyTile - 1)) * 256;
+  const wrapX = (v: number) => ((v % span) + span) % span; // x wraps the globe
+
+  const tiles: { x: number; y: number; key: string }[] = [];
+  for (let row = -1; row <= 1; row++) {
+    for (let col = -1; col <= 1; col++) {
+      const ty = cyTile + row;
+      if (ty < 0 || ty >= span) continue;
+      tiles.push({ x: wrapX(cxTile + col), y: ty, key: `${col}_${row}` });
+    }
+  }
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden bg-[#aadaff]"
+      style={{ borderRadius: radius }}
+      aria-hidden
+    >
+      <div
+        className="absolute grid"
+        style={{
+          width: 768,
+          height: 768,
+          gridTemplateColumns: "repeat(3, 256px)",
+          left: `calc(50% - ${px}px)`,
+          top: `calc(50% - ${py}px)`,
+        }}
+      >
+        {tiles.map((t) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={t.key}
+            src={`/api/map-tile?z=${zoom}&x=${t.x}&y=${t.y}`}
+            alt=""
+            width={256}
+            height={256}
+            className="block"
+          />
+        ))}
+      </div>
+      {/* Pin at the exact coordinate (centre of the cell). */}
+      <div
+        className="absolute"
+        style={{ left: "50%", top: "50%", transform: "translate(-50%, -100%)" }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="#ae564b" stroke="#ffffff" strokeWidth="1.5">
+          <path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" />
+          <circle cx="12" cy="9" r="2.5" fill="#ffffff" stroke="none" />
+        </svg>
+      </div>
+      <div className="absolute bottom-0 right-0 bg-white/70 px-1 text-[9px] leading-tight text-anamaya-charcoal/70">
+        © OpenStreetMap
+      </div>
+    </div>
+  );
 }
 
 function numOr(v: unknown, fallback: number): number {

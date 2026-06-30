@@ -222,7 +222,7 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "three_column":      return <ThreeColumnBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
-    case "google_map_with_text": return <GoogleMapTextBlock content={content} />;
+    case "google_map_with_text": return <GoogleMapTextBlock content={content} previewStaticMap />;
     // Async server-only blocks render via the iframe path above; the
     // case below is just a fallback placeholder when we fall through
     // (e.g. the iframe preview is disabled because blockSlug is missing).
