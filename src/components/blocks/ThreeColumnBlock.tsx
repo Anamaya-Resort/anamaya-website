@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ThreeColumnContent, ThreeColumnSide, BlockCta } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import { fluidHeading, fluidBody, fluidSpace } from "@/lib/responsive";
 import CtaButton from "./shared/CtaButton";
 
 /**
@@ -67,8 +68,8 @@ export default function ThreeColumnBlock({ content }: { content: ThreeColumnCont
         backgroundPosition: "center",
         backgroundRepeat: bgRepeat,
         color: textColor,
-        paddingTop: padY,
-        paddingBottom: padY,
+        paddingTop: fluidSpace(padY),
+        paddingBottom: fluidSpace(padY),
       }}
     >
       {c.heading && (
@@ -77,7 +78,7 @@ export default function ThreeColumnBlock({ content }: { content: ThreeColumnCont
             c.heading_font === "body" ? "font-sans" : "font-heading"
           }`}
           style={{
-            fontSize: c.heading_size_px ?? 36,
+            fontSize: fluidHeading(c.heading_size_px ?? 36),
             color: resolveBrandColor(c.heading_color) ?? undefined,
             fontWeight: c.heading_bold ? 700 : 600,
             fontStyle: c.heading_italic ? "italic" : "normal",
@@ -140,7 +141,7 @@ function ColumnView({
     <h3
       className={s.heading_font === "body" ? "font-sans" : "font-heading"}
       style={{
-        fontSize: s.heading_size_px ?? 22,
+        fontSize: fluidHeading(s.heading_size_px ?? 22),
         color: resolveBrandColor(s.heading_color) ?? undefined,
         fontWeight: s.heading_bold ? 700 : 600,
         fontStyle: s.heading_italic ? "italic" : "normal",
@@ -188,7 +189,7 @@ function ColumnView({
             s.body_font === "heading" ? "font-heading" : "font-sans"
           }`}
           style={{
-            fontSize: s.body_size_px ?? undefined,
+            fontSize: s.body_size_px ? fluidBody(s.body_size_px) : undefined,
             color: resolveBrandColor(s.body_color) ?? undefined,
             marginTop: 12,
           }}

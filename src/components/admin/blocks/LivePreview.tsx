@@ -30,6 +30,7 @@ import SmallFormOverImageBlock from "@/components/blocks/SmallFormOverImageBlock
 import GoogleMapTextBlock from "@/components/blocks/GoogleMapTextBlock";
 import ImageSlideshowBlock from "@/components/blocks/ImageSlideshowBlock";
 import VariantCarousel from "./VariantCarousel";
+import DevicePreviewHover from "./DevicePreviewHover";
 
 /**
  * Reusable live-preview shell for any block editor.
@@ -110,10 +111,11 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
 
   return (
     <section className="mb-8">
-      <header className="mb-2">
+      <header className="mb-2 flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-800">
           {label}
         </h3>
+        {blockSlug && <DevicePreviewHover slug={blockSlug} />}
       </header>
 
       {/* Outer wrapper breaks out of the admin column (full-bleed).

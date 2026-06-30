@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
 import BrandTokensStyle from "@/components/brand/BrandTokensStyle";
@@ -23,6 +23,14 @@ export const metadata: Metadata = {
   title: "Anamaya Resort",
   description:
     "Wellness retreats and yoga teacher trainings on a clifftop in Montezuma, Costa Rica.",
+};
+
+// Mobile-critical. Without width=device-width phones render the page at a
+// ~980px desktop width and zoom out, making everything tiny — this is the
+// single most important responsiveness setting on the site.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
