@@ -28,27 +28,33 @@ export default function VideoShowcaseBlock({ content }: { content: VideoShowcase
             italic={content.title_top_italic}
           />
         )}
-        <div className="mx-auto my-6" style={{ maxWidth: maxW }}>
-          {source === "upload" && content?.video_url ? (
-            <video
-              src={content.video_url}
-              poster={content.video_poster_url}
-              controls
-              playsInline
-              className="aspect-video w-full bg-black object-cover"
-            />
-          ) : youtubeId ? (
-            <div className="aspect-video w-full bg-black">
-              <YouTubeFacade
-                videoId={youtubeId}
-                title={content?.title_top ?? "Video"}
+        {/* Flex-centre (not mx-auto): auto margins don't resolve in the
+            html-to-image snapshot, which left-justified the video even
+            though it's centred on the live site. justify-center captures
+            correctly and renders identically live. */}
+        <div className="my-6 flex justify-center">
+          <div className="w-full" style={{ maxWidth: maxW }}>
+            {source === "upload" && content?.video_url ? (
+              <video
+                src={content.video_url}
+                poster={content.video_poster_url}
+                controls
+                playsInline
+                className="aspect-video w-full bg-black object-cover"
               />
-            </div>
-          ) : (
-            <div className="flex aspect-video w-full items-center justify-center bg-zinc-100 text-sm italic text-anamaya-charcoal/50">
-              No video yet
-            </div>
-          )}
+            ) : youtubeId ? (
+              <div className="aspect-video w-full bg-black">
+                <YouTubeFacade
+                  videoId={youtubeId}
+                  title={content?.title_top ?? "Video"}
+                />
+              </div>
+            ) : (
+              <div className="flex aspect-video w-full items-center justify-center bg-zinc-100 text-sm italic text-anamaya-charcoal/50">
+                No video yet
+              </div>
+            )}
+          </div>
         </div>
         {content?.title_bottom && (
           <TitleLine
