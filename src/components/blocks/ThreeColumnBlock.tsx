@@ -21,22 +21,33 @@ export default function ThreeColumnBlock({ content }: { content: ThreeColumnCont
   const textColor = resolveBrandColor(c.text_color) ?? undefined;
   const padY = c.padding_y_px ?? 64;
 
-  const stack = c.mobile_stack !== false;
   const valign = c.vertical_align ?? "top";
   const alignItems =
     valign === "center" ? "center" : valign === "bottom" ? "end" : "start";
   // Single shared corner radius for all column images.
   const imageRadius = clamp(c.image_corner_radius_px ?? 8, 0, 40);
 
-  // 7 track widths. Use fr units so any non-100 sum scales proportionally.
-  const lg = clamp(c.left_gutter_pct ?? 5, 0, 100);
-  const lc = clamp(c.left_col_pct ?? 28, 0, 100);
-  const ls = clamp(c.left_space_pct ?? 3, 0, 100);
-  const mc = clamp(c.middle_col_pct ?? 28, 0, 100);
-  const rs = clamp(c.right_space_pct ?? 3, 0, 100);
-  const rc = clamp(c.right_col_pct ?? 28, 0, 100);
-  const rg = clamp(c.right_gutter_pct ?? 5, 0, 100);
-  const cols = `${lg}fr ${lc}fr ${ls}fr ${mc}fr ${rs}fr ${rc}fr ${rg}fr`;
+  // 7 track widths per device, in fr units so any non-100 sum scales
+  // proportionally. Phones (<768px) always stack to one column; tablet
+  // (768–1023px) and desktop (≥1024px) each get their own widths, with
+  // tablet falling back to the desktop value when it isn't set.
+  const dLg = clamp(c.left_gutter_pct ?? 5, 0, 100);
+  const dLc = clamp(c.left_col_pct ?? 28, 0, 100);
+  const dLs = clamp(c.left_space_pct ?? 3, 0, 100);
+  const dMc = clamp(c.middle_col_pct ?? 28, 0, 100);
+  const dRs = clamp(c.right_space_pct ?? 3, 0, 100);
+  const dRc = clamp(c.right_col_pct ?? 28, 0, 100);
+  const dRg = clamp(c.right_gutter_pct ?? 5, 0, 100);
+  const colsDesktop = `${dLg}fr ${dLc}fr ${dLs}fr ${dMc}fr ${dRs}fr ${dRc}fr ${dRg}fr`;
+
+  const tLg = clamp(c.left_gutter_pct_tablet ?? dLg, 0, 100);
+  const tLc = clamp(c.left_col_pct_tablet ?? dLc, 0, 100);
+  const tLs = clamp(c.left_space_pct_tablet ?? dLs, 0, 100);
+  const tMc = clamp(c.middle_col_pct_tablet ?? dMc, 0, 100);
+  const tRs = clamp(c.right_space_pct_tablet ?? dRs, 0, 100);
+  const tRc = clamp(c.right_col_pct_tablet ?? dRc, 0, 100);
+  const tRg = clamp(c.right_gutter_pct_tablet ?? dRg, 0, 100);
+  const colsTablet = `${tLg}fr ${tLc}fr ${tLs}fr ${tMc}fr ${tRs}fr ${tRc}fr ${tRg}fr`;
 
   // Background image — supports cover/contain/tile + scale, mirroring
   // RichBgBlock so behaviour is consistent across blocks.
@@ -89,41 +100,38 @@ export default function ThreeColumnBlock({ content }: { content: ThreeColumnCont
       )}
 
       <div
-        className={`grid ${stack ? "grid-cols-1 md:grid-cols-[var(--cols)]" : ""}`}
+        className="grid grid-cols-1 md:grid-cols-[var(--cols-t)] lg:grid-cols-[var(--cols-d)]"
         style={
           {
-            ["--cols" as string]: cols,
-            gridTemplateColumns: stack ? undefined : cols,
+            ["--cols-t" as string]: colsTablet,
+            ["--cols-d" as string]: colsDesktop,
             alignItems,
           } as React.CSSProperties
         }
       >
-        <Spacer stack={stack} /> {/* left gutter */}
-        <ColumnView side={c.left} stack={stack} imageRadius={imageRadius} />
-        <Spacer stack={stack} /> {/* left space */}
-        <ColumnView side={c.middle} stack={stack} imageRadius={imageRadius} />
-        <Spacer stack={stack} /> {/* right space */}
-        <ColumnView side={c.right} stack={stack} imageRadius={imageRadius} />
-        <Spacer stack={stack} /> {/* right gutter */}
+        <Spacer /> {/* left gutter */}
+        <ColumnView side={c.left} imageRadius={imageRadius} />
+        <Spacer /> {/* left space */}
+        <ColumnView side={c.middle} imageRadius={imageRadius} />
+        <Spacer /> {/* right space */}
+        <ColumnView side={c.right} imageRadius={imageRadius} />
+        <Spacer /> {/* right gutter */}
       </div>
     </section>
   );
 }
 
-function Spacer({ stack }: { stack: boolean }) {
-  // On mobile (stack=true) we hide the gutters and inter-column spaces
-  // so the three columns stack flush. On desktop they're visible (and
-  // empty) so they consume the editor-defined width.
-  return <div className={stack ? "hidden md:block" : ""} aria-hidden />;
+function Spacer() {
+  // Hidden on phones (columns stack flush); shown at tablet+ so the
+  // gutters and inter-column spaces consume the editor-defined width.
+  return <div className="hidden md:block" aria-hidden />;
 }
 
 function ColumnView({
   side,
-  stack,
   imageRadius,
 }: {
   side: ThreeColumnSide | undefined;
-  stack: boolean;
   imageRadius: number;
 }) {
   const s = side ?? {};
@@ -180,7 +188,7 @@ function ColumnView({
   ) : null;
 
   return (
-    <div className={`min-w-0 ${stack ? "px-6 mb-8 md:mb-0 md:px-0" : ""}`}>
+    <div className="min-w-0 px-6 mb-8 md:mb-0 md:px-0">
       {imageNode}
       {headingNode}
       {s.body_html && (

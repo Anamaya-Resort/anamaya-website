@@ -59,8 +59,16 @@ function normalize(c: ThreeColumnContent | null | undefined): ThreeColumnContent
     right_space_pct: c?.right_space_pct ?? 3,
     right_col_pct: c?.right_col_pct ?? 28,
     right_gutter_pct: c?.right_gutter_pct ?? 5,
+    // Tablet widths default to the matching desktop value, so an existing
+    // block renders identically until its tablet set is edited.
+    left_gutter_pct_tablet: c?.left_gutter_pct_tablet ?? c?.left_gutter_pct ?? 5,
+    left_col_pct_tablet: c?.left_col_pct_tablet ?? c?.left_col_pct ?? 28,
+    left_space_pct_tablet: c?.left_space_pct_tablet ?? c?.left_space_pct ?? 3,
+    middle_col_pct_tablet: c?.middle_col_pct_tablet ?? c?.middle_col_pct ?? 28,
+    right_space_pct_tablet: c?.right_space_pct_tablet ?? c?.right_space_pct ?? 3,
+    right_col_pct_tablet: c?.right_col_pct_tablet ?? c?.right_col_pct ?? 28,
+    right_gutter_pct_tablet: c?.right_gutter_pct_tablet ?? c?.right_gutter_pct ?? 5,
     vertical_align: c?.vertical_align ?? "top",
-    mobile_stack: c?.mobile_stack ?? true,
     left: normalizeSide(c?.left),
     middle: normalizeSide(c?.middle),
     right: normalizeSide(c?.right),
@@ -90,7 +98,7 @@ export default function ThreeColumnEditor(props: {
 function Form({ state }: { state: BlockEditorState<ThreeColumnContent> }) {
   const { draft, patch, brandTokens } = state;
 
-  const widthSum =
+  const desktopSum =
     (draft.left_gutter_pct ?? 0) +
     (draft.left_col_pct ?? 0) +
     (draft.left_space_pct ?? 0) +
@@ -98,6 +106,15 @@ function Form({ state }: { state: BlockEditorState<ThreeColumnContent> }) {
     (draft.right_space_pct ?? 0) +
     (draft.right_col_pct ?? 0) +
     (draft.right_gutter_pct ?? 0);
+
+  const tabletSum =
+    (draft.left_gutter_pct_tablet ?? draft.left_gutter_pct ?? 0) +
+    (draft.left_col_pct_tablet ?? draft.left_col_pct ?? 0) +
+    (draft.left_space_pct_tablet ?? draft.left_space_pct ?? 0) +
+    (draft.middle_col_pct_tablet ?? draft.middle_col_pct ?? 0) +
+    (draft.right_space_pct_tablet ?? draft.right_space_pct ?? 0) +
+    (draft.right_col_pct_tablet ?? draft.right_col_pct ?? 0) +
+    (draft.right_gutter_pct_tablet ?? draft.right_gutter_pct ?? 0);
 
   function patchSide(key: "left" | "middle" | "right", update: Partial<ThreeColumnSide>) {
     const current = (draft[key] ?? {}) as ThreeColumnSide;
@@ -316,18 +333,19 @@ function Form({ state }: { state: BlockEditorState<ThreeColumnContent> }) {
         </div>
       </section>
 
-      {/* Layout widths */}
+      {/* Layout widths — Desktop + Tablet, set independently. */}
       <section className={sectionCls}>
         <h3 className={sectionTitleCls}>Layout widths (%)</h3>
-        <p className="mb-3 text-xs text-anamaya-charcoal/60">
+        <p className="mb-4 text-xs text-anamaya-charcoal/60">
           Seven horizontal slices: gutter, column, space, column, space, column,
-          gutter. Total {widthSum}%
-          {widthSum !== 100 && (
-            <span className="ml-2 italic">
-              — values are auto-normalised by weight, so non-100 totals still render correctly.
-            </span>
-          )}
+          gutter. Desktop and tablet are set independently. Values are
+          auto-normalised by weight, so non-100 totals still render correctly.
         </p>
+
+        {/* Desktop */}
+        <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+          Desktop (≥1024px) — total {desktopSum}%
+        </h4>
         <div className="grid gap-3 sm:grid-cols-7">
           <WidthInput label="Left gutter" value={draft.left_gutter_pct} onChange={(v) => patch({ left_gutter_pct: v })} />
           <WidthInput label="Left col" value={draft.left_col_pct} onChange={(v) => patch({ left_col_pct: v })} />
@@ -337,14 +355,24 @@ function Form({ state }: { state: BlockEditorState<ThreeColumnContent> }) {
           <WidthInput label="Right col" value={draft.right_col_pct} onChange={(v) => patch({ right_col_pct: v })} />
           <WidthInput label="Right gutter" value={draft.right_gutter_pct} onChange={(v) => patch({ right_gutter_pct: v })} />
         </div>
-        <label className="mt-3 flex items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={draft.mobile_stack !== false}
-            onChange={(e) => patch({ mobile_stack: e.target.checked })}
-          />
-          Stack columns vertically on mobile (recommended)
-        </label>
+
+        {/* Tablet */}
+        <h4 className="mb-2 mt-5 text-[12px] font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+          Tablet (768–1023px) — total {tabletSum}%
+        </h4>
+        <div className="grid gap-3 sm:grid-cols-7">
+          <WidthInput label="Left gutter" value={draft.left_gutter_pct_tablet} onChange={(v) => patch({ left_gutter_pct_tablet: v })} />
+          <WidthInput label="Left col" value={draft.left_col_pct_tablet} onChange={(v) => patch({ left_col_pct_tablet: v })} />
+          <WidthInput label="Space" value={draft.left_space_pct_tablet} onChange={(v) => patch({ left_space_pct_tablet: v })} />
+          <WidthInput label="Middle col" value={draft.middle_col_pct_tablet} onChange={(v) => patch({ middle_col_pct_tablet: v })} />
+          <WidthInput label="Space" value={draft.right_space_pct_tablet} onChange={(v) => patch({ right_space_pct_tablet: v })} />
+          <WidthInput label="Right col" value={draft.right_col_pct_tablet} onChange={(v) => patch({ right_col_pct_tablet: v })} />
+          <WidthInput label="Right gutter" value={draft.right_gutter_pct_tablet} onChange={(v) => patch({ right_gutter_pct_tablet: v })} />
+        </div>
+
+        <p className="mt-4 text-[11px] italic text-anamaya-charcoal/60">
+          Phones (&lt;768px) always stack to a single column automatically.
+        </p>
       </section>
 
       {/* Per-column editors */}

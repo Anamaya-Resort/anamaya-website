@@ -783,7 +783,8 @@ export type ThreeColumnContent = {
    *  not per column). 0 = squared, default 8 px. */
   image_corner_radius_px?: number;
 
-  // 7-track widths in % (or any number — fr units distribute)
+  // 7-track widths in % (or any number — fr units distribute).
+  // These are the DESKTOP (≥1024px) widths.
   left_gutter_pct?: number;
   left_col_pct?: number;
   left_space_pct?: number;
@@ -792,8 +793,19 @@ export type ThreeColumnContent = {
   right_col_pct?: number;
   right_gutter_pct?: number;
 
+  // TABLET (768–1023px) widths. Each falls back to the matching desktop
+  // value when unset, so a block that never sets tablet widths renders
+  // identically to before. Phones (<768px) always stack to one column.
+  left_gutter_pct_tablet?: number;
+  left_col_pct_tablet?: number;
+  left_space_pct_tablet?: number;
+  middle_col_pct_tablet?: number;
+  right_space_pct_tablet?: number;
+  right_col_pct_tablet?: number;
+  right_gutter_pct_tablet?: number;
+
   vertical_align?: "top" | "center" | "bottom";
-  /** Stack vertically on mobile (default true). */
+  /** @deprecated Phones now always stack to one column. */
   mobile_stack?: boolean;
 
   // The three column payloads
