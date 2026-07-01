@@ -39,7 +39,7 @@ const BLEND_MODES: NonNullable<CtaBannerContent["bg_image_blend_mode"]>[] = [
 
 function normalize(c: CtaBannerContent | null | undefined): CtaBannerContent {
   return {
-    ...normalizeLayoutWidths(c),
+    ...normalizeLayoutWidths(c, 896),
     heading: c?.heading ?? "",
     subheading: c?.subheading ?? "",
     bg_color: c?.bg_color ?? "",
@@ -80,7 +80,7 @@ function Form({ state }: { state: BlockEditorState<CtaBannerContent> }) {
   return (
     <div className="space-y-6">
       {/* Layout widths — first, right under the live preview. */}
-      <LayoutWidthsFieldset values={draft} onPatch={patch} />
+      <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={896} />
 
       {/* Heading + subheading */}
       <section className={sectionCls}>

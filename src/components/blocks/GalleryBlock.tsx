@@ -21,7 +21,6 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
   const lightbox = content?.lightbox !== false;
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";
   const pad = content?.padding_y_px ?? 64;
-  const contentWidth = content?.content_width_px ?? 1400;
 
   const close = useCallback(() => setActiveIdx(null), []);
   const next = useCallback(
@@ -52,8 +51,11 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
       style={{ backgroundColor: bg, paddingTop: pad, paddingBottom: pad }}
     >
       <DecorationOverlay frame={content} />
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
-        <LayoutWidths content={content}>
+      <LayoutWidths
+        content={content}
+        defaultMaxContentPx={content?.content_width_px ?? 1400}
+        className="relative"
+      >
         {content?.heading && (
           <h2 className="mb-8 text-center font-heading text-3xl">{content.heading}</h2>
         )}
@@ -123,8 +125,7 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
             ))}
           </div>
         )}
-        </LayoutWidths>
-      </div>
+      </LayoutWidths>
 
       {lightbox && activeIdx !== null && (
         <div

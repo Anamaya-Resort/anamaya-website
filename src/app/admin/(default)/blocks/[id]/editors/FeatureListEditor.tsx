@@ -26,7 +26,7 @@ const sectionTitleCls = "mb-3 text-sm font-semibold text-anamaya-charcoal";
 
 function normalize(c: FeatureListContent | null | undefined): FeatureListContent {
   return {
-    ...normalizeLayoutWidths(c),
+    ...normalizeLayoutWidths(c, c?.content_width_px ?? 1200),
     heading: c?.heading ?? "",
     intro: c?.intro ?? "",
     items: c?.items ?? [],
@@ -102,7 +102,7 @@ function Form({ state }: { state: BlockEditorState<FeatureListContent> }) {
   return (
     <div className="space-y-6">
       {/* Layout widths — first, right under the live preview. */}
-      <LayoutWidthsFieldset values={draft} onPatch={patch} />
+      <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={draft.content_width_px ?? 1200} />
 
       {/* Heading + intro */}
       <section className={sectionCls}>

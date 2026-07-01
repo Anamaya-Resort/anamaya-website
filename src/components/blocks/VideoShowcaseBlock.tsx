@@ -18,8 +18,7 @@ export default function VideoShowcaseBlock({ content }: { content: VideoShowcase
       className="w-full"
       style={{ backgroundColor: bg, paddingTop: pad, paddingBottom: pad }}
     >
-      <div className="mx-auto w-full max-w-[1400px] px-6 text-center">
-        <LayoutWidths content={content}>
+      <LayoutWidths content={content} defaultMaxContentPx={1400} className="text-center">
         {content?.title_top && (
           <TitleLine
             text={content.title_top}
@@ -69,8 +68,7 @@ export default function VideoShowcaseBlock({ content }: { content: VideoShowcase
           />
         )}
         <CtaButton cta={content ?? {}} />
-        </LayoutWidths>
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

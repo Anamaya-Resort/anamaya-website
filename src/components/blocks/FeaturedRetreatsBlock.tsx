@@ -93,27 +93,25 @@ export default async function FeaturedRetreatsBlock({
         // gap + 48 padding), so iPad/tablet and typical laptops get one
         // wide card instead of two squished ones. The 840 / 1760 literals
         // in the grid classes must stay in sync with this maxWidth.
-        <div className="mx-auto mt-10 w-full px-6" style={{ maxWidth: 1760 }}>
-          <LayoutWidths content={c}>
-            <ul className="grid justify-center gap-8 [grid-template-columns:minmax(0,840px)] min-[1760px]:[grid-template-columns:repeat(2,minmax(0,840px))]">
-              {retreats.map((r) => (
-                <RetreatCard
-                  key={r.id}
-                  r={r}
-                  opts={{
-                    urlPattern,
-                    registerLabel,
-                    headingColor,
-                    cardBg,
-                    cardBorder,
-                    cardBorderWidth,
-                    cardRadius,
-                  }}
-                />
-              ))}
-            </ul>
-          </LayoutWidths>
-        </div>
+        <LayoutWidths content={c} defaultMaxContentPx={1760} className="mt-10">
+          <ul className="grid justify-center gap-8 [grid-template-columns:minmax(0,840px)] min-[1760px]:[grid-template-columns:repeat(2,minmax(0,840px))]">
+            {retreats.map((r) => (
+              <RetreatCard
+                key={r.id}
+                r={r}
+                opts={{
+                  urlPattern,
+                  registerLabel,
+                  headingColor,
+                  cardBg,
+                  cardBorder,
+                  cardBorderWidth,
+                  cardRadius,
+                }}
+              />
+            ))}
+          </ul>
+        </LayoutWidths>
       )}
     </section>
   );

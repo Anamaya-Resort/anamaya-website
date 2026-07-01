@@ -22,7 +22,7 @@ const labelCls =
 
 function normalize(c: VideoShowcaseContent | null | undefined): VideoShowcaseContent {
   return {
-    ...normalizeLayoutWidths(c),
+    ...normalizeLayoutWidths(c, 1400),
     ...(c ?? {}),
     bg_color: c?.bg_color ?? "brandSubtle",
     padding_y_px: c?.padding_y_px ?? 48,
@@ -90,7 +90,7 @@ function Form({ state }: { state: BlockEditorState<VideoShowcaseContent> }) {
   return (
     <>
       {/* Layout widths — first, right under the live preview. */}
-      <LayoutWidthsFieldset values={draft} onPatch={patch} />
+      <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={1400} />
 
       {/* Backdrop */}
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">

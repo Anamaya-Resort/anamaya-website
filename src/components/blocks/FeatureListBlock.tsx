@@ -18,7 +18,6 @@ export default function FeatureListBlock({ content }: { content: FeatureListCont
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";
   const color = resolveBrandColor(content?.text_color);
   const pad = content?.padding_y_px ?? 64;
-  const contentWidth = content?.content_width_px ?? 1200;
 
   return (
     <section
@@ -26,8 +25,11 @@ export default function FeatureListBlock({ content }: { content: FeatureListCont
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
       <DecorationOverlay frame={content} />
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
-        <LayoutWidths content={content}>
+      <LayoutWidths
+        content={content}
+        defaultMaxContentPx={content?.content_width_px ?? 1200}
+        className="relative"
+      >
           {content?.heading && (
             <h2 className="mb-3 text-center font-heading text-3xl">{content.heading}</h2>
           )}
@@ -54,8 +56,7 @@ export default function FeatureListBlock({ content }: { content: FeatureListCont
           {layout === "split" && <SplitLayout items={items} />}
 
           <CtaButton cta={content ?? {}} />
-        </LayoutWidths>
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

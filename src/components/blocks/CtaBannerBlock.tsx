@@ -32,7 +32,7 @@ export default function CtaBannerBlock({ content }: { content: CtaBannerContent 
           aria-hidden="true"
         />
       )}
-      <LayoutWidths content={content} className="relative mx-auto max-w-4xl text-center">
+      <LayoutWidths content={content} defaultMaxContentPx={896} className="relative text-center">
         <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           {content.heading}
         </h2>

@@ -17,7 +17,7 @@ const labelCls =
 
 function normalize(c: FeaturedRetreatsContent | null | undefined): FeaturedRetreatsContent {
   return {
-    ...normalizeLayoutWidths(c),
+    ...normalizeLayoutWidths(c, 1760),
     heading: c?.heading ?? "Featured Retreats",
     subheading: c?.subheading ?? "",
     max_count: c?.max_count ?? 5,
@@ -60,7 +60,7 @@ function Form({ state }: { state: BlockEditorState<FeaturedRetreatsContent> }) {
   return (
     <div className="space-y-6">
       {/* Layout widths — first, right under the live preview. */}
-      <LayoutWidthsFieldset values={draft} onPatch={patch} />
+      <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={1760} />
 
       <section className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
         <header className="mb-3">

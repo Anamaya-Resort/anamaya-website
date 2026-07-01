@@ -59,6 +59,7 @@ export default function GalleryEditor({
         <LayoutWidthsFieldset
           values={state}
           onPatch={(u) => setState((s) => ({ ...s, ...u }))}
+          maxContentDefault={state.content_width_px ?? 1400}
         />
       </div>
 
