@@ -81,12 +81,22 @@ export default function GoogleMapTextBlock({
     ? `${mapPct}% ${textPct}%`
     : `${textPct}% ${mapPct}%`;
 
+  // Phones stack (1 column, map on top); tablets+ stay side-by-side. The
+  // cells are ALWAYS rendered map-then-text so the map is on top when
+  // stacked; on tablet+ their left/right position is set by md:col-start
+  // (only applied at md+, so the single-column phone layout is untouched).
+  const mapColStart = mapOnLeft ? "md:col-start-1" : "md:col-start-2";
+  const textColStart = mapOnLeft ? "md:col-start-2" : "md:col-start-1";
+
   const mapCell = (
-    <div className={`flex h-full w-full overflow-hidden ${justifyMap}`}>
+    <div className={`flex h-full w-full overflow-hidden ${justifyMap} ${mapColStart}`}>
       <div
         className="relative w-full"
         style={{
-          minHeight: hasFixedHeight ? undefined : 360,
+          // Floor so the map is always visible — critical when stacked on
+          // phones, where the grid row is auto-height (a bare height:100%
+          // would collapse to zero).
+          minHeight: hasFixedHeight ? 320 : 360,
           height: hasFixedHeight ? "100%" : 360,
           borderRadius: radius,
           overflow: "hidden",
@@ -117,7 +127,7 @@ export default function GoogleMapTextBlock({
   );
 
   const textCell = (
-    <div className="px-8 py-6">
+    <div className={`px-6 py-6 md:px-8 ${textColStart}`}>
       <div
         className="prose-anamaya prose-anamaya-block"
         // eslint-disable-next-line react/no-danger
@@ -139,15 +149,17 @@ export default function GoogleMapTextBlock({
     >
       <div className="mx-auto w-full px-6" style={{ maxWidth: containerWidth }}>
         <div
-          className={`grid ${alignItems}`}
-          style={{
-            gridTemplateColumns: gridCols,
-            gap: 0,
-            height: hasFixedHeight ? containerHeightPx : undefined,
-          }}
+          className={`grid grid-cols-1 md:grid-cols-[var(--cols)] md:[height:var(--gm-h)] ${alignItems}`}
+          style={
+            {
+              "--cols": gridCols,
+              "--gm-h": hasFixedHeight ? `${containerHeightPx}px` : "auto",
+              gap: 0,
+            } as React.CSSProperties
+          }
         >
-          {mapOnLeft ? mapCell : textCell}
-          {mapOnLeft ? textCell : mapCell}
+          {mapCell}
+          {textCell}
         </div>
       </div>
     </section>
