@@ -3,6 +3,7 @@ import { resolveBrandColor } from "@/config/brand-tokens";
 import { getFeaturedTestimonials, type Testimonial } from "@/lib/testimonials";
 import TestimonialsCarousel from "./shared/TestimonialsCarousel";
 import TestimonialsSchema from "./shared/TestimonialsSchema";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Full-width Testimonials carousel. Pulls only `featured = true` rows
@@ -32,7 +33,6 @@ export default async function TestimonialsBlock({
   const textColor = resolveBrandColor(c.text_color);
   const headingColor = resolveBrandColor(c.heading_color);
   const padY = c.padding_y_px ?? 80;
-  const maxW = c.content_width_px ?? 900;
 
   const bgImageOpacity = clamp(c.bg_image_opacity ?? 100, 0, 100) / 100;
   const bgImageBlend = c.bg_image_blend_mode ?? "normal";
@@ -63,7 +63,11 @@ export default async function TestimonialsBlock({
         />
       )}
 
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: maxW }}>
+      <LayoutWidths
+        content={c}
+        defaultMaxContentPx={c.content_width_px ?? 900}
+        className="relative"
+      >
         <h2
           className="mb-10 text-center font-heading font-semibold uppercase tracking-[0.3em]"
           style={{ color: headingColor, fontSize: headingSize }}
@@ -101,7 +105,7 @@ export default async function TestimonialsBlock({
             fadeSeconds={fade}
           />
         )}
-      </div>
+      </LayoutWidths>
 
       <TestimonialsSchema items={items} />
     </section>

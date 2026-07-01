@@ -7,8 +7,10 @@ import ContainerFieldset from "@/components/admin/blocks/ContainerFieldset";
 import MediaFieldset from "@/components/admin/blocks/MediaFieldset";
 import ImageTransformFieldset from "@/components/admin/blocks/ImageTransformFieldset";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
 import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
 import RTE from "@/components/admin/rte/RichTextEditor";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { RichBgContent } from "@/types/blocks";
 
@@ -20,6 +22,7 @@ const sectionTitleCls =
 
 function normalize(c: RichBgContent | null | undefined): RichBgContent {
   return {
+    ...normalizeLayoutWidths(c, c?.content_width_px ?? 1200),
     ...(c ?? {}),
     html: c?.html ?? "",
     bg_color: c?.bg_color ?? "brandSubtle",
@@ -48,6 +51,8 @@ export default function RichBgEditor(props: {
       normalize={normalize}
       renderForm={({ draft, setDraft, commit, patch, brandTokens, saving }) => (
         <>
+          <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={draft.content_width_px ?? 1200} />
+
           <ContainerFieldset
             brandTokens={brandTokens}
             paddingYPx={draft.padding_y_px}

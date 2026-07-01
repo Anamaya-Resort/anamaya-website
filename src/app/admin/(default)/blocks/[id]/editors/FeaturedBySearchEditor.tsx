@@ -5,6 +5,8 @@ import BlockEditorChrome, {
   type BlockEditorState,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { FeaturedBySearchContent } from "@/types/blocks";
 
@@ -15,6 +17,7 @@ const labelCls =
 
 function normalize(c: FeaturedBySearchContent | null | undefined): FeaturedBySearchContent {
   return {
+    ...normalizeLayoutWidths(c, c?.container_width_px ?? 1200),
     heading: c?.heading ?? "Recommended Retreats",
     subheading: c?.subheading ?? "",
     max_count: c?.max_count ?? 4,
@@ -60,6 +63,8 @@ function Form({ state }: { state: BlockEditorState<FeaturedBySearchContent> }) {
 
   return (
     <div className="space-y-6">
+      <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={draft.container_width_px ?? 1200} />
+
       <section className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
         <header className="mb-3">
           <h4 className="text-sm font-semibold text-anamaya-charcoal">

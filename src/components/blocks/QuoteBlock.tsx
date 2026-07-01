@@ -2,6 +2,7 @@ import type { QuoteContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
 import DecorationOverlay from "./shared/DecorationOverlay";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Quote / testimonial. Three layouts:
@@ -15,7 +16,6 @@ export default function QuoteBlock({ content }: { content: QuoteContent }) {
   const color = resolveBrandColor(content?.text_color);
   const pad = content?.padding_y_px ?? (variant === "banner" ? 80 : 48);
   const defaultWidth = variant === "card" ? 800 : 900;
-  const contentWidth = content?.content_width_px ?? defaultWidth;
 
   return (
     <section
@@ -23,11 +23,10 @@ export default function QuoteBlock({ content }: { content: QuoteContent }) {
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
       <DecorationOverlay frame={content} />
-      <div
-        className={`relative mx-auto w-full px-6 ${
-          variant === "card" ? "" : "text-center"
-        }`}
-        style={{ maxWidth: contentWidth }}
+      <LayoutWidths
+        content={content}
+        defaultMaxContentPx={content?.content_width_px ?? defaultWidth}
+        className={`relative ${variant === "card" ? "" : "text-center"}`}
       >
         {variant === "card" ? (
           <CardLayout content={content} />
@@ -35,7 +34,7 @@ export default function QuoteBlock({ content }: { content: QuoteContent }) {
           <CenteredLayout content={content} />
         )}
         <CtaButton cta={content ?? {}} />
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

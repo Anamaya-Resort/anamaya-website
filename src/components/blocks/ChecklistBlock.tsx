@@ -2,6 +2,7 @@ import type { ChecklistContent, ChecklistItem } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
 import DecorationOverlay from "./shared/DecorationOverlay";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /** Two rows of checklist items on a branded background. */
 export default function ChecklistBlock({ content }: { content: ChecklistContent }) {
@@ -13,7 +14,6 @@ export default function ChecklistBlock({ content }: { content: ChecklistContent 
   const headingFontClass = content?.heading_font === "body" ? "font-sans" : "font-heading";
   const top = content?.columns_top ?? [];
   const bottom = content?.columns_bottom ?? [];
-  const contentWidth = content?.content_width_px ?? 1200;
 
   return (
     <section
@@ -21,7 +21,11 @@ export default function ChecklistBlock({ content }: { content: ChecklistContent 
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
       <DecorationOverlay frame={content} />
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
+      <LayoutWidths
+        content={content}
+        defaultMaxContentPx={content?.content_width_px ?? 1200}
+        className="relative"
+      >
         {content?.heading && (
           <h2
             className={`${headingFontClass} mb-6 text-center`}
@@ -41,7 +45,7 @@ export default function ChecklistBlock({ content }: { content: ChecklistContent 
           </div>
         )}
         <CtaButton cta={content ?? {}} />
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

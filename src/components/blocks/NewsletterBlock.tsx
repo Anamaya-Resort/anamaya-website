@@ -1,5 +1,6 @@
 import type { NewsletterContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /** Newsletter signup on a branded background. */
 export default function NewsletterBlock({ content }: { content: NewsletterContent }) {
@@ -13,7 +14,7 @@ export default function NewsletterBlock({ content }: { content: NewsletterConten
       className="w-full"
       style={{ backgroundColor: bg, paddingTop: pad, paddingBottom: pad }}
     >
-      <div className="mx-auto w-full max-w-[720px] px-6 text-center">
+      <LayoutWidths content={content} defaultMaxContentPx={720} className="text-center">
         {content?.heading && (
           <h2
             className={`${headingFontClass} mb-3`}
@@ -56,7 +57,7 @@ export default function NewsletterBlock({ content }: { content: NewsletterConten
             {content?.submit_label ?? "Subscribe"}
           </button>
         </form>
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

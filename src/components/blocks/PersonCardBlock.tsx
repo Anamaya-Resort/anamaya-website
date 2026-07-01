@@ -3,6 +3,7 @@ import { resolveBrandColor } from "@/config/brand-tokens";
 import ProseHtml from "@/components/ProseHtml";
 import CtaButton from "./shared/CtaButton";
 import DecorationOverlay from "./shared/DecorationOverlay";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Person card — used for retreat-leader, teacher, and guest-speaker bios.
@@ -12,14 +13,16 @@ import DecorationOverlay from "./shared/DecorationOverlay";
  * piped in by the page composer.
  */
 export default function PersonCardBlock({ content }: { content: PersonCardContent }) {
-  if (!content?.name) return null;
+  // Render as long as there's SOMETHING to show — so the builder preview
+  // isn't blank while a card is being filled in. Only a truly empty card
+  // (no name, photo, or bio) collapses to nothing on the public site.
+  if (!content?.name && !content?.photo_url && !content?.html) return null;
 
   const layout = content?.layout ?? "side-by-side";
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";
   const color = resolveBrandColor(content?.text_color);
   const pad = content?.padding_y_px ?? 64;
   const photoPct = clamp(content?.photo_width_pct ?? 30, 20, 50);
-  const contentWidth = content?.content_width_px ?? 1100;
 
   return (
     <section
@@ -27,7 +30,11 @@ export default function PersonCardBlock({ content }: { content: PersonCardConten
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
       <DecorationOverlay frame={content} />
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
+      <LayoutWidths
+        content={content}
+        defaultMaxContentPx={content?.content_width_px ?? 1200}
+        className="relative"
+      >
         {layout === "stacked" ? (
           <div className="flex flex-col items-center text-center">
             {content.photo_url && (
@@ -68,7 +75,7 @@ export default function PersonCardBlock({ content }: { content: PersonCardConten
           </div>
         )}
         <CtaButton cta={content ?? {}} />
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

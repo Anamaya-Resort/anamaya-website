@@ -6,6 +6,8 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { BlockBlendMode, TestimonialsBlockContent } from "@/types/blocks";
 
@@ -39,6 +41,7 @@ const CATEGORY_CHOICES: Array<{ slug: string; label: string }> = [
 
 function normalize(c: TestimonialsBlockContent | null | undefined): TestimonialsBlockContent {
   return {
+    ...normalizeLayoutWidths(c, c?.content_width_px ?? 900),
     category_slug:        c?.category_slug ?? "homepage",
     display_seconds:      c?.display_seconds ?? 4,
     fade_seconds:         c?.fade_seconds ?? 2,
@@ -89,6 +92,9 @@ function Form({ state }: { state: BlockEditorState<TestimonialsBlockContent> }) 
 
   return (
     <div className="space-y-6">
+      {/* Layout widths — first, right under the live preview. */}
+      <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={draft.content_width_px ?? 900} />
+
       <section className={sectionCls}>
         <h3 className={sectionTitleCls}>Source</h3>
         <div className="grid gap-3 sm:grid-cols-2">

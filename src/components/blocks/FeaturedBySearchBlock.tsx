@@ -1,6 +1,7 @@
 import type { FeaturedBySearchContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import { RetreatCard, clamp } from "./RetreatCard";
+import LayoutWidths from "./shared/LayoutWidths";
 import { recommendRetreats, buildPageContext } from "@/lib/ai/retreat-recommender";
 
 /**
@@ -31,7 +32,6 @@ export default async function FeaturedBySearchBlock({
   const numberToShow = Math.max(1, Math.min(50, c.max_count ?? 4));
   const registerLabel = c.register_label ?? "Register Now";
   const urlPattern = c.url_pattern || "/retreats/{slug}/";
-  const containerWidth = c.container_width_px ?? 1200;
   const padY = c.padding_y_px ?? 64;
   const bg = resolveBrandColor(c.bg_color) ?? "transparent";
   const textColor = resolveBrandColor(c.text_color) ?? undefined;
@@ -72,7 +72,7 @@ export default async function FeaturedBySearchBlock({
         paddingBottom: padY,
       }}
     >
-      <div className="mx-auto w-full px-6" style={{ maxWidth: containerWidth }}>
+      <LayoutWidths content={c} defaultMaxContentPx={c.container_width_px ?? 1200}>
         <header className="mb-10 text-center">
           {heading && (
             <h2
@@ -112,7 +112,7 @@ export default async function FeaturedBySearchBlock({
             ))}
           </ul>
         )}
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

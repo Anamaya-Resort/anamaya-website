@@ -3,6 +3,7 @@ import { resolveBrandColor } from "@/config/brand-tokens";
 import { aoSupabaseOrNull } from "@/lib/ao-supabase";
 import CtaButton from "./shared/CtaButton";
 import DecorationOverlay from "./shared/DecorationOverlay";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Two-column "Retreat Details + Rates" section. Right-side rates pull
@@ -20,7 +21,6 @@ export default async function DetailsRatesDynamicBlock({
   const color = resolveBrandColor(content?.text_color) ?? undefined;
   const padY = content?.padding_y_px ?? 64;
   const gap = content?.gap_px ?? 48;
-  const containerWidth = content?.container_width_px ?? 1200;
   const leftPct = Math.max(20, Math.min(80, content?.left_width_pct ?? 55));
   const rightPct = 100 - leftPct;
   const valign = content?.vertical_align ?? "top";
@@ -35,7 +35,11 @@ export default async function DetailsRatesDynamicBlock({
       style={{ backgroundColor: bg, color, paddingTop: padY, paddingBottom: padY }}
     >
       <DecorationOverlay frame={content} />
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: containerWidth }}>
+      <LayoutWidths
+        content={content}
+        defaultMaxContentPx={content?.container_width_px ?? 1200}
+        className="relative"
+      >
         <div
           className="grid grid-cols-1 md:grid-cols-[var(--cols)]"
           style={
@@ -69,7 +73,7 @@ export default async function DetailsRatesDynamicBlock({
           </div>
         </div>
         <CtaButton cta={content ?? {}} />
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

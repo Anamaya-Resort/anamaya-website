@@ -313,7 +313,16 @@ export default async function EditBlock({
         <GalleryEditor content={block.content} onSave={saveContent} />
       )}
       {block.type_slug === "person_card" && (
-        <PersonCardEditor content={block.content} onSave={saveContent} />
+        <PersonCardEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
       )}
       {block.type_slug === "two_column" && (
         <TwoColumnEditor content={block.content} onSave={saveContent} />

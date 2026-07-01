@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SaveButton } from "@/components/admin/blocks/BlockEditorChrome";
 import type { DateRangeContent } from "@/types/blocks";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -29,6 +30,15 @@ export default function DateRangeEditor({
       }}
       className="grid grid-cols-1 gap-4 rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2"
     >
+      {/* Layout widths — first, right under the live preview. */}
+      <div className="sm:col-span-2">
+        <LayoutWidthsFieldset
+          values={state}
+          onPatch={(u) => setState((s) => ({ ...s, ...u }))}
+          maxContentDefault={1200}
+        />
+      </div>
+
       <Field label="Label (optional)">
         <input
           className={inputCls}

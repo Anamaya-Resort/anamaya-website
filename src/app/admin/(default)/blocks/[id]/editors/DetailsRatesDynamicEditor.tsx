@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SaveButton } from "@/components/admin/blocks/BlockEditorChrome";
 import type { DetailsRatesDynamicContent, PricingTier } from "@/types/blocks";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
 import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
 
 const inputCls =
@@ -60,6 +61,14 @@ export default function DetailsRatesDynamicEditor({
       }}
       className="grid grid-cols-1 gap-4 rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2"
     >
+      <div className="sm:col-span-2">
+        <LayoutWidthsFieldset
+          values={state}
+          onPatch={(u) => setState((s) => ({ ...s, ...u }))}
+          maxContentDefault={state.container_width_px ?? 1200}
+        />
+      </div>
+
       <Field label="Background color (brand token or hex)">
         <input
           className={inputCls}

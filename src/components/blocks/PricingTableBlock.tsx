@@ -2,6 +2,7 @@ import type { PricingTableContent, PricingTier } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
 import DecorationOverlay from "./shared/DecorationOverlay";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Pricing table — N tiers in a responsive grid. `price` is a free-form
@@ -16,7 +17,6 @@ export default function PricingTableBlock({ content }: { content: PricingTableCo
   const color = resolveBrandColor(content?.text_color);
   const pad = content?.padding_y_px ?? 64;
   const cols = content?.columns ?? Math.min(tiers.length, 4);
-  const contentWidth = content?.content_width_px ?? 1200;
 
   return (
     <section
@@ -24,7 +24,11 @@ export default function PricingTableBlock({ content }: { content: PricingTableCo
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
       <DecorationOverlay frame={content} />
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
+      <LayoutWidths
+        content={content}
+        defaultMaxContentPx={content?.content_width_px ?? 1200}
+        className="relative"
+      >
         {content?.heading && (
           <h2 className="mb-3 text-center font-heading text-3xl">{content.heading}</h2>
         )}
@@ -47,7 +51,7 @@ export default function PricingTableBlock({ content }: { content: PricingTableCo
           <p className="mt-8 text-center text-sm opacity-70">{content.footnote}</p>
         )}
         <CtaButton cta={content ?? {}} />
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

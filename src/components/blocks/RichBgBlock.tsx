@@ -2,6 +2,7 @@ import type { RichBgContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
 import DecorationOverlay from "./shared/DecorationOverlay";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /** Rich text content on a branded background (color + optional image). */
 export default function RichBgBlock({ content }: { content: RichBgContent }) {
@@ -22,7 +23,6 @@ export default function RichBgBlock({ content }: { content: RichBgContent }) {
       ? fit
       : `${scalePct}% auto`;
   const bgRepeat = fit === "tile" ? "repeat" : "no-repeat";
-  const contentWidth = content?.content_width_px ?? 1200;
 
   return (
     <section
@@ -39,14 +39,18 @@ export default function RichBgBlock({ content }: { content: RichBgContent }) {
       }}
     >
       <DecorationOverlay frame={content} />
-      <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
+      <LayoutWidths
+        content={content}
+        defaultMaxContentPx={content?.content_width_px ?? 1200}
+        className="relative"
+      >
         <div
           className="prose-anamaya prose-anamaya-block"
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: content?.html ?? "" }}
         />
         <CtaButton cta={content ?? {}} />
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

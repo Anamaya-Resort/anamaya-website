@@ -7,7 +7,9 @@ import BlockEditorChrome, {
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
 import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { ChecklistContent, ChecklistItem } from "@/types/blocks";
 
@@ -18,6 +20,7 @@ const labelCls =
 
 function normalize(c: ChecklistContent | null | undefined): ChecklistContent {
   return {
+    ...normalizeLayoutWidths(c, c?.content_width_px ?? 1200),
     ...(c ?? {}),
     heading: c?.heading ?? "",
     heading_font: c?.heading_font ?? "heading",
@@ -74,6 +77,8 @@ function Form({ state }: { state: BlockEditorState<ChecklistContent> }) {
 
   return (
     <>
+      <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={draft.content_width_px ?? 1200} />
+
       <label className="block">
         <span className={labelCls}>Heading</span>
         <input

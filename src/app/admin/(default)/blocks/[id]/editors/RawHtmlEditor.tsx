@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SaveButton } from "@/components/admin/blocks/BlockEditorChrome";
 import type { RawHtmlContent } from "@/types/blocks";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -29,6 +30,15 @@ export default function RawHtmlEditor({
       }}
       className="grid grid-cols-1 gap-4 rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2"
     >
+      {/* Layout widths — first, right under the live preview. */}
+      <div className="sm:col-span-2">
+        <LayoutWidthsFieldset
+          values={state}
+          onPatch={(u) => setState((s) => ({ ...s, ...u }))}
+          maxContentDefault={1200}
+        />
+      </div>
+
       <p className="col-span-full rounded bg-amber-50 p-3 text-xs text-amber-800">
         ⚠ Raw HTML — content is rendered as-is. Sanitize before pasting; never
         embed scripts or untrusted markup. Prefer a typed block when the markup

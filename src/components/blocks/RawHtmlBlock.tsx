@@ -1,6 +1,7 @@
 import type { RawHtmlContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import ProseHtml from "@/components/ProseHtml";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Escape hatch for one-off legacy markup that doesn't fit a typed block.
@@ -14,9 +15,9 @@ export default function RawHtmlBlock({ content }: { content: RawHtmlContent }) {
   const pad = content?.padding_y_px ?? 32;
   return (
     <section className="w-full" style={{ backgroundColor: bg, paddingTop: pad, paddingBottom: pad }}>
-      <div className="mx-auto w-full max-w-[1200px] px-6">
+      <LayoutWidths content={content} defaultMaxContentPx={1200}>
         <ProseHtml html={content.html} />
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

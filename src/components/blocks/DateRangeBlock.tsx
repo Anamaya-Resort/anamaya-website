@@ -1,5 +1,6 @@
 import type { DateRangeContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Formatted date range with optional label. When start/end are missing
@@ -22,13 +23,12 @@ export default function DateRangeBlock({ content }: { content: DateRangeContent 
       className="w-full"
       style={{ backgroundColor: bg, color, paddingTop: pad, paddingBottom: pad }}
     >
-      <div
-        className="mx-auto w-full max-w-[1200px] px-6"
-        style={{ textAlign: align, fontSize: size }}
-      >
-        {content?.label && <span className="font-semibold">{content.label} </span>}
-        <span>{display}</span>
-      </div>
+      <LayoutWidths content={content} defaultMaxContentPx={1200}>
+        <div style={{ textAlign: align, fontSize: size }}>
+          {content?.label && <span className="font-semibold">{content.label} </span>}
+          <span>{display}</span>
+        </div>
+      </LayoutWidths>
     </section>
   );
 }

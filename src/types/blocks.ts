@@ -3,7 +3,7 @@
 
 import type { LayoutWidthsContent } from "@/lib/layout-widths";
 
-export type RichTextContent = SectionFrame & {
+export type RichTextContent = LayoutWidthsContent & SectionFrame & {
   html: string;
   bg_color?: string;
   text_color?: string;
@@ -319,7 +319,7 @@ export type SectionFrame = {
 };
 
 /** Rich Text with Background — any HTML on a branded background. */
-export type RichBgContent = BlockCta & SectionFrame & {
+export type RichBgContent = LayoutWidthsContent & BlockCta & SectionFrame & {
   html?: string;
   bg_color?: string;                           // brand key or hex
   bg_image_url?: string;                       // optional background image
@@ -359,7 +359,7 @@ export type VideoShowcaseContent = LayoutWidthsContent & BlockCta & {
 
 /** Double-row checklist. */
 export type ChecklistItem = { text: string };
-export type ChecklistContent = BlockCta & SectionFrame & {
+export type ChecklistContent = LayoutWidthsContent & BlockCta & SectionFrame & {
   heading?: string;
   heading_font?: "body" | "heading";
   heading_color?: string;
@@ -373,7 +373,7 @@ export type ChecklistContent = BlockCta & SectionFrame & {
 };
 
 /** Newsletter signup. The form POSTs to form_action_url (optional). */
-export type NewsletterContent = {
+export type NewsletterContent = LayoutWidthsContent & {
   bg_color?: string;
   heading?: string;
   heading_font?: "body" | "heading";
@@ -538,7 +538,7 @@ export type DividerContent = {
  *   - "pull":   large centered pull-quote, no photo
  *   - "banner": full-width with optional bg color/image
  */
-export type QuoteContent = BlockCta & SectionFrame & {
+export type QuoteContent = LayoutWidthsContent & BlockCta & SectionFrame & {
   quote: string;
   attribution?: string;
   attribution_role?: string;
@@ -555,7 +555,7 @@ export type QuoteContent = BlockCta & SectionFrame & {
  * label ("Dates:", "Retreat dates:"). When dates are missing falls back
  * to fallback_text (e.g. "Custom dates available year-round").
  */
-export type DateRangeContent = {
+export type DateRangeContent = LayoutWidthsContent & {
   label?: string;
   /** ISO-8601 date string (YYYY-MM-DD). */
   start_date?: string;
@@ -577,7 +577,7 @@ export type PricingTier = {
   note?: string;
   highlight?: boolean;       // visual emphasis (the "best value" tier)
 };
-export type PricingTableContent = BlockCta & SectionFrame & {
+export type PricingTableContent = LayoutWidthsContent & BlockCta & SectionFrame & {
   heading?: string;
   intro?: string;
   tiers: PricingTier[];
@@ -659,7 +659,7 @@ export type GalleryContent = LayoutWidthsContent & SectionFrame & {
  * "side-by-side" puts the photo to the left of the text; "stacked"
  * centers the photo above the text.
  */
-export type PersonCardContent = BlockCta & SectionFrame & {
+export type PersonCardContent = LayoutWidthsContent & BlockCta & SectionFrame & {
   name: string;
   photo_url?: string;
   photo_alt?: string;
@@ -680,7 +680,7 @@ export type PersonCardContent = BlockCta & SectionFrame & {
  * embedded scripts) that doesn't fit any other block. Sanitized at
  * render time. Use sparingly; prefer a typed block when possible.
  */
-export type RawHtmlContent = {
+export type RawHtmlContent = LayoutWidthsContent & {
   html: string;
   bg_color?: string;
   padding_y_px?: number;
@@ -831,7 +831,7 @@ export type ThreeColumnContent = {
  * pricing. To keep the editor sane the AO retreat is identified by its
  * UUID; legacy WP slugs are not supported as a lookup key.
  */
-export type DetailsRatesDynamicContent = BlockCta & SectionFrame & {
+export type DetailsRatesDynamicContent = LayoutWidthsContent & BlockCta & SectionFrame & {
   bg_color?: string;
   text_color?: string;
   padding_y_px?: number;
@@ -1001,7 +1001,7 @@ export type FeaturedRetreatsContent = LayoutWidthsContent & {
  * FeaturedRetreatsContent, but instead of the is_featured flag it ranks
  * upcoming retreats by semantic relevance to a context.
  */
-export type FeaturedBySearchContent = {
+export type FeaturedBySearchContent = LayoutWidthsContent & {
   heading?: string;             // section heading; default "Recommended Retreats"
   subheading?: string;          // optional sub-text under the heading
   max_count?: number;           // number of retreats to recommend; default 4
@@ -1146,7 +1146,7 @@ export type BlockRecord = {
  * `<figure><blockquote>` elements so crawlers + LLM agents can parse
  * every testimonial regardless of which is currently visible.
  */
-export type TestimonialsBlockContent = {
+export type TestimonialsBlockContent = LayoutWidthsContent & {
   /** Category slug (testimonial_sets.slug). Required for the block to
    *  render anything. */
   category_slug?: string;

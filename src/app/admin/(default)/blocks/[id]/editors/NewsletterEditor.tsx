@@ -5,6 +5,8 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { NewsletterContent } from "@/types/blocks";
 
@@ -15,6 +17,7 @@ const labelCls =
 
 function normalize(c: NewsletterContent | null | undefined): NewsletterContent {
   return {
+    ...normalizeLayoutWidths(c, 720),
     bg_color: c?.bg_color ?? "brandSubtle",
     heading: c?.heading ?? "",
     heading_font: c?.heading_font ?? "heading",
@@ -48,6 +51,9 @@ export default function NewsletterEditor(props: {
       normalize={normalize}
       renderForm={({ draft, setDraft, commit, patch, brandTokens }) => (
         <>
+          {/* Layout widths — first, right under the live preview. */}
+          <LayoutWidthsFieldset values={draft} onPatch={patch} maxContentDefault={720} />
+
           <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
             <div>
               <span className={labelCls}>Background color</span>
