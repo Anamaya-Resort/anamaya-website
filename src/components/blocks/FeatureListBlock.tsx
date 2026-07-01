@@ -2,6 +2,7 @@ import type { FeatureListContent, FeatureListItem } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
 import DecorationOverlay from "./shared/DecorationOverlay";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Feature / inclusions list. Three layouts:
@@ -26,32 +27,34 @@ export default function FeatureListBlock({ content }: { content: FeatureListCont
     >
       <DecorationOverlay frame={content} />
       <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
-        {content?.heading && (
-          <h2 className="mb-3 text-center font-heading text-3xl">{content.heading}</h2>
-        )}
-        {content?.intro && (
-          <p className="mx-auto mb-10 max-w-2xl text-center text-base opacity-80">
-            {content.intro}
-          </p>
-        )}
+        <LayoutWidths content={content}>
+          {content?.heading && (
+            <h2 className="mb-3 text-center font-heading text-3xl">{content.heading}</h2>
+          )}
+          {content?.intro && (
+            <p className="mx-auto mb-10 max-w-2xl text-center text-base opacity-80">
+              {content.intro}
+            </p>
+          )}
 
-        {layout === "stack" && (
-          <StackLayout
-            items={items}
-            stackColumns={content?.stack_columns ?? 1}
-            sectionEmoji={content?.marker_emoji}
-          />
-        )}
-        {layout === "grid" && (
-          <GridLayout
-            items={items}
-            columns={content?.columns ?? 3}
-            sectionEmoji={content?.marker_emoji}
-          />
-        )}
-        {layout === "split" && <SplitLayout items={items} />}
+          {layout === "stack" && (
+            <StackLayout
+              items={items}
+              stackColumns={content?.stack_columns ?? 1}
+              sectionEmoji={content?.marker_emoji}
+            />
+          )}
+          {layout === "grid" && (
+            <GridLayout
+              items={items}
+              columns={content?.columns ?? 3}
+              sectionEmoji={content?.marker_emoji}
+            />
+          )}
+          {layout === "split" && <SplitLayout items={items} />}
 
-        <CtaButton cta={content ?? {}} />
+          <CtaButton cta={content ?? {}} />
+        </LayoutWidths>
       </div>
     </section>
   );

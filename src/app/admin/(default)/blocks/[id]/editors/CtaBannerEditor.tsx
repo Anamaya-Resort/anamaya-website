@@ -6,6 +6,8 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { CtaBannerContent } from "@/types/blocks";
 
@@ -37,6 +39,7 @@ const BLEND_MODES: NonNullable<CtaBannerContent["bg_image_blend_mode"]>[] = [
 
 function normalize(c: CtaBannerContent | null | undefined): CtaBannerContent {
   return {
+    ...normalizeLayoutWidths(c),
     heading: c?.heading ?? "",
     subheading: c?.subheading ?? "",
     bg_color: c?.bg_color ?? "",
@@ -76,6 +79,9 @@ function Form({ state }: { state: BlockEditorState<CtaBannerContent> }) {
 
   return (
     <div className="space-y-6">
+      {/* Layout widths — first, right under the live preview. */}
+      <LayoutWidthsFieldset values={draft} onPatch={patch} />
+
       {/* Heading + subheading */}
       <section className={sectionCls}>
         <h3 className={sectionTitleCls}>Text</h3>

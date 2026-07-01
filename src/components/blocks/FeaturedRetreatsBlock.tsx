@@ -2,6 +2,7 @@ import type { FeaturedRetreatsContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import { aoSupabaseAdminOrNull } from "@/lib/ao-supabase";
 import { RetreatCard, clamp, type RetreatCardData } from "./RetreatCard";
+import LayoutWidths from "./shared/LayoutWidths";
 
 type AoRetreat = RetreatCardData & {
   is_featured: boolean | null;
@@ -93,23 +94,25 @@ export default async function FeaturedRetreatsBlock({
         // wide card instead of two squished ones. The 840 / 1760 literals
         // in the grid classes must stay in sync with this maxWidth.
         <div className="mx-auto mt-10 w-full px-6" style={{ maxWidth: 1760 }}>
-          <ul className="grid justify-center gap-8 [grid-template-columns:minmax(0,840px)] min-[1760px]:[grid-template-columns:repeat(2,minmax(0,840px))]">
-            {retreats.map((r) => (
-              <RetreatCard
-                key={r.id}
-                r={r}
-                opts={{
-                  urlPattern,
-                  registerLabel,
-                  headingColor,
-                  cardBg,
-                  cardBorder,
-                  cardBorderWidth,
-                  cardRadius,
-                }}
-              />
-            ))}
-          </ul>
+          <LayoutWidths content={c}>
+            <ul className="grid justify-center gap-8 [grid-template-columns:minmax(0,840px)] min-[1760px]:[grid-template-columns:repeat(2,minmax(0,840px))]">
+              {retreats.map((r) => (
+                <RetreatCard
+                  key={r.id}
+                  r={r}
+                  opts={{
+                    urlPattern,
+                    registerLabel,
+                    headingColor,
+                    cardBg,
+                    cardBorder,
+                    cardBorderWidth,
+                    cardRadius,
+                  }}
+                />
+              ))}
+            </ul>
+          </LayoutWidths>
         </div>
       )}
     </section>

@@ -5,6 +5,8 @@ import BlockEditorChrome, {
   type BlockEditorState,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { FeaturedRetreatsContent } from "@/types/blocks";
 
@@ -15,6 +17,7 @@ const labelCls =
 
 function normalize(c: FeaturedRetreatsContent | null | undefined): FeaturedRetreatsContent {
   return {
+    ...normalizeLayoutWidths(c),
     heading: c?.heading ?? "Featured Retreats",
     subheading: c?.subheading ?? "",
     max_count: c?.max_count ?? 5,
@@ -56,6 +59,9 @@ function Form({ state }: { state: BlockEditorState<FeaturedRetreatsContent> }) {
   const { draft, patch, brandTokens } = state;
   return (
     <div className="space-y-6">
+      {/* Layout widths — first, right under the live preview. */}
+      <LayoutWidthsFieldset values={draft} onPatch={patch} />
+
       <section className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
         <header className="mb-3">
           <h4 className="text-sm font-semibold text-anamaya-charcoal">Heading</h4>

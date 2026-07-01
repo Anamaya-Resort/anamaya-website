@@ -1,6 +1,8 @@
 // Content schemas for each block type. Stored as jsonb in blocks.content
 // (or block_usages.override_content for per-usage overrides).
 
+import type { LayoutWidthsContent } from "@/lib/layout-widths";
+
 export type RichTextContent = SectionFrame & {
   html: string;
   bg_color?: string;
@@ -69,7 +71,7 @@ export type HeroContent = {
   seo_duration_seconds?: number;
 };
 
-export type CtaBannerContent = {
+export type CtaBannerContent = LayoutWidthsContent & {
   heading: string;
   subheading?: string;
   bg_color?: string;          // brand token or hex; shown when no bg image
@@ -329,7 +331,7 @@ export type RichBgContent = BlockCta & SectionFrame & {
 };
 
 /** Video Showcase — solid-bg block with optional titles above and below. */
-export type VideoShowcaseContent = BlockCta & {
+export type VideoShowcaseContent = LayoutWidthsContent & BlockCta & {
   bg_color?: string;
   padding_y_px?: number;
   // Titles
@@ -611,7 +613,7 @@ export type FeatureListItem = {
    *  stack_columns = 2. Items default to column 1 if unset. */
   column?: 1 | 2;
 };
-export type FeatureListContent = BlockCta & SectionFrame & {
+export type FeatureListContent = LayoutWidthsContent & BlockCta & SectionFrame & {
   heading?: string;
   intro?: string;
   items: FeatureListItem[];
@@ -640,7 +642,7 @@ export type GalleryImage = {
   height?: number;
   caption?: string;
 };
-export type GalleryContent = SectionFrame & {
+export type GalleryContent = LayoutWidthsContent & SectionFrame & {
   heading?: string;
   images: GalleryImage[];
   layout?: "grid" | "masonry" | "carousel";
@@ -974,7 +976,7 @@ export type UiSideMenuRightContent = OverlayMixin & {
  * retreat data — the retreats list IS the AO data; the editor only
  * controls headings, the CTA label, and styling.
  */
-export type FeaturedRetreatsContent = {
+export type FeaturedRetreatsContent = LayoutWidthsContent & {
   heading?: string;             // section heading; default "Featured Retreats"
   subheading?: string;          // optional sub-text under the heading
   max_count?: number;           // number of cards to show; default 6. Featured always show (even if more); empty slots backfill with soonest upcoming non-featured.

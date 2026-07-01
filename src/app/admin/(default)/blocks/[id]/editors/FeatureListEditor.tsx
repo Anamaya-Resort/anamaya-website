@@ -7,7 +7,9 @@ import BlockEditorChrome, {
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
 import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type {
   BlockCta,
@@ -24,6 +26,7 @@ const sectionTitleCls = "mb-3 text-sm font-semibold text-anamaya-charcoal";
 
 function normalize(c: FeatureListContent | null | undefined): FeatureListContent {
   return {
+    ...normalizeLayoutWidths(c),
     heading: c?.heading ?? "",
     intro: c?.intro ?? "",
     items: c?.items ?? [],
@@ -98,6 +101,9 @@ function Form({ state }: { state: BlockEditorState<FeatureListContent> }) {
 
   return (
     <div className="space-y-6">
+      {/* Layout widths — first, right under the live preview. */}
+      <LayoutWidthsFieldset values={draft} onPatch={patch} />
+
       {/* Heading + intro */}
       <section className={sectionCls}>
         <h3 className={sectionTitleCls}>Heading + intro</h3>

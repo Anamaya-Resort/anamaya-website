@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SaveButton } from "@/components/admin/blocks/BlockEditorChrome";
 import type { GalleryContent, GalleryImage } from "@/types/blocks";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
 import SectionFrameFieldset from "@/components/admin/blocks/SectionFrameFieldset";
 
 const inputCls =
@@ -53,6 +54,14 @@ export default function GalleryEditor({
       }}
       className="grid grid-cols-1 gap-4 rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200 sm:grid-cols-2"
     >
+      {/* Layout widths — first, right under the live preview. */}
+      <div className="sm:col-span-2">
+        <LayoutWidthsFieldset
+          values={state}
+          onPatch={(u) => setState((s) => ({ ...s, ...u }))}
+        />
+      </div>
+
       <Field label="Heading (optional)">
         <input
           className={inputCls}

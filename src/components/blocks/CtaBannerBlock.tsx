@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CtaBannerContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import LayoutWidths from "./shared/LayoutWidths";
 
 const DEFAULT_BG_HEX = "#444444"; // anamaya-charcoal
 
@@ -31,7 +32,7 @@ export default function CtaBannerBlock({ content }: { content: CtaBannerContent 
           aria-hidden="true"
         />
       )}
-      <div className="relative mx-auto max-w-4xl text-center">
+      <LayoutWidths content={content} className="relative mx-auto max-w-4xl text-center">
         <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           {content.heading}
         </h2>
@@ -48,7 +49,7 @@ export default function CtaBannerBlock({ content }: { content: CtaBannerContent 
             {content.cta.label}
           </Link>
         )}
-      </div>
+      </LayoutWidths>
     </section>
   );
 }

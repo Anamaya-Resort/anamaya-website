@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import type { GalleryContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import DecorationOverlay from "./shared/DecorationOverlay";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Image gallery — uniform grid, masonry, or a horizontal-scroll carousel.
@@ -52,6 +53,7 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
     >
       <DecorationOverlay frame={content} />
       <div className="relative mx-auto w-full px-6" style={{ maxWidth: contentWidth }}>
+        <LayoutWidths content={content}>
         {content?.heading && (
           <h2 className="mb-8 text-center font-heading text-3xl">{content.heading}</h2>
         )}
@@ -121,6 +123,7 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
             ))}
           </div>
         )}
+        </LayoutWidths>
       </div>
 
       {lightbox && activeIdx !== null && (

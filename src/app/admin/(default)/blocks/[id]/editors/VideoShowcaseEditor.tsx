@@ -9,6 +9,8 @@ import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import BrandFontSelect from "@/components/admin/brand/BrandFontSelect";
 import ImageUploadButton from "@/components/admin/blocks/ImageUploadButton";
 import CtaFieldset from "@/components/admin/blocks/CtaFieldset";
+import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
+import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { VideoShowcaseContent } from "@/types/blocks";
 import { uploadHeroVideo } from "../../actions";
@@ -20,6 +22,7 @@ const labelCls =
 
 function normalize(c: VideoShowcaseContent | null | undefined): VideoShowcaseContent {
   return {
+    ...normalizeLayoutWidths(c),
     ...(c ?? {}),
     bg_color: c?.bg_color ?? "brandSubtle",
     padding_y_px: c?.padding_y_px ?? 48,
@@ -86,6 +89,9 @@ function Form({ state }: { state: BlockEditorState<VideoShowcaseContent> }) {
 
   return (
     <>
+      {/* Layout widths — first, right under the live preview. */}
+      <LayoutWidthsFieldset values={draft} onPatch={patch} />
+
       {/* Backdrop */}
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
         <div>

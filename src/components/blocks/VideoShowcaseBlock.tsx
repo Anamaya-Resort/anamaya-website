@@ -2,6 +2,7 @@ import type { VideoShowcaseContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import CtaButton from "./shared/CtaButton";
 import YouTubeFacade from "./shared/YouTubeFacade";
+import LayoutWidths from "./shared/LayoutWidths";
 
 /** Video on a solid background with optional titles above + below. */
 export default function VideoShowcaseBlock({ content }: { content: VideoShowcaseContent }) {
@@ -18,6 +19,7 @@ export default function VideoShowcaseBlock({ content }: { content: VideoShowcase
       style={{ backgroundColor: bg, paddingTop: pad, paddingBottom: pad }}
     >
       <div className="mx-auto w-full max-w-[1400px] px-6 text-center">
+        <LayoutWidths content={content}>
         {content?.title_top && (
           <TitleLine
             text={content.title_top}
@@ -67,6 +69,7 @@ export default function VideoShowcaseBlock({ content }: { content: VideoShowcase
           />
         )}
         <CtaButton cta={content ?? {}} />
+        </LayoutWidths>
       </div>
     </section>
   );
