@@ -111,8 +111,15 @@ export default async function BlogIndexPage() {
   return (
     <>
       {/* The real site top bar (logo + CALENDAR + MENU). Hand-built React
-          pages don't get chrome from a template, so we render the block. */}
-      <UiTopBlock content={{}} />
+          pages don't get chrome from a template, so we render the block.
+          New wordmark logos: dark lettering on the light/white bar, white
+          lettering if the bar ever floats over a dark hero. */}
+      <UiTopBlock
+        content={{
+          logo_dark_url: "/journal/anamaya-word-on-light.webp",
+          logo_light_url: "/journal/anamaya-word-on-dark.webp",
+        }}
+      />
 
       <style>{cssScoped}</style>
       <script
