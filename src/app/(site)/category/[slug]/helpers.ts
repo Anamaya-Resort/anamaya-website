@@ -43,8 +43,11 @@ export function readMinutes(html: string | null): number {
   return Math.max(1, Math.round(words / 220));
 }
 
-/** Absolute live-article URL for a post's url_path (opens the real site). */
+/** Same-site article URL for a post's url_path. Returns a RELATIVE path so
+ *  the link stays on the current host (test.anamaya.com now, the live domain
+ *  later) and the article renders from its WP snapshot at that same URL.
+ *  (Was hard-coded to https://anamaya.com, which wrongly sent visitors to
+ *  production.) */
 export function liveArticleUrl(urlPath: string): string {
-  const path = urlPath.startsWith("/") ? urlPath : `/${urlPath}`;
-  return `https://anamaya.com${path}`;
+  return urlPath.startsWith("/") ? urlPath : `/${urlPath}`;
 }
