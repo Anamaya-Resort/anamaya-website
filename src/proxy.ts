@@ -35,6 +35,8 @@ const HARDCODED_PUBLIC: RegExp[] = [
   /^\/home2\/?$/,
   /^\/retreats\/?$/,
   /^\/retreat\/[^/]+\/?$/,
+  /^\/yoga-blog-articles\/?$/,
+  /^\/journal\/?$/,
   /^\/preview(\/.*)?$/,
   /^\/block-preview(\/.*)?$/,
   /^\/auth(\/.*)?$/,
