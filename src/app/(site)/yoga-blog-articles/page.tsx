@@ -85,6 +85,13 @@ export default async function BlogIndexPage() {
   const hero = posts.find((p) => p.image_url) ?? posts[0] ?? null;
   const rest = hero ? posts.filter((p) => p.id !== hero.id) : [];
 
+  // The archive is large (hundreds of posts). Render only the latest slice
+  // as full rows so the page stays light; the "Browse by" sidebar is how
+  // visitors reach the rest. (Pagination / load-more is the next step.)
+  const VISIBLE_ROWS = 30;
+  const shown = rest.slice(0, VISIBLE_ROWS);
+  const hiddenCount = rest.length - shown.length;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -172,7 +179,17 @@ export default async function BlogIndexPage() {
               {rest.length === 0 && !hero ? (
                 <p className="bx-empty">No stories here yet.</p>
               ) : (
-                rest.map((p, i) => <StoryRow key={p.id} post={p} flip={i % 2 === 1} />)
+                <>
+                  {shown.map((p, i) => (
+                    <StoryRow key={p.id} post={p} flip={i % 2 === 1} />
+                  ))}
+                  {hiddenCount > 0 && (
+                    <p className="bx-more">
+                      Showing the {shown.length} latest stories. Browse the other{" "}
+                      {hiddenCount} by category above.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -266,6 +283,7 @@ const cssScoped = `
   text-transform: uppercase; letter-spacing: .1em; font-size: 12px; font-weight: 600; }
 
 .bx-empty { text-align: center; color: var(--ink-soft); padding: 60px 0; }
+.bx-more { text-align: center; color: var(--ink-faint); font-size: 14px; padding: 8px 0 0; }
 
 @media (prefers-reduced-motion: no-preference) {
   .bx-hero, .bx-row { animation: bx-rise .5s both; }
