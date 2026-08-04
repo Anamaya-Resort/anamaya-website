@@ -130,10 +130,10 @@ export default async function CategoryPage({
               </a>
               <span className="mx-2 text-anamaya-mint">/</span>
               <a
-                href="/blog"
+                href="/blog-posts"
                 className="text-anamaya-teal hover:text-anamaya-green-dark"
               >
-                Stories
+                Blog Posts
               </a>
               <span className="mx-2 text-anamaya-mint">/</span>
               <span className="text-anamaya-olive-dark">{term.name}</span>

@@ -35,8 +35,10 @@ const HARDCODED_PUBLIC: RegExp[] = [
   /^\/home2\/?$/,
   /^\/retreats\/?$/,
   /^\/retreat\/[^/]+\/?$/,
+  /^\/blog-posts\/?$/,
+  // Kept so the old URL reaches the catch-all router, which 301-redirects
+  // it to /blog-posts via the `redirects` table (instead of the WP snapshot).
   /^\/yoga-blog-articles\/?$/,
-  /^\/journal\/?$/,
   /^\/preview(\/.*)?$/,
   /^\/block-preview(\/.*)?$/,
   /^\/auth(\/.*)?$/,

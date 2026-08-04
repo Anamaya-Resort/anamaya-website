@@ -34,7 +34,7 @@ export const SIDE_MENU: NavItem[] = [
       { label: "Accommodations",         href: "/accommodations/" },
       { label: "Traveling To Anamaya",   href: "/travel/" },
       { label: "Photo Galleries",        href: "/photo-galleries/" },
-      { label: "On the Blog",            href: "/yoga-blog-articles/" },
+      { label: "On the Blog",            href: "/blog-posts/" },
       { label: "Scuba Certification",    href: "/scuba-certification-anamaya-resort/" },
       { label: "Testimonials",           href: "/guest_testimonials/" },
       { label: "Press",                  href: "/news-coverage-anamaya/" },
@@ -94,7 +94,7 @@ const COMPANY: FooterGroup = {
   heading: "The Company",
   items: [
     { label: "Contact Us",               href: "/contact/" },
-    { label: "Featured Blog & Articles", href: "/yoga-blog-articles/" },
+    { label: "Featured Blog & Articles", href: "/blog-posts/" },
     { label: "Press Coverage",           href: "/news-coverage-anamaya" },
     { label: "Testimonials",             href: "/testimonials-guest-blogs-about-anamaya/" },
   ],
