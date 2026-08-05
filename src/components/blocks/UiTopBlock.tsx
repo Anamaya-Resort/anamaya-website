@@ -82,7 +82,21 @@ export default function UiTopBlock({ content }: { content: UiTopContent }) {
           />
         </Link>
 
+        {/* Order (left -> right): user (name + avatar), a divider, then the
+            CALENDAR and MENU actions pinned to the far right. */}
         <nav className="flex items-center gap-3 sm:gap-4">
+          <HeaderAuth user={user} lightMode={lightMode} />
+
+          {/* Divider separating the user identity from the action buttons.
+              Hidden on mobile where the user label/Sign-In collapses. */}
+          <span
+            aria-hidden
+            className={[
+              "mx-1 hidden h-6 w-px sm:block",
+              lightMode ? "bg-white/30" : "bg-anamaya-charcoal/15",
+            ].join(" ")}
+          />
+
           <Link
             href={ctaHref}
             className={[
@@ -113,8 +127,6 @@ export default function UiTopBlock({ content }: { content: UiTopContent }) {
             </svg>
             {menuLabel}
           </button>
-
-          <HeaderAuth user={user} lightMode={lightMode} />
         </nav>
       </div>
     </header>
