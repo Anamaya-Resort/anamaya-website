@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { applySnapshotTransforms } from "@/lib/snapshot/transforms";
+import { injectReactionWidget } from "@/lib/reactions/widget";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,9 @@ export async function GET(
     return notFoundHtml(`No snapshot captured for ${candidates[0]}.`);
   }
 
-  return new Response(applySnapshotTransforms(ci.frozen_html, `/${joined}`), {
+  return new Response(
+    injectReactionWidget(applySnapshotTransforms(ci.frozen_html, `/${joined}`)),
+    {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
