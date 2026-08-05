@@ -29,6 +29,10 @@ import ThreeColumnBlock from "@/components/blocks/ThreeColumnBlock";
 import SmallFormOverImageBlock from "@/components/blocks/SmallFormOverImageBlock";
 import GoogleMapTextBlock from "@/components/blocks/GoogleMapTextBlock";
 import ImageSlideshowBlock from "@/components/blocks/ImageSlideshowBlock";
+import FaqBlockView, {
+  SAMPLE_FEATURED as FAQ_SAMPLE_FEATURED,
+  SAMPLE_MORE as FAQ_SAMPLE_MORE,
+} from "@/components/blocks/FaqBlockView";
 import VariantCarousel from "./VariantCarousel";
 import DevicePreviewHover from "./DevicePreviewHover";
 
@@ -83,7 +87,6 @@ const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set([
   "featured_by_search",
   "retreats_calendar",
   "testimonials",
-  "faq",
 ]);
 
 // 15px checkerboard via two stacked linear-gradients. No image asset.
@@ -248,11 +251,16 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
         </div>
       );
     case "faq":
+      // Live inline preview with sample Q&A so width / colors / labels update
+      // as the editor changes (the real page-specific questions are authored
+      // in the page editor).
       return (
-        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
-          FAQ — questions are page-specific; pick a page in the editor to draft
-          and preview its FAQs
-        </div>
+        <FaqBlockView
+          content={content}
+          featured={FAQ_SAMPLE_FEATURED}
+          more={FAQ_SAMPLE_MORE}
+          isSample
+        />
       );
     case "testimonials":
       return (

@@ -15,9 +15,12 @@ const inputCls =
 const labelCls =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70";
 
+// The block's historical content cap; used when Max Content hasn't been set.
+const FAQ_DEFAULT_MAX_CONTENT_PX = 820;
+
 function normalize(c: FaqContent | null | undefined): FaqContent {
   return {
-    ...normalizeLayoutWidths(c, c?.container_width_px ?? 820),
+    ...normalizeLayoutWidths(c, FAQ_DEFAULT_MAX_CONTENT_PX),
     ...(c ?? {}),
     heading: c?.heading ?? "Frequently Asked Questions",
     subheading: c?.subheading ?? "",
@@ -26,7 +29,6 @@ function normalize(c: FaqContent | null | undefined): FaqContent {
     bg_color: c?.bg_color ?? "",
     text_color: c?.text_color ?? "",
     padding_y_px: c?.padding_y_px ?? 64,
-    container_width_px: c?.container_width_px ?? 820,
   };
 }
 
@@ -74,7 +76,7 @@ function Form({ state }: { state: BlockEditorState<FaqContent> }) {
       <LayoutWidthsFieldset
         values={draft}
         onPatch={patch}
-        maxContentDefault={draft.container_width_px ?? 820}
+        maxContentDefault={FAQ_DEFAULT_MAX_CONTENT_PX}
       />
 
       <label className="block">

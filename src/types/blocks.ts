@@ -1046,7 +1046,6 @@ export type FaqContent = LayoutWidthsContent & {
   text_color?: string;
   heading_color?: string;
   padding_y_px?: number;
-  container_width_px?: number;
 };
 
 export type FeaturedBySearchContent = LayoutWidthsContent & {

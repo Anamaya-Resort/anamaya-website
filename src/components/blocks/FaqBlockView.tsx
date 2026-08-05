@@ -1,0 +1,153 @@
+import type { FaqContent } from "@/types/blocks";
+import { resolveBrandColor } from "@/config/brand-tokens";
+import LayoutWidths from "./shared/LayoutWidths";
+
+/**
+ * Presentational FAQ markup, shared by:
+ *   - FaqBlock (server): resolves this page's approved Q&A + emits JSON-LD,
+ *     then renders this view.
+ *   - LivePreview (client, block editor): renders this view inline with sample
+ *     Q&A so the design updates live as the editor changes width / colors /
+ *     labels — exactly like the non-async blocks.
+ *
+ * No hooks and no server-only imports, so it renders in either tree. Width is
+ * governed entirely by the shared LayoutWidths system (Max Content px + the
+ * Desktop/Tablet % split) — the same control every other block uses.
+ */
+
+/** The minimal shape this view needs (decoupled from the DB row type). */
+export type FaqViewItem = { id: string; question: string; answer: string };
+
+/** The block's historical content cap, used when the editor hasn't set a
+ *  Max Content value. */
+const FAQ_DEFAULT_MAX_CONTENT_PX = 820;
+
+export default function FaqBlockView({
+  content,
+  featured,
+  more,
+  isSample,
+}: {
+  content: FaqContent | undefined;
+  featured: FaqViewItem[];
+  more: FaqViewItem[];
+  isSample?: boolean;
+}) {
+  const c = content ?? {};
+  const heading = c.heading ?? "Frequently Asked Questions";
+  const subheading = c.subheading ?? "";
+  const moreLabel = c.more_label ?? "More questions";
+  const padY = c.padding_y_px ?? 64;
+  const bg = resolveBrandColor(c.bg_color) ?? "transparent";
+  const textColor = resolveBrandColor(c.text_color) ?? undefined;
+  const headingColor = resolveBrandColor(c.heading_color) ?? undefined;
+
+  return (
+    <section
+      className="w-full"
+      style={{
+        backgroundColor: bg,
+        color: textColor,
+        paddingTop: padY,
+        paddingBottom: padY,
+      }}
+    >
+      <LayoutWidths content={c} defaultMaxContentPx={FAQ_DEFAULT_MAX_CONTENT_PX}>
+        {isSample && (
+          <p className="mb-6 rounded-md border border-dashed border-anamaya-charcoal/25 bg-white/50 px-4 py-2 text-center text-xs italic text-anamaya-charcoal/60">
+            Sample preview — on a real page these questions are generated from
+            that page&rsquo;s own content and reviewed before publishing.
+          </p>
+        )}
+        <header className="mb-8 text-center">
+          {heading && (
+            <h2
+              className="font-heading text-3xl font-semibold tracking-wide sm:text-4xl"
+              style={{ color: headingColor }}
+            >
+              {heading}
+            </h2>
+          )}
+          {subheading && (
+            <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed opacity-80">
+              {subheading}
+            </p>
+          )}
+        </header>
+
+        <div>
+          {/* Featured: always open. */}
+          {featured.map((f) => (
+            <FaqItem key={f.id} faq={f} defaultOpen />
+          ))}
+
+          {/* The rest: tucked in a collapsible panel, still in the page source
+              so machines read them. */}
+          {more.length > 0 && (
+            <details className="mt-4 border-t border-anamaya-charcoal/10 pt-4">
+              <summary className="cursor-pointer list-none text-sm font-semibold uppercase tracking-[0.15em] text-anamaya-charcoal/70 hover:text-anamaya-charcoal">
+                {moreLabel} ({more.length})
+              </summary>
+              <div className="mt-3">
+                {more.map((f) => (
+                  <FaqItem key={f.id} faq={f} />
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      </LayoutWidths>
+    </section>
+  );
+}
+
+/** A single question/answer as a native accordion row. */
+function FaqItem({ faq, defaultOpen }: { faq: FaqViewItem; defaultOpen?: boolean }) {
+  return (
+    <details open={defaultOpen} className="border-b border-anamaya-charcoal/10 py-3">
+      <summary className="cursor-pointer list-none text-lg font-medium leading-snug text-anamaya-charcoal marker:hidden">
+        {faq.question}
+      </summary>
+      <p className="mt-2 whitespace-pre-line text-base leading-relaxed text-anamaya-charcoal/80">
+        {faq.answer}
+      </p>
+    </details>
+  );
+}
+
+/** Sample Q&A for the block-editor design preview only (never public). */
+export const SAMPLE_FEATURED: FaqViewItem[] = [
+  {
+    id: "sample-1",
+    question: "Where is Anamaya located?",
+    answer:
+      "Anamaya sits on a clifftop above Montezuma, on Costa Rica's Nicoya Peninsula, overlooking the Pacific.",
+  },
+  {
+    id: "sample-2",
+    question: "What's included in a stay?",
+    answer:
+      "Your accommodation, daily gourmet meals, yoga classes, and access to the pool, spa, and grounds are all included.",
+  },
+  {
+    id: "sample-3",
+    question: "How do I get there from the airport?",
+    answer:
+      "Most guests fly into San José or Liberia, then reach Montezuma by a short domestic flight, shuttle, or the ferry across the Gulf of Nicoya.",
+  },
+];
+
+export const SAMPLE_MORE: FaqViewItem[] = [
+  {
+    id: "sample-4",
+    question: "Do you offer yoga teacher training?",
+    answer:
+      "Yes. Anamaya runs 200-hour Yoga Teacher Trainings several times a year, led by experienced guest teachers.",
+  },
+  {
+    id: "sample-5",
+    question: "Is Anamaya a good fit for solo travelers?",
+    answer:
+      "Very much so. Many guests arrive on their own and connect quickly over shared meals and daily classes.",
+  },
+];
