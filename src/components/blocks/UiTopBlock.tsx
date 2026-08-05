@@ -78,7 +78,7 @@ export default function UiTopBlock({ content }: { content: UiTopContent }) {
             alt="Anamaya Resort"
             width={logoW}
             height={logoH}
-            className="h-10 w-auto transition-opacity duration-300 sm:h-12"
+            className="h-8 w-auto transition-opacity duration-300 sm:h-[2.4rem]"
           />
         </Link>
 
