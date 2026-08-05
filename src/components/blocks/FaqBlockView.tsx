@@ -42,6 +42,13 @@ export default function FaqBlockView({
   const textColor = resolveBrandColor(c.text_color) ?? undefined;
   const headingColor = resolveBrandColor(c.heading_color) ?? undefined;
 
+  // Optional decorative frame: same image at the top and mirrored (flipped
+  // vertically) at the bottom, sized as a % of the section width or px.
+  const frameUrl = c.frame_image_url || undefined;
+  const frameValue = c.frame_scale_value ?? 100;
+  const frameWidthCss =
+    (c.frame_scale_unit ?? "pct") === "px" ? `${frameValue}px` : `${frameValue}%`;
+
   return (
     <section
       className="w-full"
@@ -52,6 +59,7 @@ export default function FaqBlockView({
         paddingBottom: padY,
       }}
     >
+      {frameUrl && <FaqFrame url={frameUrl} widthCss={frameWidthCss} />}
       <LayoutWidths content={c} defaultMaxContentPx={FAQ_DEFAULT_MAX_CONTENT_PX}>
         {isSample && (
           <p className="mb-6 rounded-md border border-dashed border-anamaya-charcoal/25 bg-white/50 px-4 py-2 text-center text-xs italic text-anamaya-charcoal/60">
@@ -97,7 +105,33 @@ export default function FaqBlockView({
           )}
         </div>
       </LayoutWidths>
+      {frameUrl && <FaqFrame url={frameUrl} widthCss={frameWidthCss} flip />}
     </section>
+  );
+}
+
+/** Decorative frame image: normal at the top, flipped vertically at the
+ *  bottom. Purely decorative, so it's hidden from assistive tech. */
+function FaqFrame({
+  url,
+  widthCss,
+  flip,
+}: {
+  url: string;
+  widthCss: string;
+  flip?: boolean;
+}) {
+  return (
+    <div className={`w-full text-center ${flip ? "mt-6" : "mb-6"}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt=""
+        aria-hidden
+        className="inline-block h-auto max-w-full align-middle"
+        style={{ width: widthCss, transform: flip ? "scaleY(-1)" : undefined }}
+      />
+    </div>
   );
 }
 

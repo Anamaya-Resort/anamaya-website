@@ -1046,6 +1046,12 @@ export type FaqContent = LayoutWidthsContent & {
   text_color?: string;
   heading_color?: string;
   padding_y_px?: number;
+  /** Decorative frame image shown at the TOP of the section and mirrored
+   *  (flipped vertically) at the BOTTOM. Empty = no frame. */
+  frame_image_url?: string;
+  /** Frame size: a % of the section width, or an absolute px value. */
+  frame_scale_value?: number;
+  frame_scale_unit?: CardSizeUnit;
 };
 
 export type FeaturedBySearchContent = LayoutWidthsContent & {

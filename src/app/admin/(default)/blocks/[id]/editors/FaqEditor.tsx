@@ -6,9 +6,10 @@ import BlockEditorChrome, {
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
 import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
+import MediaFieldset from "@/components/admin/blocks/MediaFieldset";
 import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
-import type { FaqContent } from "@/types/blocks";
+import type { FaqContent, CardSizeUnit } from "@/types/blocks";
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-anamaya-green focus:outline-none focus:ring-1 focus:ring-anamaya-green";
@@ -29,6 +30,9 @@ function normalize(c: FaqContent | null | undefined): FaqContent {
     bg_color: c?.bg_color ?? "",
     text_color: c?.text_color ?? "",
     padding_y_px: c?.padding_y_px ?? 64,
+    frame_image_url: c?.frame_image_url ?? "",
+    frame_scale_value: c?.frame_scale_value ?? 100,
+    frame_scale_unit: c?.frame_scale_unit ?? "pct",
   };
 }
 
@@ -159,6 +163,67 @@ function Form({ state }: { state: BlockEditorState<FaqContent> }) {
           onBlur={commit}
         />
       </label>
+
+      <section className="rounded-md border border-zinc-200 p-4">
+        <h3 className="mb-1 text-sm font-semibold text-anamaya-charcoal">
+          Frame (top &amp; bottom)
+        </h3>
+        <p className="mb-3 text-[11px] text-anamaya-charcoal/60">
+          A decorative image shown above the FAQs and mirrored (flipped
+          vertically) below them. Leave empty for no frame.
+        </p>
+        <MediaFieldset
+          label="Frame image"
+          url={draft.frame_image_url}
+          onUrlChange={(u) => patch({ frame_image_url: u })}
+          uploadKind="frames"
+          showAlt={false}
+        />
+        <div className="mt-3 w-56">
+          <SizeField
+            label="Frame size (% of width, or px)"
+            value={draft.frame_scale_value}
+            unit={draft.frame_scale_unit}
+            onChange={(v, u) => patch({ frame_scale_value: v, frame_scale_unit: u })}
+          />
+        </div>
+      </section>
     </>
+  );
+}
+
+/** Number + %/px unit toggle (mirrors the shared SizeField pattern). */
+function SizeField({
+  label,
+  value,
+  unit,
+  onChange,
+}: {
+  label: string;
+  value: number | undefined;
+  unit: CardSizeUnit | undefined;
+  onChange: (value: number, unit: CardSizeUnit) => void;
+}) {
+  return (
+    <div>
+      <span className={labelCls}>{label}</span>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          min={1}
+          className={`${inputCls} flex-1`}
+          value={value ?? 0}
+          onChange={(e) => onChange(Number(e.target.value) || 0, unit ?? "pct")}
+        />
+        <select
+          className={`${inputCls} w-20`}
+          value={unit ?? "pct"}
+          onChange={(e) => onChange(value ?? 0, e.target.value as CardSizeUnit)}
+        >
+          <option value="pct">%</option>
+          <option value="px">px</option>
+        </select>
+      </div>
+    </div>
   );
 }
