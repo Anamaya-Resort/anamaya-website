@@ -81,7 +81,9 @@ type Props = {
 const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set([
   "featured_retreats",
   "featured_by_search",
+  "retreats_calendar",
   "testimonials",
+  "faq",
 ]);
 
 // 15px checkerboard via two stacked linear-gradients. No image asset.
@@ -232,11 +234,24 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
           Featured Retreats — preview at the page&rsquo;s public URL
         </div>
       );
+    case "retreats_calendar":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-xs italic text-anamaya-charcoal/60">
+          Retreats Calendar — save to see the iframe preview (live from AnamayaOS)
+        </div>
+      );
     case "featured_by_search":
       return (
         <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
           Featured by Search — save to see the iframe preview (page-content
           mode only fills in on a real page)
+        </div>
+      );
+    case "faq":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
+          FAQ — questions are page-specific; pick a page in the editor to draft
+          and preview its FAQs
         </div>
       );
     case "testimonials":

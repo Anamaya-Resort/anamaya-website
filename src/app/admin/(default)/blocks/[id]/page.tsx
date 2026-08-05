@@ -35,6 +35,8 @@ import UiFooterMainEditor from "./editors/UiFooterMainEditor";
 import UiFooterLegalEditor from "./editors/UiFooterLegalEditor";
 import FeaturedRetreatsEditor from "./editors/FeaturedRetreatsEditor";
 import FeaturedBySearchEditor from "./editors/FeaturedBySearchEditor";
+import RetreatsCalendarEditor from "./editors/RetreatsCalendarEditor";
+import FaqEditor from "./editors/FaqEditor";
 import SmallFormOverImageEditor from "./editors/SmallFormOverImageEditor";
 import GoogleMapTextEditor from "./editors/GoogleMapTextEditor";
 import TestimonialsEditor from "./editors/TestimonialsEditor";
@@ -416,6 +418,30 @@ export default async function EditBlock({
       )}
       {block.type_slug === "featured_by_search" && (
         <FeaturedBySearchEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "retreats_calendar" && (
+        <RetreatsCalendarEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "faq" && (
+        <FaqEditor
           blockId={id}
           name={block.name}
           slug={block.slug}

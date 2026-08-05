@@ -997,10 +997,58 @@ export type FeaturedRetreatsContent = LayoutWidthsContent & {
 };
 
 /**
+ * Retreats Calendar — the public, on-brand replacement for the Retreat
+ * Guru rg-calendar embed (lives at /book-retreat). Lists every UPCOMING
+ * retreat from AnamayaOS (is_public + is_active + status='confirmed' +
+ * future start_date), optionally grouped by month. Each row's Book
+ * button links out to Retreat Guru — booking always stays external.
+ * No per-instance retreat data; the list IS the AO data.
+ */
+export type RetreatsCalendarContent = LayoutWidthsContent & {
+  heading?: string;             // section heading; default "Upcoming Retreats"
+  subheading?: string;          // optional sub-text under the heading
+  book_label?: string;          // Book button label; default "Book Now"
+  /** Per-retreat page URL; `{slug}` → AO website_slug. When a retreat has
+   *  no website_slug the name/image link falls back to its booking link.
+   *  Default `/retreats/{slug}/`. */
+  url_pattern?: string;
+  max_count?: number;           // hard cap on rows; default 100
+  group_by_month?: boolean;     // month headers; default true
+  bg_color?: string;
+  text_color?: string;
+  heading_color?: string;
+  card_bg_color?: string;
+  card_border_color?: string;
+  card_border_width_px?: number;
+  card_corner_radius_px?: number;
+  padding_y_px?: number;        // section vertical padding; default 64
+  container_width_px?: number;  // max-width of inner content; default 1100
+};
+
+/**
  * Featured by Search — AI-recommended retreats. Same card design as
  * FeaturedRetreatsContent, but instead of the is_featured flag it ranks
  * upcoming retreats by semantic relevance to a context.
  */
+/**
+ * FAQ block. The block instance only holds display settings — the actual
+ * questions/answers are per-page and live in the `page_faqs` table (keyed
+ * to the page the block renders on), so one block on a template produces a
+ * different FAQ list on every page/post.
+ */
+export type FaqContent = LayoutWidthsContent & {
+  heading?: string;             // section heading; default "Frequently Asked Questions"
+  subheading?: string;          // optional sub-text under the heading
+  /** Label for the collapsible panel holding the non-featured FAQs.
+   *  Default "More questions". */
+  more_label?: string;
+  bg_color?: string;
+  text_color?: string;
+  heading_color?: string;
+  padding_y_px?: number;
+  container_width_px?: number;
+};
+
 export type FeaturedBySearchContent = LayoutWidthsContent & {
   heading?: string;             // section heading; default "Recommended Retreats"
   subheading?: string;          // optional sub-text under the heading
@@ -1127,10 +1175,12 @@ export type BlockTypeSlug =
   | "ui_footer_legal"
   | "featured_retreats"
   | "featured_by_search"
+  | "retreats_calendar"
   | "small_form_over_image"
   | "google_map_with_text"
   | "testimonials"
-  | "image_slideshow";
+  | "image_slideshow"
+  | "faq";
 
 export type BlockRecord = {
   id: string;

@@ -25,6 +25,8 @@ import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
+import FaqBlock from "./FaqBlock";
+import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
 import TwoColumnBlock from "./TwoColumnBlock";
@@ -44,7 +46,15 @@ import ImageSlideshowBlock from "./ImageSlideshowBlock";
  *   <Shortcode slug="hero_vid_1" />
  *   <Shortcode slug="press_bar_1" />
  */
-export default async function Shortcode({ slug }: { slug: string }) {
+export default async function Shortcode({
+  slug,
+  preview,
+}: {
+  slug: string;
+  /** Admin block-preview only: lets page-specific blocks (e.g. faq) render
+   *  sample content so their design shows with no real page attached. */
+  preview?: boolean;
+}) {
   const sb = supabaseServerOrNull();
   if (!sb) return null;
   const { data } = await sb
@@ -87,10 +97,15 @@ export default async function Shortcode({ slug }: { slug: string }) {
     case "ui_footer_main":    return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "featured_retreats": return <FeaturedRetreatsBlock content={content} />;
+    case "retreats_calendar": return <RetreatsCalendarBlock content={content} />;
     // No pageId via the shortcode path (block-preview iframe / direct use),
     // so page-context mode falls back to its "no page to read" state; a
     // typed search phrase still works.
     case "featured_by_search": return <FeaturedBySearchBlock content={content} />;
+    // FAQs are page-specific; the shortcode path has no page context. In the
+    // admin block-preview (preview=true) it shows sample questions so the
+    // design is visible; anywhere else it shows its "add me to a page" hint.
+    case "faq":                return <FaqBlock content={content} preview={preview} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text":  return <GoogleMapTextBlock content={content} />;
     case "two_column":     return <TwoColumnBlock content={content} />;

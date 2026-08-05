@@ -49,7 +49,7 @@ export default async function BlockPreview({
         }}
       />
       <main>
-        <Shortcode slug={slug} />
+        <Shortcode slug={slug} preview />
       </main>
     </>
   );

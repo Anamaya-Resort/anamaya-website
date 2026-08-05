@@ -27,10 +27,12 @@ import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
+import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
 import TestimonialsBlock from "./TestimonialsBlock";
 import ImageSlideshowBlock from "./ImageSlideshowBlock";
+import FaqBlock from "./FaqBlock";
 
 /**
  * Renders a block from its type slug and resolved content. The single
@@ -81,6 +83,8 @@ export default function renderBlockByType(
     case "ui_footer_legal":       return <UiFooterLegalBlock content={content} />;
     case "featured_retreats":     return <FeaturedRetreatsBlock content={content} />;
     case "featured_by_search":    return <FeaturedBySearchBlock content={content} pageId={ctx?.pageId} />;
+    case "faq":                   return <FaqBlock content={content} pageId={ctx?.pageId} />;
+    case "retreats_calendar":     return <RetreatsCalendarBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text":  return <GoogleMapTextBlock content={content} />;
     case "testimonials":          return <TestimonialsBlock content={content} />;

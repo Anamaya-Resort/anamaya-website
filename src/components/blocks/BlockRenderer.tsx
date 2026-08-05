@@ -27,6 +27,8 @@ import UiFooterMainBlock from "./UiFooterMainBlock";
 import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
+import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
+import FaqBlock from "./FaqBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
 import TestimonialsBlock from "./TestimonialsBlock";
@@ -68,6 +70,8 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "featured_retreats": return <FeaturedRetreatsBlock content={content} />;
     case "featured_by_search": return <FeaturedBySearchBlock content={content} />;
+    case "faq":               return <FaqBlock content={content} />;
+    case "retreats_calendar": return <RetreatsCalendarBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text": return <GoogleMapTextBlock content={content} />;
     case "testimonials":   return <TestimonialsBlock content={content} />;
