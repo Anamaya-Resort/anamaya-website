@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseServerOrNull } from "@/lib/supabase-server";
 import { decodeEntities } from "@/lib/website-builder/decode";
+import { firstBodyImage } from "@/lib/website-builder/first-body-image";
 import { stripHtmlToWords, readMinutes } from "./helpers";
 
 // Staging source. v2 is the live/newest WP mirror the builder surfaces —
@@ -179,7 +180,9 @@ export async function getBlogIndexData(): Promise<BlogIndexData | null> {
       date_published: r.date_published,
       author: r.author_id ? authorMap.get(r.author_id) ?? null : null,
       excerpt,
-      image_url: media?.url ?? null,
+      // Fall back to the first photo in the article body when no featured
+      // image is set, so photo-rich posts never show an empty colour tile.
+      image_url: media?.url ?? firstBodyImage(body) ?? null,
       image_alt: media?.alt ?? null,
       read_minutes: readMinutes(body),
       category: primaryCatByPost.get(r.id) ?? null,
