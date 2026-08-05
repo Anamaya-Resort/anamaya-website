@@ -4,7 +4,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 
-type Section = "general" | "default_meta" | "tracking";
+type Section = "general" | "default_meta" | "tracking" | "faq_knowledge";
 
 const SECTION_FIELDS: Record<Section, string[]> = {
   general: ["site_title", "tagline", "timezone"],
@@ -16,10 +16,16 @@ const SECTION_FIELDS: Record<Section, string[]> = {
     "custom_head_html",
     "custom_body_html",
   ],
+  faq_knowledge: ["customer_avatars", "brand_vibe", "info", "faq_content"],
 };
 
 function isSection(s: string): s is Section {
-  return s === "general" || s === "default_meta" || s === "tracking";
+  return (
+    s === "general" ||
+    s === "default_meta" ||
+    s === "tracking" ||
+    s === "faq_knowledge"
+  );
 }
 
 export async function updateSettingsSection(formData: FormData) {
@@ -41,6 +47,7 @@ export async function updateSettingsSection(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/website/settings");
+  if (section === "faq_knowledge") revalidatePath("/admin/website/faqs");
   // Tracking changes affect the public site shell on every page.
   if (section === "tracking") revalidatePath("/", "layout");
 }

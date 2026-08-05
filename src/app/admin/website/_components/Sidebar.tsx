@@ -20,6 +20,7 @@ import {
   ArrowRightLeft,
   Code2,
   Sparkles,
+  HelpCircle,
   Settings,
 } from "lucide-react";
 import { POST_TYPES } from "@/lib/website-builder/post-types";
@@ -87,6 +88,7 @@ export default function Sidebar() {
       href: "/admin/website/ai-site-builder",
       icon: Sparkles,
     },
+    { label: "FAQs", href: "/admin/website/faqs", icon: HelpCircle },
     { label: "Settings", href: "/admin/website/settings", icon: Settings },
   ];
 

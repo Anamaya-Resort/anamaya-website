@@ -1,5 +1,6 @@
 import "server-only";
 import { buildPageContext } from "./retreat-recommender";
+import { getFaqKnowledge } from "@/lib/website-builder/settings";
 
 /**
  * FAQ drafter. Reads a page/post's own content and asks OpenAI to write a
@@ -27,9 +28,12 @@ export type FaqDraft = {
 
 const SYSTEM_PROMPT = [
   "You write concise, accurate FAQs for a wellness/yoga retreat resort's website.",
-  "You are given the text of ONE page or post. Produce FAQs that a real prospective guest would type into Google or ask an AI assistant about THIS page's topic.",
+  "You are given the text of ONE page or post, plus REFERENCE material about the business (brand voice, customer avatars, general info, and an existing FAQ library).",
+  "Produce FAQs that a real prospective guest would type into Google or ask an AI assistant about THIS page's topic.",
   "Rules:",
-  "- Answer ONLY from the provided page content. If the page doesn't support an answer, do not include that question. Never invent prices, dates, policies, or facts.",
+  "- Answer using the PAGE CONTENT and the REFERENCE material. Do not invent prices, dates, policies, or facts that none of them support; skip a question rather than guess.",
+  "- Prefer the wording and answers from the REFERENCE info / FAQ library when they apply — they are authoritative.",
+  "- Match the BRAND & VIBE voice, and phrase questions the way the described CUSTOMER AVATARS would ask them.",
   "- Questions must sound like a real person ('Does the room have air conditioning?', 'How do I get there from the airport?'), not like a heading.",
   "- Answers: 1-3 sentences, warm and direct, no fluff. Do not restate the question.",
   "- Write 6 to 9 FAQs. Mark the 3 most valuable / most-asked as featured.",
@@ -56,16 +60,35 @@ export async function generateFaqDraft(
     throw new Error("Not enough page content to draft FAQs from");
   }
 
+  // Business reference (brand voice, avatars, info, FAQ library) from the
+  // /admin/website/faqs knowledge base — grounds answers and keeps them
+  // on-brand. Each field is capped to keep the prompt bounded.
+  const knowledge = await getFaqKnowledge();
+  const cap = (s: string, n: number) => (s.length > n ? s.slice(0, n) : s);
+  const referenceBlock = [
+    knowledge.brand_vibe &&
+      `BRAND & VIBE (match this voice):\n${cap(knowledge.brand_vibe, 3000)}`,
+    knowledge.customer_avatars &&
+      `CUSTOMER AVATARS (how these people ask):\n${cap(knowledge.customer_avatars, 3000)}`,
+    knowledge.info &&
+      `REFERENCE INFO (authoritative facts):\n${cap(knowledge.info, 6000)}`,
+    knowledge.faq_content &&
+      `EXISTING FAQ LIBRARY (reuse/adapt the relevant ones):\n${cap(knowledge.faq_content, 6000)}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
   const steer = (opts?.extraPrompt ?? "").trim();
   const userContent = [
     steer ? `Extra instructions from the editor: ${steer}` : "",
+    referenceBlock,
     "PAGE CONTENT:",
     context,
     "",
     'Return JSON of the exact shape: {"faqs":[{"question":"...","answer":"...","featured":true|false}]}',
   ]
     .filter(Boolean)
-    .join("\n");
+    .join("\n\n");
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",

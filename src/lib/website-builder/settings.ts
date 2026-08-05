@@ -68,3 +68,33 @@ export async function getTrackingSettings(): Promise<TrackingSettings> {
   const all = await getAllSettings();
   return all.tracking;
 }
+
+/**
+ * FAQ knowledge base — free-text reference the AI reads when drafting FAQs for
+ * a page/post, so answers stay accurate and on-brand. Never shown to visitors
+ * directly. Edited at /admin/website/faqs.
+ */
+export type FaqKnowledgeSettings = {
+  customer_avatars: string;
+  brand_vibe: string;
+  info: string;
+  faq_content: string;
+};
+
+const EMPTY_FAQ_KNOWLEDGE: FaqKnowledgeSettings = {
+  customer_avatars: "",
+  brand_vibe: "",
+  info: "",
+  faq_content: "",
+};
+
+export async function getFaqKnowledge(): Promise<FaqKnowledgeSettings> {
+  const sb = supabaseServerOrNull();
+  if (!sb) return { ...EMPTY_FAQ_KNOWLEDGE };
+  const { data } = await sb
+    .from("site_settings")
+    .select("value")
+    .eq("key", "faq_knowledge")
+    .maybeSingle();
+  return { ...EMPTY_FAQ_KNOWLEDGE, ...((data?.value as Partial<FaqKnowledgeSettings>) ?? {}) };
+}
