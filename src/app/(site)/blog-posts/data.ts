@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseServerOrNull } from "@/lib/supabase-server";
 import { decodeEntities } from "@/lib/website-builder/decode";
+import { canonicalizeSourcePath } from "@/lib/website-builder/redirects";
 import {
   firstBodyImage,
   resolveBodyImageMirrors,
@@ -22,6 +23,7 @@ export type BlogPost = {
   image_alt: string | null;
   read_minutes: number;
   category: string | null; // primary category label shown on the card
+  featured: boolean;
 };
 
 export type BlogCategory = {
@@ -34,6 +36,10 @@ export type BlogIndexData = {
   posts: BlogPost[];
   categories: BlogCategory[];
   total: number;
+  // Right-column sections.
+  recents: BlogPost[]; // newest
+  favorites: BlogPost[]; // highest love score (article_engagement)
+  featured: BlogPost[]; // admin-flagged (url_inventory.featured)
 };
 
 /**
@@ -52,7 +58,7 @@ export async function getBlogIndexData(): Promise<BlogIndexData | null> {
   const { data: rowsRaw } = await sb
     .from("url_inventory")
     .select(
-      "id, title, url_path, date_published, excerpt, author_id, featured_media_wp_id",
+      "id, title, url_path, date_published, excerpt, author_id, featured_media_wp_id, featured",
     )
     .eq("source_site", SOURCE_SITE)
     .eq("post_type", "post")
@@ -66,10 +72,18 @@ export async function getBlogIndexData(): Promise<BlogIndexData | null> {
     excerpt: string | null;
     author_id: string | null;
     featured_media_wp_id: number | null;
+    featured: boolean | null;
   }>;
 
   const total = rows.length;
-  const emptyResult: BlogIndexData = { posts: [], categories: [], total: 0 };
+  const emptyResult: BlogIndexData = {
+    posts: [],
+    categories: [],
+    total: 0,
+    recents: [],
+    favorites: [],
+    featured: [],
+  };
   if (rows.length === 0) return emptyResult;
 
   const postIds = rows.map((r) => r.id);
@@ -86,7 +100,7 @@ export async function getBlogIndexData(): Promise<BlogIndexData | null> {
     ),
   ];
 
-  const [authorsRes, mediaRes, contentRes, termsRes, linksRes] =
+  const [authorsRes, mediaRes, contentRes, termsRes, linksRes, engagementRes] =
     await Promise.all([
       authorIds.length
         ? sb.from("authors").select("id, display_name").in("id", authorIds)
@@ -111,6 +125,13 @@ export async function getBlogIndexData(): Promise<BlogIndexData | null> {
         .from("post_terms")
         .select("url_inventory_id, taxonomy_term_id")
         .in("url_inventory_id", postIds),
+      // Favorites = highest love score. Empty until reactions accrue.
+      sb
+        .from("article_engagement")
+        .select("url_path, love_score")
+        .gt("love_score", 0)
+        .order("love_score", { ascending: false })
+        .limit(30),
     ]);
 
   const authorMap = new Map<string, string>();
@@ -205,6 +226,7 @@ export async function getBlogIndexData(): Promise<BlogIndexData | null> {
       image_alt: media?.alt ?? null,
       read_minutes: readMinutes(body),
       category: primaryCatByPost.get(r.id) ?? null,
+      featured: r.featured === true,
     };
   });
 
@@ -227,5 +249,17 @@ export async function getBlogIndexData(): Promise<BlogIndexData | null> {
     .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count);
 
-  return { posts, categories, total };
+  // Right-column sections.
+  const recents = posts.slice(0, 6);
+  const featured = posts.filter((p) => p.featured).slice(0, 6);
+  const byPath = new Map(posts.map((p) => [canonicalizeSourcePath(p.url_path), p]));
+  const favorites = ((engagementRes.data ?? []) as {
+    url_path: string;
+    love_score: number;
+  }[])
+    .map((e) => byPath.get(canonicalizeSourcePath(e.url_path)))
+    .filter((p): p is BlogPost => !!p)
+    .slice(0, 6);
+
+  return { posts, categories, total, recents, favorites, featured };
 }

@@ -75,11 +75,52 @@ function StoryRow({ post, flip }: { post: BlogPost; flip: boolean }) {
   );
 }
 
+/** A right-column card: heading + a compact list of small article items. */
+function RightSection({ title, items }: { title: string; items: BlogPost[] }) {
+  return (
+    <div className="bx-rcard">
+      <span className="bx-rtitle">{title}</span>
+      {items.length === 0 ? (
+        <p className="bx-rempty">Nothing here yet.</p>
+      ) : (
+        <ul className="bx-rlist">
+          {items.map((p) => (
+            <li key={p.id}>
+              <a
+                className="bx-ritem"
+                href={liveArticleUrl(p.url_path)}
+                target="_blank"
+                rel="noopener"
+              >
+                <span className="bx-rthumb">
+                  {p.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.image_url} alt="" loading="lazy" />
+                  ) : (
+                    <span className="bx-rthumb-tint" aria-hidden="true" />
+                  )}
+                </span>
+                <span className="bx-rmeta">
+                  {p.category && <span className="bx-rcat">{p.category}</span>}
+                  <span className="bx-rname">{p.title}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default async function BlogIndexPage() {
   const data = await getBlogIndexData();
   const posts = data?.posts ?? [];
   const categories = data?.categories ?? [];
   const total = data?.total ?? 0;
+  const recents = data?.recents ?? [];
+  const favorites = data?.favorites ?? [];
+  const featured = data?.featured ?? [];
 
   // Featured = newest post that has an image, else newest post at all.
   const hero = posts.find((p) => p.image_url) ?? posts[0] ?? null;
@@ -199,6 +240,13 @@ export default async function BlogIndexPage() {
                 </>
               )}
             </div>
+
+            {/* ---------- RIGHT COLUMN ---------- */}
+            <aside className="bx-right">
+              <RightSection title="Recents" items={recents} />
+              <RightSection title="Favorites" items={favorites} />
+              <RightSection title="Featured" items={featured} />
+            </aside>
           </div>
         </main>
       </div>
@@ -220,7 +268,7 @@ const cssScoped = `
   background: var(--color-anamaya-cream);
   color: var(--color-anamaya-charcoal);
 }
-.bx-main { max-width: 1152px; margin: 0 auto; padding: 8px 24px 96px; }
+.bx-main { width: 90%; max-width: 1600px; margin: 0 auto; padding: 8px 0 96px; }
 
 .bx-pill, .bx-cat {
   font-family: var(--font-heading), sans-serif;
@@ -250,8 +298,39 @@ const cssScoped = `
 
 /* ---------- BODY: sidebar + rows ---------- */
 .bx-body { display: grid; grid-template-columns: 1fr; gap: 34px; margin-top: 36px; }
-@media (min-width: 900px) { .bx-body { grid-template-columns: 214px 1fr; gap: 52px; } }
+/* Tablet: Browse-by + main list side by side; right column spans full width below. */
+@media (min-width: 900px) {
+  .bx-body { grid-template-columns: 214px minmax(0, 1fr); gap: 52px; }
+  .bx-right { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+}
 @media (min-width: 900px) { .bx-side { position: sticky; top: 100px; align-self: start; } }
+/* Desktop: three columns — Browse-by · main list · right column. */
+@media (min-width: 1200px) {
+  .bx-body { grid-template-columns: 214px minmax(0, 1fr) 300px; column-gap: 44px; }
+  .bx-right { grid-column: auto; display: flex; flex-direction: column; gap: 22px; }
+}
+
+/* ---------- RIGHT COLUMN cards ---------- */
+.bx-right { display: flex; flex-direction: column; gap: 22px; }
+.bx-rcard { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 15px 16px 18px; }
+.bx-rtitle { display: block; font-family: var(--font-heading), sans-serif; text-transform: uppercase;
+  letter-spacing: .16em; font-size: 13px; color: var(--color-anamaya-olive-dark);
+  padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.bx-rlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+.bx-ritem { display: flex; gap: 11px; align-items: center; }
+.bx-rthumb { flex: none; width: 52px; height: 52px; border-radius: 6px; overflow: hidden;
+  background: var(--color-anamaya-teal-muted); }
+.bx-rthumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.bx-ritem:hover .bx-rthumb img { transform: scale(1.06); }
+.bx-rthumb-tint { display: block; width: 100%; height: 100%;
+  background: linear-gradient(135deg, var(--color-anamaya-teal), var(--color-anamaya-green)); }
+.bx-rmeta { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bx-rcat { font-family: var(--font-heading), sans-serif; text-transform: uppercase;
+  letter-spacing: .12em; font-size: 9.5px; color: var(--color-anamaya-green); }
+.bx-rname { font-size: 13.5px; line-height: 1.25; color: var(--ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bx-ritem:hover .bx-rname { color: var(--color-anamaya-olive-dark); }
+.bx-rempty { color: var(--ink-faint); font-size: 13px; margin: 2px 0 0; }
 .bx-side .bx-eyebrow { display: block; margin-bottom: 2px; }
 .bx-side ul { list-style: none; margin: 0; padding: 0; }
 .bx-side li a { display: flex; justify-content: space-between; align-items: center; gap: 10px;
