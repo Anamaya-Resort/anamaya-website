@@ -8,7 +8,7 @@ import TagsCloud from "./TagsCloud";
 export const dynamic = "force-dynamic";
 
 const LEDE =
-  "Every subject we write about, drifting together as a living cloud. Tap any tag to jump to its stories below.";
+  "Every subject we write about, drifting together as a living cloud.";
 
 const CARD_ROWS = 4; // rows shown per card before a "+N more" line
 
@@ -178,7 +178,6 @@ export default async function TagsPage() {
       <div id="tags-root">
         {/* ---------- MASTHEAD ---------- */}
         <section className="tg-col tg-mast">
-          <div className="kicker">Browse · The Journal</div>
           <h1 className="cat-title font-heading">Tags</h1>
           <p className="cat-lede">{LEDE}</p>
           <div className="count">
@@ -201,7 +200,6 @@ export default async function TagsPage() {
             </span>
           ))}
         </div>
-        <p className="cloudhint">Tap a tag to jump to it</p>
 
         {/* ---------- SORT + CARDS ---------- */}
         <div className="tagwrap">
