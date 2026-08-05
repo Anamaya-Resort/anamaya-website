@@ -1,6 +1,5 @@
 import type { FaqContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
-import LayoutWidths from "./shared/LayoutWidths";
 
 /**
  * Presentational FAQ markup, shared by:
@@ -10,9 +9,8 @@ import LayoutWidths from "./shared/LayoutWidths";
  *     Q&A so the design updates live as the editor changes width / colors /
  *     labels — exactly like the non-async blocks.
  *
- * No hooks and no server-only imports, so it renders in either tree. Width is
- * governed entirely by the shared LayoutWidths system (Max Content px + the
- * Desktop/Tablet % split) — the same control every other block uses.
+ * No hooks and no server-only imports, so it renders in either tree. Content
+ * width is a simple % or px value (width_value / width_unit), centered.
  */
 
 /** The minimal shape this view needs (decoupled from the DB row type). */
@@ -49,6 +47,11 @@ export default function FaqBlockView({
   const frameWidthCss =
     (c.frame_scale_unit ?? "pct") === "px" ? `${frameValue}px` : `${frameValue}%`;
 
+  // Section content width: % of the section, or absolute px. Centered.
+  const widthValue = c.width_value ?? FAQ_DEFAULT_MAX_CONTENT_PX;
+  const widthCss =
+    (c.width_unit ?? "px") === "pct" ? `${widthValue}%` : `${widthValue}px`;
+
   return (
     <section
       className="w-full"
@@ -60,7 +63,7 @@ export default function FaqBlockView({
       }}
     >
       {frameUrl && <FaqFrame url={frameUrl} widthCss={frameWidthCss} />}
-      <LayoutWidths content={c} defaultMaxContentPx={FAQ_DEFAULT_MAX_CONTENT_PX}>
+      <div className="mx-auto px-6" style={{ maxWidth: widthCss }}>
         {isSample && (
           <p className="mb-6 rounded-md border border-dashed border-anamaya-charcoal/25 bg-white/50 px-4 py-2 text-center text-xs italic text-anamaya-charcoal/60">
             Sample preview — on a real page these questions are generated from
@@ -93,7 +96,7 @@ export default function FaqBlockView({
               so machines read them. */}
           {more.length > 0 && (
             <details className="mt-4 border-t border-anamaya-charcoal/10 pt-4">
-              <summary className="cursor-pointer list-none text-sm font-semibold uppercase tracking-[0.15em] text-anamaya-charcoal/70 hover:text-anamaya-charcoal">
+              <summary className="cursor-pointer list-none text-sm font-semibold uppercase tracking-[0.15em] opacity-70 hover:opacity-100">
                 {moreLabel} ({more.length})
               </summary>
               <div className="mt-3">
@@ -104,7 +107,7 @@ export default function FaqBlockView({
             </details>
           )}
         </div>
-      </LayoutWidths>
+      </div>
       {frameUrl && <FaqFrame url={frameUrl} widthCss={frameWidthCss} flip />}
     </section>
   );
@@ -139,10 +142,10 @@ function FaqFrame({
 function FaqItem({ faq, defaultOpen }: { faq: FaqViewItem; defaultOpen?: boolean }) {
   return (
     <details open={defaultOpen} className="border-b border-anamaya-charcoal/10 py-3">
-      <summary className="cursor-pointer list-none text-lg font-medium leading-snug text-anamaya-charcoal marker:hidden">
+      <summary className="cursor-pointer list-none text-lg font-medium leading-snug marker:hidden">
         {faq.question}
       </summary>
-      <p className="mt-2 whitespace-pre-line text-base leading-relaxed text-anamaya-charcoal/80">
+      <p className="mt-2 whitespace-pre-line text-base leading-relaxed opacity-80">
         {faq.answer}
       </p>
     </details>

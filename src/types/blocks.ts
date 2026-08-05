@@ -1046,6 +1046,10 @@ export type FaqContent = LayoutWidthsContent & {
   text_color?: string;
   heading_color?: string;
   padding_y_px?: number;
+  /** Section content width: a % of the section width, or an absolute px
+   *  value. Content is centered within it. */
+  width_value?: number;
+  width_unit?: CardSizeUnit;
   /** Decorative frame image shown at the TOP of the section and mirrored
    *  (flipped vertically) at the BOTTOM. Empty = no frame. */
   frame_image_url?: string;

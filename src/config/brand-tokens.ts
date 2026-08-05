@@ -161,6 +161,17 @@ export const BRAND_FONTS: { key: BrandFontKey; label: string; cssClass: string; 
  */
 export function resolveBrandColor(value: string | undefined): string | undefined {
   if (!value) return undefined;
+  // Lightened color: "<base>|L<pct>" mixes <base> with white, where pct is
+  // how much of the base shows (100 = full color, 0 = pure white). Uses
+  // color-mix so a brand base keeps its live CSS var (still matches the
+  // palette, just lighter). <base> is itself a key / hex / legacy name.
+  const lighten = value.match(/^(.+)\|L(\d{1,3})$/);
+  if (lighten) {
+    const base = resolveBrandColor(lighten[1]);
+    if (!base) return undefined;
+    const pct = Math.max(0, Math.min(100, parseInt(lighten[2], 10)));
+    return `color-mix(in srgb, ${base} ${pct}%, #ffffff)`;
+  }
   // Brand token key — use the CSS var so live AO changes propagate.
   if (value in COLOR_KEY_TO_CSS_VAR) {
     const v = COLOR_KEY_TO_CSS_VAR[value as keyof BrandingColors];

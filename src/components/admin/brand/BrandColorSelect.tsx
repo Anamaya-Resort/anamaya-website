@@ -45,13 +45,21 @@ export default function BrandColorSelect({
   horizontal = false,
   extraSwatches,
 }: Props) {
-  const isBrandKey = !!value && value in COLOR_KEY_TO_CSS_VAR;
+  // A stored value may be a plain color OR a lightened one ("<base>|L<pct>").
+  // Split it so the swatches select on the base and the slider shows the amount.
+  const { base, pct: lightenPct } = parseLighten(value);
+  const compose = (b: string, p: number) => (p >= 100 ? b : `${b}|L${p}`);
+  const isBrandKey = !!base && base in COLOR_KEY_TO_CSS_VAR;
   const initialMode: "brand" | "custom" =
-    isBrandKey || !value ? "brand" : "custom";
+    isBrandKey || !base ? "brand" : "custom";
   const [mode, setMode] = useState<"brand" | "custom">(initialMode);
-  const initialHex = !isBrandKey && value ? value : "#A35B4E";
+  const initialHex = !isBrandKey && base ? base : "#A35B4E";
 
   const allKeys = includeStatus ? [...keys, ...STATUS_COLOR_KEYS] : keys;
+  // Solid hex used to paint the slider's "full colour" end.
+  const lightenDisplay =
+    brandTokens.light[base as keyof typeof brandTokens.light] ??
+    (base.startsWith("#") ? base : "#999999");
 
   return (
     <div className={horizontal ? "flex flex-wrap items-center gap-3" : "space-y-3"}>
@@ -82,6 +90,7 @@ export default function BrandColorSelect({
       </div>
 
       {mode === "brand" ? (
+        <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           {allowAuto && (
             <button
@@ -99,12 +108,12 @@ export default function BrandColorSelect({
           )}
           {(extraSwatches ?? []).map((s) => {
             const selected =
-              !!value && value.toLowerCase() === s.hex.toLowerCase();
+              !!base && base.toLowerCase() === s.hex.toLowerCase();
             return (
               <button
                 key={s.hex}
                 type="button"
-                onClick={() => onChange(s.hex)}
+                onClick={() => onChange(compose(s.hex, lightenPct))}
                 title={`${s.label} — ${s.hex}`}
                 className={`group relative h-9 w-9 overflow-hidden rounded-md border transition-all ${
                   selected
@@ -120,12 +129,12 @@ export default function BrandColorSelect({
           {allKeys.map((key) => {
             const hex = brandTokens.light[key];
             if (!hex) return null;
-            const selected = value === key;
+            const selected = base === key;
             return (
               <button
                 key={key}
                 type="button"
-                onClick={() => onChange(key)}
+                onClick={() => onChange(compose(key, lightenPct))}
                 title={`${COLOR_LABELS[key]} — ${hex}`}
                 className={`group relative h-9 w-9 overflow-hidden rounded-md border transition-all ${
                   selected
@@ -139,9 +148,17 @@ export default function BrandColorSelect({
             );
           })}
         </div>
+        {base && (
+          <LightenSlider
+            pct={lightenPct}
+            display={lightenDisplay}
+            onChange={(p) => onChange(compose(base, p))}
+          />
+        )}
+        </div>
       ) : (
         <CustomColorPicker
-          value={!isBrandKey && value ? value : initialHex}
+          value={!isBrandKey && base ? base : initialHex}
           onChange={onChange}
         />
       )}
@@ -257,6 +274,50 @@ function CustomColorPicker({
       </div>
     </div>
   );
+}
+
+/**
+ * Lighten slider: right end (100%) is the chosen colour, left end (0%) is pure
+ * white. Selecting a brand colour then lightening it keeps the palette match,
+ * just lighter (resolveBrandColor turns "<base>|L<pct>" into a color-mix).
+ */
+function LightenSlider({
+  pct,
+  display,
+  onChange,
+}: {
+  pct: number;
+  display: string;
+  onChange: (pct: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-anamaya-charcoal/50">
+        Lighten
+      </span>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={pct}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-2 flex-1 cursor-pointer appearance-none rounded-full border border-zinc-300"
+        style={{ background: `linear-gradient(to right, #ffffff, ${display})` }}
+        title={`${pct}% of the colour, ${100 - pct}% white`}
+      />
+      <span className="w-9 text-right font-mono text-[10px] text-anamaya-charcoal/60">
+        {pct}%
+      </span>
+    </div>
+  );
+}
+
+/** Split a stored value into its base colour and lighten amount (100 = none). */
+function parseLighten(value: string | undefined): { base: string; pct: number } {
+  if (!value) return { base: "", pct: 100 };
+  const m = value.match(/^(.+)\|L(\d{1,3})$/);
+  if (m) return { base: m[1], pct: clamp(parseInt(m[2], 10), 0, 100) };
+  return { base: value, pct: 100 };
 }
 
 function clamp(v: number, lo: number, hi: number): number {

@@ -5,9 +5,7 @@ import BlockEditorChrome, {
   type BlockEditorState,
 } from "@/components/admin/blocks/BlockEditorChrome";
 import BrandColorSelect from "@/components/admin/brand/BrandColorSelect";
-import LayoutWidthsFieldset from "@/components/admin/blocks/LayoutWidthsFieldset";
 import MediaFieldset from "@/components/admin/blocks/MediaFieldset";
-import { normalizeLayoutWidths } from "@/lib/layout-widths";
 import type { OrgBranding } from "@/config/brand-tokens";
 import type { FaqContent, CardSizeUnit } from "@/types/blocks";
 
@@ -21,7 +19,6 @@ const FAQ_DEFAULT_MAX_CONTENT_PX = 820;
 
 function normalize(c: FaqContent | null | undefined): FaqContent {
   return {
-    ...normalizeLayoutWidths(c, FAQ_DEFAULT_MAX_CONTENT_PX),
     ...(c ?? {}),
     heading: c?.heading ?? "Frequently Asked Questions",
     subheading: c?.subheading ?? "",
@@ -30,6 +27,8 @@ function normalize(c: FaqContent | null | undefined): FaqContent {
     bg_color: c?.bg_color ?? "",
     text_color: c?.text_color ?? "",
     padding_y_px: c?.padding_y_px ?? 64,
+    width_value: c?.width_value ?? FAQ_DEFAULT_MAX_CONTENT_PX,
+    width_unit: c?.width_unit ?? "px",
     frame_image_url: c?.frame_image_url ?? "",
     frame_scale_value: c?.frame_scale_value ?? 100,
     frame_scale_unit: c?.frame_scale_unit ?? "pct",
@@ -77,11 +76,14 @@ function Form({ state }: { state: BlockEditorState<FaqContent> }) {
         </p>
       </div>
 
-      <LayoutWidthsFieldset
-        values={draft}
-        onPatch={patch}
-        maxContentDefault={FAQ_DEFAULT_MAX_CONTENT_PX}
-      />
+      <div className="w-64">
+        <SizeField
+          label="Section width (% of page, or px)"
+          value={draft.width_value}
+          unit={draft.width_unit}
+          onChange={(v, u) => patch({ width_value: v, width_unit: u })}
+        />
+      </div>
 
       <label className="block">
         <span className={labelCls}>Section heading</span>
