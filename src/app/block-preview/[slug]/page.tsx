@@ -11,6 +11,11 @@ import BlockPreviewMeasurer from "@/components/admin/blocks/BlockPreviewMeasurer
 
 export const dynamic = "force-dynamic";
 
+// These are internal block previews (reachable without the admin SSO gate so
+// the editor iframe can load them). Keep them out of search indexes — the FAQ
+// block in particular renders convincing sample prose here.
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function BlockPreview({
   params,
 }: {

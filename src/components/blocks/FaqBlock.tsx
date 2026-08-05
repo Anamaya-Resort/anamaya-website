@@ -104,20 +104,10 @@ export default async function FaqBlock({
     featured = SAMPLE_FAQS.filter((f) => f.is_featured);
     more = SAMPLE_FAQS.filter((f) => !f.is_featured);
   } else {
-    // No page context (a stray single-block surface): show a hint instead of
-    // rendering blank, so the editor isn't confused by an empty box.
-    if (!pageId) {
-      return (
-        <section className="w-full" style={{ paddingTop: padY, paddingBottom: padY }}>
-          <LayoutWidths content={c} defaultMaxContentPx={c.container_width_px ?? 820}>
-            <p className="rounded-md border border-dashed border-anamaya-charcoal/20 bg-white/40 p-8 text-center text-sm italic opacity-60">
-              FAQs are specific to each page. Add this block to a page or post to
-              generate and show its questions here.
-            </p>
-          </LayoutWidths>
-        </section>
-      );
-    }
+    // No page context on a public render path: render nothing. A hint box must
+    // never reach a crawlable page (e.g. /home2, /preview/template). The admin
+    // block-preview shows sample content via preview=true instead.
+    if (!pageId) return null;
     const res = await getPublicFaqs(pageId);
     featured = res.featured;
     more = res.more;
@@ -135,6 +125,14 @@ export default async function FaqBlock({
       acceptedAnswer: { "@type": "Answer", text: f.answer },
     })),
   };
+  // Escape the JSON so a question/answer containing "</script>" (or "<", "&")
+  // can't break out of the <script type="application/ld+json"> element and
+  // inject markup. These are valid JSON string escapes, so parsers are
+  // unaffected.
+  const jsonLdHtml = JSON.stringify(jsonLd)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
 
   return (
     <section
@@ -147,7 +145,7 @@ export default async function FaqBlock({
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdHtml }}
         />
       )}
       <LayoutWidths content={c} defaultMaxContentPx={c.container_width_px ?? 820}>

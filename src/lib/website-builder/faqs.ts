@@ -90,6 +90,15 @@ export async function replacePageFaqs(
   const sb = supabaseServerOrNull();
   if (!sb || !pageId) throw new Error("No DB connection");
 
+  // supabase-js has no cross-statement transaction, so back up the current
+  // rows before the destructive delete. If the insert fails we restore them,
+  // rather than leaving a (possibly approved) page with zero FAQs.
+  const { data: backup } = await sb
+    .from("page_faqs")
+    .select("question, answer, is_featured, sort_order, source")
+    .eq("url_inventory_id", pageId)
+    .order("sort_order", { ascending: true });
+
   await sb.from("page_faqs").delete().eq("url_inventory_id", pageId);
   if (faqs.length) {
     const rows = faqs.map((f, i) => ({
@@ -101,7 +110,15 @@ export async function replacePageFaqs(
       source: f.source ?? "ai",
     }));
     const { error } = await sb.from("page_faqs").insert(rows);
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Roll back to the backed-up set so reviewed FAQs aren't lost.
+      if (backup && backup.length) {
+        await sb
+          .from("page_faqs")
+          .insert(backup.map((b) => ({ url_inventory_id: pageId, ...b })));
+      }
+      throw new Error(error.message);
+    }
   }
 
   const metaRow: Record<string, unknown> = {
@@ -141,6 +158,12 @@ export async function generateAndSaveFaqs(
   opts?: { extraPrompt?: string; approve?: boolean },
 ): Promise<FaqDraft[]> {
   const drafts = await generateFaqDraft(pageId, { extraPrompt: opts?.extraPrompt });
+  // Never wipe a page's reviewed FAQs just because the model returned nothing.
+  if (drafts.length === 0) {
+    throw new Error(
+      "The AI returned no FAQs for this page (its content may be too thin). Your existing FAQs were kept.",
+    );
+  }
   await replacePageFaqs(
     pageId,
     drafts.map((d) => ({ ...d, source: "ai" as const })),

@@ -14,8 +14,10 @@ import {
   globalTagSummary,
   templateLabel,
 } from "@/lib/website-builder/tracking";
+import { getAdminFaqs } from "@/lib/website-builder/faqs";
 import AiTextarea from "@/components/ai/AiTextarea";
 import BodyEditor from "@/components/admin/website/BodyEditor";
+import FaqPanel from "./FaqPanel";
 import EditablePermalink from "@/components/admin/website/EditablePermalink";
 import HtmlViewer from "@/components/admin/website/HtmlViewer";
 import PageHeader from "../../_components/PageHeader";
@@ -51,7 +53,7 @@ export default async function EditItemPage({
   const pt = getPostTypeBySlug(postTypeSlug);
   if (!pt) notFound();
 
-  const [item, templates, orgCtx, pageTracking, templateTracking, globalTracking] =
+  const [item, templates, orgCtx, pageTracking, templateTracking, globalTracking, faqData] =
     await Promise.all([
       getItemForEdit(pt.postType, id),
       listPageTemplates(),
@@ -59,6 +61,7 @@ export default async function EditItemPage({
       getPageTracking(id),
       getTemplateTracking(pt.templateSlug),
       getGlobalTracking(),
+      getAdminFaqs(id),
     ]);
   if (!item) notFound();
   const properties = orgCtx?.properties ?? [];
@@ -810,6 +813,16 @@ export default async function EditItemPage({
           </aside>
         </div>
       </form>
+
+      {/* Per-article FAQ authoring — its own form/persistence, so it sits
+          outside the main edit form above. */}
+      <FaqPanel
+        pageId={item.id}
+        adminPath={`/admin/website/${pt.slug}/${item.id}`}
+        publicPath={item.url_path ?? undefined}
+        initialFaqs={faqData.faqs}
+        initialMeta={faqData.meta}
+      />
     </div>
   );
 }
