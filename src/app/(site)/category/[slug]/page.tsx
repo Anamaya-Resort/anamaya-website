@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import UiTopBlock from "@/components/blocks/UiTopBlock";
+import UiSideMenuRightBlock from "@/components/blocks/UiSideMenuRightBlock";
 import { getCategoryData, type CategoryPost } from "./data";
 import { formatDate, liveArticleUrl } from "./helpers";
 
@@ -106,6 +108,16 @@ export default async function CategoryPage({
 
   return (
     <>
+      {/* Shared site header (logo + user/avatar, then CALENDAR + MENU).
+          Hand-built React pages don't inherit chrome from a template, so we
+          render the same blocks blog-posts does — same wordmark logos. */}
+      <UiTopBlock
+        content={{
+          logo_dark_url: "/journal/anamaya-word-on-light.webp",
+          logo_light_url: "/journal/anamaya-word-on-dark.webp",
+        }}
+      />
+
       {/* Scoped styles: scrims + CSS multi-column masonry. */}
       <style>{cssScoped}</style>
       <script
@@ -117,7 +129,7 @@ export default async function CategoryPage({
       />
 
       <div className="bg-anamaya-cream">
-        <div className="mx-auto max-w-6xl px-6 py-16 pt-28">
+        <div className="mx-auto max-w-6xl px-6 py-16">
           {/* ---------- INTRO ---------- */}
           <div className="mx-auto max-w-3xl text-center">
             {/* Breadcrumb */}
@@ -249,6 +261,11 @@ export default async function CategoryPage({
           )}
         </div>
       </div>
+
+      {/* Right-anchored slide-out menu the MENU button opens (via
+          ChromeContext). Empty content falls back to the site's SIDE_MENU
+          nav, so the drawer works without a per-page DB fetch. */}
+      <UiSideMenuRightBlock content={{}} />
     </>
   );
 }
