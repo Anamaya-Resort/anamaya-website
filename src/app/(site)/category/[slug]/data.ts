@@ -1,7 +1,10 @@
 import "server-only";
 import { supabaseServerOrNull } from "@/lib/supabase-server";
 import { decodeEntities } from "@/lib/website-builder/decode";
-import { firstBodyImage } from "@/lib/website-builder/first-body-image";
+import {
+  firstBodyImage,
+  resolveBodyImageMirrors,
+} from "@/lib/website-builder/first-body-image";
 import { stripHtmlToWords, readMinutes } from "./helpers";
 
 // Staging source. v2 is the live/newest WP mirror the builder surfaces.
@@ -172,6 +175,24 @@ export async function getCategoryData(
     contentMap.set(c.url_inventory_id, c.content_rendered ?? null);
   }
 
+  // Posts with no featured image: fall back to the first body photo, but
+  // resolved to a WORKING Supabase mirror URL — raw WP body URLs 404 on
+  // staging. Unresolved posts keep the colour tile (never a broken image).
+  const fallbackCandidates: { id: string; url: string }[] = [];
+  for (const r of rows) {
+    const hasFeatured =
+      r.featured_media_wp_id != null &&
+      !!mediaMap.get(r.featured_media_wp_id)?.url;
+    if (hasFeatured) continue;
+    const u = firstBodyImage(contentMap.get(r.id) ?? null);
+    if (u) fallbackCandidates.push({ id: r.id, url: u });
+  }
+  const bodyMirror = await resolveBodyImageMirrors(
+    sb,
+    fallbackCandidates,
+    SOURCE_SITE,
+  );
+
   const posts: CategoryPost[] = rows.map((r) => {
     const media =
       r.featured_media_wp_id != null
@@ -189,9 +210,7 @@ export async function getCategoryData(
       date_published: r.date_published,
       author: r.author_id ? authorMap.get(r.author_id) ?? null : null,
       excerpt,
-      // Fall back to the first photo in the article body when no featured
-      // image is set, so photo-rich posts never show an empty colour tile.
-      image_url: media?.url ?? firstBodyImage(body) ?? null,
+      image_url: media?.url ?? bodyMirror.get(r.id) ?? null,
       image_alt: media?.alt ?? null,
       read_minutes: readMinutes(body),
     };
