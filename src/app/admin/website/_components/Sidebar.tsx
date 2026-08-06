@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   Image as ImageIcon,
   ArrowRightLeft,
+  Tags,
   Code2,
   Sparkles,
   HelpCircle,
@@ -72,6 +73,11 @@ export default function Sidebar() {
       ],
     })),
     { label: "Media", href: "/admin/website/media", icon: ImageIcon },
+    {
+      label: "Categories & Tags",
+      href: "/admin/website/taxonomies",
+      icon: Tags,
+    },
     { label: "Authors", href: "/admin/website/authors", icon: Users },
     {
       label: "Technical",
