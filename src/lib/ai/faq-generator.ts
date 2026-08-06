@@ -1,6 +1,7 @@
 import "server-only";
 import { buildPageContext } from "./retreat-recommender";
 import { getFaqKnowledge } from "@/lib/website-builder/settings";
+import { getAOAIContext } from "@/lib/ao-ai-context";
 
 /**
  * FAQ drafter. Reads a page/post's own content and asks OpenAI to write a
@@ -60,16 +61,56 @@ export async function generateFaqDraft(
     throw new Error("Not enough page content to draft FAQs from");
   }
 
-  // Business reference (brand voice, avatars, info, FAQ library) from the
-  // /admin/website/faqs knowledge base — grounds answers and keeps them
-  // on-brand. Each field is capped to keep the prompt bounded.
-  const knowledge = await getFaqKnowledge();
+  // Business reference: brand voice + customer avatars pulled LIVE from
+  // AnamayOS (authoritative), plus the website-only notes from the
+  // /admin/website/faqs knowledge base. Both ground answers and keep them
+  // on-brand. Each field is capped to keep the prompt bounded. AO degrades
+  // gracefully to empty when unreachable.
+  const [knowledge, ao] = await Promise.all([
+    getFaqKnowledge(),
+    getAOAIContext(),
+  ]);
   const cap = (s: string, n: number) => (s.length > n ? s.slice(0, n) : s);
+
+  const aoGuide = ao.guides[0];
+  const aoBrand = aoGuide?.compiled_context
+    ? cap(aoGuide.compiled_context, 4000)
+    : aoGuide
+      ? cap(
+          [
+            aoGuide.voice_tone && `Voice/tone: ${aoGuide.voice_tone}`,
+            aoGuide.personality_traits?.length &&
+              `Personality: ${aoGuide.personality_traits.join(", ")}`,
+            aoGuide.dos_and_donts &&
+              `Do: ${(aoGuide.dos_and_donts.dos ?? []).join("; ")}. Don't: ${(aoGuide.dos_and_donts.donts ?? []).join("; ")}.`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          4000,
+        )
+      : "";
+  const aoAvatars = (ao.archetypes ?? [])
+    .filter((a) => a.is_active !== false)
+    .map((a) =>
+      [
+        `- ${a.name}${a.description ? `: ${a.description}` : ""}`,
+        a.motivations?.length ? `  wants: ${a.motivations.join(", ")}` : "",
+        a.pain_points?.length ? `  worries: ${a.pain_points.join(", ")}` : "",
+        a.content_tone ? `  tone: ${a.content_tone}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    )
+    .join("\n");
+
   const referenceBlock = [
+    aoBrand && `BRAND VOICE (from AnamayOS — match this):\n${aoBrand}`,
+    aoAvatars &&
+      `CUSTOMER AVATARS (from AnamayOS — phrase questions the way these people ask):\n${cap(aoAvatars, 4000)}`,
     knowledge.brand_vibe &&
-      `BRAND & VIBE (match this voice):\n${cap(knowledge.brand_vibe, 3000)}`,
+      `BRAND & VIBE (extra notes):\n${cap(knowledge.brand_vibe, 3000)}`,
     knowledge.customer_avatars &&
-      `CUSTOMER AVATARS (how these people ask):\n${cap(knowledge.customer_avatars, 3000)}`,
+      `CUSTOMER AVATARS (extra notes):\n${cap(knowledge.customer_avatars, 3000)}`,
     knowledge.info &&
       `REFERENCE INFO (authoritative facts):\n${cap(knowledge.info, 6000)}`,
     knowledge.faq_content &&

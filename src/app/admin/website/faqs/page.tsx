@@ -1,4 +1,5 @@
 import { getFaqKnowledge } from "@/lib/website-builder/settings";
+import { getAOAIContext } from "@/lib/ao-ai-context";
 import PageHeader from "../_components/PageHeader";
 import { updateSettingsSection } from "../settings/actions";
 
@@ -47,7 +48,10 @@ function Block({
 }
 
 export default async function FaqKnowledgePage() {
-  const k = await getFaqKnowledge();
+  const [k, ao] = await Promise.all([getFaqKnowledge(), getAOAIContext()]);
+  const guide = ao.guides[0] ?? null;
+  const archetypes = (ao.archetypes ?? []).filter((a) => a.is_active !== false);
+  const hasAo = !!guide || archetypes.length > 0;
 
   return (
     <div className="px-5 py-4">
@@ -60,6 +64,63 @@ export default async function FaqKnowledgePage() {
         shown to visitors directly; only the FAQs you review and publish per
         page appear on the site.
       </p>
+
+      {/* Brand voice + customer avatars, pulled live from AnamayOS and fed to
+          the generator automatically. Read-only here. */}
+      <div className="mb-6 max-w-3xl rounded-sm border border-[#c3c4c7] bg-white">
+        <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-4 py-2.5">
+          <h2 className="text-[14px] font-semibold text-[#1d2327]">
+            From AnamayOS — used automatically
+          </h2>
+          <p className="mt-1 text-[12px] text-[#50575e]">
+            Your brand voice and customer avatars are pulled live from AnamayOS
+            and fed to the FAQ generator. Read-only here — edit them in AnamayOS.
+          </p>
+        </div>
+        <div className="space-y-4 px-4 py-3 text-[13px] text-[#1d2327]">
+          {!hasAo ? (
+            <p className="text-[#50575e]">
+              No AnamayOS brand data found
+              {ao.error ? ` (${ao.error})` : ""}. The FAQ generator will fall
+              back to the notes below.
+            </p>
+          ) : (
+            <>
+              {guide && (
+                <section>
+                  <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                    Brand guide
+                  </h3>
+                  <p className="mt-1">
+                    <strong>{guide.name}</strong>
+                    {guide.voice_tone ? ` — ${guide.voice_tone}` : ""}
+                  </p>
+                  {guide.personality_traits?.length ? (
+                    <p className="mt-0.5 text-[12px] text-[#50575e]">
+                      Personality: {guide.personality_traits.join(", ")}
+                    </p>
+                  ) : null}
+                </section>
+              )}
+              {archetypes.length > 0 && (
+                <section>
+                  <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#50575e]">
+                    Customer avatars ({archetypes.length})
+                  </h3>
+                  <ul className="mt-1 space-y-1">
+                    {archetypes.map((a) => (
+                      <li key={a.id}>
+                        <strong>{a.name}</strong>
+                        {a.description ? ` — ${a.description}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       <form
         action={updateSettingsSection}
