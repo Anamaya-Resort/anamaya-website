@@ -52,7 +52,7 @@ export async function GET(
   // harmless tiebreak (there is at most one captured row per site per path).
   const { data: rows, error: rowErr } = await sb
     .from("url_inventory")
-    .select("id, source_site, date_modified, content_items!inner(frozen_html)")
+    .select("id, source_site, date_modified, post_type, content_items!inner(frozen_html)")
     .in("url_path", candidates)
     .not("content_items.frozen_html", "is", null)
     .order("source_site", { ascending: true })
@@ -63,16 +63,22 @@ export async function GET(
     return NextResponse.json({ error: rowErr.message }, { status: 500 });
   }
   const row = rows?.[0] as
-    | { content_items: { frozen_html: string } | { frozen_html: string }[] }
+    | {
+        post_type: string | null;
+        content_items: { frozen_html: string } | { frozen_html: string }[];
+      }
     | undefined;
   const ci = row ? (Array.isArray(row.content_items) ? row.content_items[0] : row.content_items) : null;
   if (!ci?.frozen_html) {
     return notFoundHtml(`No snapshot captured for ${candidates[0]}.`);
   }
 
-  return new Response(
-    injectReactionWidget(applySnapshotTransforms(ci.frozen_html, `/${joined}`)),
-    {
+  // The reaction widget goes on ARTICLES only (blog posts), not on pages,
+  // retreats, recipes, testimonials, etc. — all of which are also served here.
+  const html = applySnapshotTransforms(ci.frozen_html, `/${joined}`);
+  const body = row?.post_type === "post" ? injectReactionWidget(html) : html;
+
+  return new Response(body, {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
