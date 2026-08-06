@@ -36,6 +36,7 @@ import UiFooterLegalEditor from "./editors/UiFooterLegalEditor";
 import FeaturedRetreatsEditor from "./editors/FeaturedRetreatsEditor";
 import FeaturedBySearchEditor from "./editors/FeaturedBySearchEditor";
 import RetreatsCalendarEditor from "./editors/RetreatsCalendarEditor";
+import ServiceMenuEditor from "./editors/ServiceMenuEditor";
 import FaqEditor from "./editors/FaqEditor";
 import SmallFormOverImageEditor from "./editors/SmallFormOverImageEditor";
 import GoogleMapTextEditor from "./editors/GoogleMapTextEditor";
@@ -430,6 +431,18 @@ export default async function EditBlock({
       )}
       {block.type_slug === "retreats_calendar" && (
         <RetreatsCalendarEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "service_menu" && (
+        <ServiceMenuEditor
           blockId={id}
           name={block.name}
           slug={block.slug}

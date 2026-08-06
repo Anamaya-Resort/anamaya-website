@@ -86,6 +86,7 @@ const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set([
   "featured_retreats",
   "featured_by_search",
   "retreats_calendar",
+  "service_menu",
   "testimonials",
 ]);
 
@@ -248,6 +249,12 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
         <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
           Featured by Search — save to see the iframe preview (page-content
           mode only fills in on a real page)
+        </div>
+      );
+    case "service_menu":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-xs italic text-anamaya-charcoal/60">
+          Service Menu — save to see the iframe preview (live from AnamayaOS)
         </div>
       );
     case "faq":

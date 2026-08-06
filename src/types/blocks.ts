@@ -1026,6 +1026,46 @@ export type RetreatsCalendarContent = LayoutWidthsContent & {
 };
 
 /**
+ * Service Menu — AnamayaOS-driven, categorized service/price menu read
+ * LIVE from the `service_catalog` table, parameterized by `domain`
+ * (e.g. "spa"). The same block later powers cookbook / excursions /
+ * biohacking by pointing it at a different domain. Reproduces the
+ * "Centered Ceremony" design from the /spa-massage-costa-rica page:
+ * per-category ornate divider (alternating red/green), a category title
+ * bookended by the sideways flower, then treatment rows (name +
+ * description left, right-aligned tiered prices).
+ *
+ * The block holds DISPLAY settings only — never prices. Which services
+ * show, their categories, names, durations and prices all come from AO
+ * (service_catalog.domain = domain, is_active = true), grouped by the
+ * shared `spa_categories` table for labels + ordering. To change the
+ * menu, an admin edits AnamayaOS — there is no per-instance service data.
+ *
+ * Degrades silently to a small empty state when AO env vars are missing
+ * or the query fails (mirrors RetreatsCalendarBlock).
+ */
+export type ServiceMenuContent = LayoutWidthsContent & {
+  /** AnamayaOS service_catalog domain to read. Default "spa". */
+  domain?: string;
+  /** Optional overall section heading above the menu. Default "". */
+  heading?: string;
+  /** Show the ornate red/green divider above each category. Default true. */
+  show_dividers?: boolean;
+  /** Bookend each category title with the sideways flower. Default true. */
+  show_flower_titles?: boolean;
+  /** Optional "Book" pill under the menu — only shown when both the label
+   *  and the href are set. Off by default. */
+  book_label?: string;
+  book_href?: string;
+  bg_color?: string;           // brand token or hex; auto = transparent
+  text_color?: string;         // brand token or hex; auto = charcoal
+  heading_color?: string;      // brand token or hex; auto = olive-dark
+  price_color?: string;        // brand token or hex; auto = olive-dark
+  container_width_px?: number; // max-width of the centered menu; default 820
+  padding_y_px?: number;       // section vertical padding; default 64
+};
+
+/**
  * Featured by Search — AI-recommended retreats. Same card design as
  * FeaturedRetreatsContent, but instead of the is_featured flag it ranks
  * upcoming retreats by semantic relevance to a context.
@@ -1185,6 +1225,7 @@ export type BlockTypeSlug =
   | "featured_retreats"
   | "featured_by_search"
   | "retreats_calendar"
+  | "service_menu"
   | "small_form_over_image"
   | "google_map_with_text"
   | "testimonials"
