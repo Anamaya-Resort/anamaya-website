@@ -41,18 +41,20 @@ export async function POST(req: Request) {
   const path = canonicalizeSourcePath(rawPath);
   const sb = supabaseServer();
 
-  if (level === 0) {
-    await sb
-      .from("article_reactions")
-      .delete()
-      .eq("url_path", path)
-      .eq("visitor_id", visitorId);
-  } else {
-    await sb.from("article_reactions").upsert(
-      { url_path: path, visitor_id: visitorId, level },
-      { onConflict: "url_path,visitor_id" },
-    );
-  }
+  const { error } =
+    level === 0
+      ? await sb
+          .from("article_reactions")
+          .delete()
+          .eq("url_path", path)
+          .eq("visitor_id", visitorId)
+      : await sb.from("article_reactions").upsert(
+          { url_path: path, visitor_id: visitorId, level },
+          { onConflict: "url_path,visitor_id" },
+        );
 
+  if (error) {
+    return NextResponse.json({ error: "write failed" }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }

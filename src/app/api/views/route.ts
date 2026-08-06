@@ -42,8 +42,12 @@ export async function POST(req: Request) {
   }
 
   const path = canonicalizeSourcePath(rawPath);
-  const fwd = req.headers.get("x-forwarded-for") ?? "";
-  const ip = fwd.split(",")[0]!.trim() || "unknown";
+  // Prefer x-real-ip (set by Vercel's edge to the true client IP — not
+  // client-spoofable). Fall back to the first x-forwarded-for hop.
+  const ip =
+    req.headers.get("x-real-ip")?.trim() ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown";
   const salt = process.env.SESSION_SECRET ?? "anamaya-view-salt";
   const ipHash = createHash("sha256").update(`${salt}|${ip}`).digest("hex");
 
