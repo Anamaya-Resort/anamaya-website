@@ -48,6 +48,16 @@ function normalize(content: HeroContent | null | undefined): HeroContent {
     seo_duration_seconds: content?.seo_duration_seconds ?? 0,
     top: { ...defaultBand(), ...(content?.top ?? {}) },
     bottom: { ...defaultBand(), ...(content?.bottom ?? {}) },
+    caption: {
+      enabled: content?.caption?.enabled ?? false,
+      kicker: content?.caption?.kicker ?? "",
+      title: content?.caption?.title ?? "",
+      subtitle: content?.caption?.subtitle ?? "",
+      button_label: content?.caption?.button_label ?? "",
+      button_href: content?.caption?.button_href ?? "",
+      align: content?.caption?.align ?? "left",
+      text_color: content?.caption?.text_color ?? "",
+    },
   };
 }
 
@@ -94,6 +104,21 @@ export default function HeroEditor({
   function patchBand(which: "top" | "bottom", update: Partial<HeroBandContent>) {
     setDraft((d) => ({ ...d, [which]: { ...d[which], ...update } }));
     setPreview((p) => ({ ...p, [which]: { ...p[which], ...update } }));
+  }
+  type HeroCaption = NonNullable<HeroContent["caption"]>;
+  function patchCaption(update: Partial<HeroCaption>) {
+    setDraft((d) => ({ ...d, caption: { ...d.caption, ...update } }));
+    setPreview((p) => ({ ...p, caption: { ...p.caption, ...update } }));
+  }
+  function captionText(key: keyof HeroCaption) {
+    return {
+      value: (draft.caption?.[key] as string | undefined) ?? "",
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const v = e.target.value;
+        setDraft((d) => ({ ...d, caption: { ...d.caption, [key]: v } }));
+      },
+      onBlur: commit,
+    };
   }
   function textBandProps(
     which: "top" | "bottom",
@@ -481,6 +506,101 @@ export default function HeroEditor({
           textProps={(key) => textBandProps("bottom", key)}
           brandTokens={brandTokens}
         />
+
+        {/* ─── Caption overlay (cover mode) ─────────────────────── */}
+        <section className="rounded-md border border-zinc-200 p-4">
+          <header className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                Caption overlay
+              </h3>
+              <p className="mt-0.5 text-[11px] text-anamaya-charcoal/50">
+                Text drawn over the image (Cover mode). Off by default.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-anamaya-charcoal/70">
+              <input
+                type="checkbox"
+                checked={!!draft.caption?.enabled}
+                onChange={(e) => patchCaption({ enabled: e.target.checked })}
+              />
+              Enabled
+            </label>
+          </header>
+
+          {draft.caption?.enabled && (
+            <div className="space-y-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                  Kicker (small label above title)
+                </span>
+                <input className={inputCls} placeholder="e.g. WELLNESS & RENEWAL" {...captionText("kicker")} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                  Title
+                </span>
+                <input className={inputCls} placeholder="e.g. The Spa" {...captionText("title")} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                  Subtitle
+                </span>
+                <textarea rows={2} className={inputCls} placeholder="Short intro sentence." {...captionText("subtitle")} />
+              </label>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                    Button label
+                  </span>
+                  <input className={inputCls} placeholder="e.g. Book on WhatsApp" {...captionText("button_label")} />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                    Button link (URL)
+                  </span>
+                  <input className={inputCls} placeholder="https://…  (leave blank = no button)" {...captionText("button_href")} />
+                </label>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-4">
+                <div>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                    Alignment
+                  </span>
+                  <div className="inline-flex rounded-md border border-zinc-300 bg-white p-0.5 text-[11px] font-semibold uppercase tracking-wider">
+                    {(["left", "center"] as const).map((a) => (
+                      <button
+                        key={a}
+                        type="button"
+                        onClick={() => patchCaption({ align: a })}
+                        className={`rounded-sm px-3 py-1 transition-colors ${
+                          (draft.caption?.align ?? "left") === a
+                            ? "bg-anamaya-charcoal text-white"
+                            : "text-anamaya-charcoal/60 hover:text-anamaya-charcoal"
+                        }`}
+                      >
+                        {a === "left" ? "Bottom-left" : "Center"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-[240px]">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70">
+                    Text color
+                  </span>
+                  <BrandColorSelect
+                    value={draft.caption?.text_color}
+                    onChange={(v) => patchCaption({ text_color: v })}
+                    brandTokens={brandTokens}
+                    allowAuto
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
 
         <div className="flex justify-end">
           <SaveButton saving={saving} />

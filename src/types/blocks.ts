@@ -69,6 +69,23 @@ export type HeroContent = {
   seo_upload_date?: string;
   /** Runtime in seconds; emitted as ISO-8601 duration (PT…S). */
   seo_duration_seconds?: number;
+  /**
+   * Optional caption drawn OVER the cover image (fit="cover" only). Purely
+   * additive and opt-in: when `enabled` is false (or unset), or no text
+   * fields are filled, nothing extra renders — existing heroes are
+   * untouched. Sits above the darkening overlay for legibility.
+   */
+  caption?: {
+    enabled?: boolean;
+    kicker?: string;
+    title?: string;
+    subtitle?: string;
+    button_label?: string;
+    button_href?: string;
+    align?: "left" | "center";
+    /** Brand-token key or hex. Default white. */
+    text_color?: string;
+  };
 };
 
 export type CtaBannerContent = LayoutWidthsContent & {

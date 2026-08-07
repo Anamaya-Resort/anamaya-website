@@ -271,6 +271,8 @@ function CoverStage({ content }: { content: HeroContent }) {
         />
       )}
 
+      <HeroCaption caption={content.caption} />
+
       <style jsx>{`
         @keyframes heroFadeIn {
           from { opacity: 0; }
@@ -278,6 +280,74 @@ function CoverStage({ content }: { content: HeroContent }) {
         }
       `}</style>
     </section>
+  );
+}
+
+/**
+ * Optional overlay caption for cover-mode heroes. Renders ONLY when the
+ * editor has enabled it AND filled at least one text/button field, so
+ * existing (caption-less) heroes emit nothing new. Sits above the
+ * darkening scrim; positioned bottom-left ("left") or centred ("center").
+ */
+function HeroCaption({ caption }: { caption?: HeroContent["caption"] }) {
+  if (!caption?.enabled) return null;
+  const { kicker, title, subtitle, button_label, button_href } = caption;
+  const hasContent =
+    !!(kicker || title || subtitle || (button_label && button_label.trim()));
+  if (!hasContent) return null;
+
+  const align = caption.align ?? "left";
+  const color = resolveBrandColor(caption.text_color) || "#ffffff";
+  const isLeft = align === "left";
+
+  return (
+    <div
+      className={`pointer-events-none absolute inset-0 z-[2] flex flex-col justify-end px-6 py-10 sm:px-10 sm:py-14 md:px-16 md:py-20 ${
+        isLeft ? "items-start text-left" : "items-center text-center"
+      }`}
+    >
+      <div
+        className="flex w-full max-w-[640px] flex-col gap-4"
+        style={{ color, alignItems: isLeft ? "flex-start" : "center" }}
+      >
+        {kicker && (
+          <span className="font-heading text-[12px] font-semibold uppercase tracking-[0.28em] opacity-80 sm:text-[13px]">
+            {kicker}
+          </span>
+        )}
+        {title && (
+          <h2
+            className="font-heading font-semibold uppercase"
+            style={{
+              fontSize: "clamp(48px, 8vw, 110px)",
+              lineHeight: 0.9,
+              textShadow: "0 2px 24px rgba(0,0,0,0.45)",
+            }}
+          >
+            {title}
+          </h2>
+        )}
+        {subtitle && (
+          <p
+            className="font-sans text-[18px] leading-relaxed"
+            style={{ maxWidth: 560, opacity: 0.9 }}
+          >
+            {subtitle}
+          </p>
+        )}
+        {button_label && button_label.trim() && button_href && button_href.trim() && (
+          <a
+            href={button_href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pointer-events-auto mt-2 inline-flex items-center rounded-full px-7 py-3 text-[13px] font-semibold uppercase tracking-[0.16em] text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "var(--color-anamaya-green)" }}
+          >
+            {button_label}
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
 
