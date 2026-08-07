@@ -97,15 +97,45 @@ function buildResortNode(origin: string, prop: Prop, resortId: string): JsonLdNo
   const description = prop.description || prop.tagline;
   if (description) node.description = description;
   if (Object.keys(address).length > 1) node.address = address;
-  if (typeof prop.latitude === "number" && typeof prop.longitude === "number") {
-    node.geo = {
-      "@type": "GeoCoordinates",
-      latitude: prop.latitude,
-      longitude: prop.longitude,
-    };
+  // Coerce numerics — PostgREST can return numeric/int columns as strings.
+  const num = (v: unknown): number | null => {
+    if (v == null) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  const lat = num(prop.latitude);
+  const lng = num(prop.longitude);
+  if (lat != null && lng != null) {
+    node.geo = { "@type": "GeoCoordinates", latitude: lat, longitude: lng };
   }
   if (prop.phone) node.telephone = prop.phone;
   if (prop.email) node.email = prop.email;
+
+  // Brand/schema fields from AnamayaOS.
+  if (prop.same_as && prop.same_as.length) node.sameAs = prop.same_as;
+  const ratingValue = num(prop.rating_value);
+  const ratingCount = num(prop.rating_count);
+  if (ratingValue != null && ratingCount != null && ratingCount > 0) {
+    node.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue,
+      reviewCount: ratingCount,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
+  if (prop.amenities && prop.amenities.length) {
+    node.amenityFeature = prop.amenities.map((name) => ({
+      "@type": "LocationFeatureSpecification",
+      name,
+      value: true,
+    }));
+  }
+  if (prop.price_range) node.priceRange = prop.price_range;
+  if (prop.logo_url) {
+    node.logo = prop.logo_url;
+    node.image = prop.logo_url;
+  }
   return node;
 }
 

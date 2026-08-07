@@ -62,6 +62,14 @@ export type PropertyRow = {
   phone: string | null;
   email: string | null;
   website_url: string | null;
+  // schema.org fields for the public site's structured data.
+  same_as: string[];
+  rating_value: number | null;
+  rating_count: number | null;
+  rating_source: string | null;
+  amenities: string[];
+  price_range: string | null;
+  logo_url: string | null;
   sensitive_topics: string[] | null;
   disclaimers: Disclaimers | null;
   sort_order: number | null;
@@ -133,7 +141,7 @@ export const getOrganizationContext = cache(
     const { data: propRows } = await ao
       .from("org_properties")
       .select(
-        "id, org_id, slug, name, description, property_type, property_type_custom, tagline, industry, primary_offering, locale, timezone, booking_url, contact_url, address_line1, address_line2, city, state_province, country, postal_code, latitude, longitude, nearest_airport, phone, email, website_url, sensitive_topics, disclaimers, sort_order",
+        "id, org_id, slug, name, description, property_type, property_type_custom, tagline, industry, primary_offering, locale, timezone, booking_url, contact_url, address_line1, address_line2, city, state_province, country, postal_code, latitude, longitude, nearest_airport, phone, email, website_url, same_as, rating_value, rating_count, rating_source, amenities, price_range, logo_url, sensitive_topics, disclaimers, sort_order",
       )
       .eq("org_id", orgRow.id)
       .eq("is_active", true)
@@ -164,6 +172,8 @@ export const getOrganizationContext = cache(
 
     const properties: PropertyRow[] = (propRows ?? []).map((p) => ({
       ...p,
+      same_as: (p.same_as as string[] | null) ?? [],
+      amenities: (p.amenities as string[] | null) ?? [],
       sensitive_topics: (p.sensitive_topics as string[] | null) ?? null,
       disclaimers: (p.disclaimers as Disclaimers | null) ?? null,
     }));
