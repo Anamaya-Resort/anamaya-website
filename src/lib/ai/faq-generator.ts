@@ -2,20 +2,23 @@ import "server-only";
 import { buildPageContext } from "./retreat-recommender";
 import { getFaqKnowledge } from "@/lib/website-builder/settings";
 import { getAOAIContext } from "@/lib/ao-ai-context";
+import type { AOBrandGuide, AOArchetype } from "@/types/ao-ai";
 
 /**
- * FAQ drafter. Reads a page/post's own content and asks OpenAI to write a
- * short set of FAQs phrased the way a real prospective guest would ask —
- * because question-shaped, page-specific content is exactly what the AI
- * answer engines (and Google) match and quote.
+ * FAQ drafter. Asks OpenAI to write a short set of FAQs phrased the way a real
+ * prospective guest would ask — question-shaped, on-brand content is exactly
+ * what AI answer engines (and Google) match and quote.
  *
- * Grounded, not inventive: the model is told to answer ONLY from the page's
- * content and to skip anything it can't support, so it won't fabricate
- * prices, policies, or dates. Output is still a DRAFT for admin review
- * before it's approved/published.
+ * Grounded, not inventive: the model answers only from the reference material
+ * and any provided page/article content, and skips anything it can't support,
+ * so it won't fabricate prices, policies, or dates. Output is a DRAFT for admin
+ * review before it's approved/published.
  *
- * Throws on failure (no key, API error, bad JSON) — callers decide whether
- * to surface the error or skip.
+ * Two entry points share one LLM core (draftFaqsFromContent):
+ *   - generateFaqDraft(pageId): grounded in ONE page's content (per-article
+ *     panel in the page editor).
+ *   - the standalone builder assembles its own reference + content from the
+ *     sources the user ticks, then calls draftFaqsFromContent directly.
  */
 
 const MODEL = "gpt-4o-mini";
@@ -29,15 +32,15 @@ export type FaqDraft = {
 
 const SYSTEM_PROMPT = [
   "You write concise, accurate FAQs for a wellness/yoga retreat resort's website.",
-  "You are given the text of ONE page or post, plus REFERENCE material about the business (brand voice, customer avatars, general info, and an existing FAQ library).",
-  "Produce FAQs that a real prospective guest would type into Google or ask an AI assistant about THIS page's topic.",
+  "You are given REFERENCE material about the business (brand voice, customer avatars, general info, and an existing FAQ library), and optionally the text of one or more pages/articles.",
+  "Produce FAQs that a real prospective guest would type into Google or ask an AI assistant.",
   "Rules:",
-  "- Answer using the PAGE CONTENT and the REFERENCE material. Do not invent prices, dates, policies, or facts that none of them support; skip a question rather than guess.",
+  "- Answer using the REFERENCE material and any provided content. Do not invent prices, dates, policies, or facts that none of them support; skip a question rather than guess.",
   "- Prefer the wording and answers from the REFERENCE info / FAQ library when they apply — they are authoritative.",
-  "- Match the BRAND & VIBE voice, and phrase questions the way the described CUSTOMER AVATARS would ask them.",
+  "- Match the BRAND VOICE, and phrase questions the way the described CUSTOMER AVATARS would ask them.",
   "- Questions must sound like a real person ('Does the room have air conditioning?', 'How do I get there from the airport?'), not like a heading.",
   "- Answers: 1-3 sentences, warm and direct, no fluff. Do not restate the question.",
-  "- Write 6 to 9 FAQs. Mark the 3 most valuable / most-asked as featured.",
+  "- Write 6 to 9 FAQs unless the instructions say otherwise. Mark the 3 most valuable / most-asked as featured.",
   "- No duplicate or near-duplicate questions.",
 ].join("\n");
 
@@ -45,52 +48,32 @@ type ChatResponse = {
   choices?: { message?: { content?: string } }[];
 };
 
-/**
- * Draft FAQs for a page from its content. `extraPrompt` lets an admin steer
- * the run ("focus on travel logistics", "emphasise solo travellers").
- */
-export async function generateFaqDraft(
-  pageId: string,
-  opts?: { extraPrompt?: string },
-): Promise<FaqDraft[]> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
+/** Trim a reference field so the assembled prompt stays bounded. */
+export function cap(s: string, n: number): string {
+  return s.length > n ? s.slice(0, n) : s;
+}
 
-  const context = await buildPageContext(pageId);
-  if (!context || context.length < 40) {
-    throw new Error("Not enough page content to draft FAQs from");
-  }
+/** Brand voice from an AnamayOS brand guide, as prompt text. */
+export function formatAoBrand(guide: AOBrandGuide | undefined | null): string {
+  if (!guide) return "";
+  if (guide.compiled_context) return cap(guide.compiled_context, 4000);
+  return cap(
+    [
+      guide.voice_tone && `Voice/tone: ${guide.voice_tone}`,
+      guide.personality_traits?.length &&
+        `Personality: ${guide.personality_traits.join(", ")}`,
+      guide.dos_and_donts &&
+        `Do: ${(guide.dos_and_donts.dos ?? []).join("; ")}. Don't: ${(guide.dos_and_donts.donts ?? []).join("; ")}.`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    4000,
+  );
+}
 
-  // Business reference: brand voice + customer avatars pulled LIVE from
-  // AnamayOS (authoritative), plus the website-only notes from the
-  // /admin/website/faqs knowledge base. Both ground answers and keep them
-  // on-brand. Each field is capped to keep the prompt bounded. AO degrades
-  // gracefully to empty when unreachable.
-  const [knowledge, ao] = await Promise.all([
-    getFaqKnowledge(),
-    getAOAIContext(),
-  ]);
-  const cap = (s: string, n: number) => (s.length > n ? s.slice(0, n) : s);
-
-  const aoGuide = ao.guides[0];
-  const aoBrand = aoGuide?.compiled_context
-    ? cap(aoGuide.compiled_context, 4000)
-    : aoGuide
-      ? cap(
-          [
-            aoGuide.voice_tone && `Voice/tone: ${aoGuide.voice_tone}`,
-            aoGuide.personality_traits?.length &&
-              `Personality: ${aoGuide.personality_traits.join(", ")}`,
-            aoGuide.dos_and_donts &&
-              `Do: ${(aoGuide.dos_and_donts.dos ?? []).join("; ")}. Don't: ${(aoGuide.dos_and_donts.donts ?? []).join("; ")}.`,
-          ]
-            .filter(Boolean)
-            .join("\n"),
-          4000,
-        )
-      : "";
-  const aoAvatars = (ao.archetypes ?? [])
-    .filter((a) => a.is_active !== false)
+/** Customer avatars from AnamayOS archetypes, as prompt text. */
+export function formatAoAvatars(archetypes: AOArchetype[]): string {
+  return (archetypes ?? [])
     .map((a) =>
       [
         `- ${a.name}${a.description ? `: ${a.description}` : ""}`,
@@ -102,30 +85,26 @@ export async function generateFaqDraft(
         .join("\n"),
     )
     .join("\n");
+}
 
-  const referenceBlock = [
-    aoBrand && `BRAND VOICE (from AnamayOS — match this):\n${aoBrand}`,
-    aoAvatars &&
-      `CUSTOMER AVATARS (from AnamayOS — phrase questions the way these people ask):\n${cap(aoAvatars, 4000)}`,
-    knowledge.brand_vibe &&
-      `BRAND & VIBE (extra notes):\n${cap(knowledge.brand_vibe, 3000)}`,
-    knowledge.customer_avatars &&
-      `CUSTOMER AVATARS (extra notes):\n${cap(knowledge.customer_avatars, 3000)}`,
-    knowledge.info &&
-      `REFERENCE INFO (authoritative facts):\n${cap(knowledge.info, 6000)}`,
-    knowledge.faq_content &&
-      `EXISTING FAQ LIBRARY (reuse/adapt the relevant ones):\n${cap(knowledge.faq_content, 6000)}`,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+/**
+ * Shared LLM core: assemble the user message from reference + content + steer,
+ * call OpenAI, parse the JSON, and apply the featured safety net. Throws on
+ * failure (no key, API error, bad JSON) — callers decide whether to surface.
+ */
+export async function draftFaqsFromContent(opts: {
+  referenceText?: string;
+  contentText?: string;
+  extraPrompt?: string;
+}): Promise<FaqDraft[]> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
 
-  const steer = (opts?.extraPrompt ?? "").trim();
+  const steer = (opts.extraPrompt ?? "").trim();
   const userContent = [
-    steer ? `Extra instructions from the editor: ${steer}` : "",
-    referenceBlock,
-    "PAGE CONTENT:",
-    context,
-    "",
+    steer ? `INSTRUCTIONS FROM THE EDITOR:\n${steer}` : "",
+    opts.referenceText || "",
+    opts.contentText ? `PAGE / ARTICLE CONTENT:\n${opts.contentText}` : "",
     'Return JSON of the exact shape: {"faqs":[{"question":"...","answer":"...","featured":true|false}]}',
   ]
     .filter(Boolean)
@@ -180,4 +159,52 @@ export async function generateFaqDraft(
   }
 
   return cleaned;
+}
+
+/** The full brand reference (AO brand + avatars + knowledge notes), as used by
+ *  the per-article generator. */
+async function buildFullReference(): Promise<string> {
+  const [knowledge, ao] = await Promise.all([
+    getFaqKnowledge(),
+    getAOAIContext(),
+  ]);
+  const aoBrand = formatAoBrand(ao.guides[0]);
+  const aoAvatars = formatAoAvatars(
+    (ao.archetypes ?? []).filter((a) => a.is_active !== false),
+  );
+  return [
+    aoBrand && `BRAND VOICE (from AnamayOS — match this):\n${aoBrand}`,
+    aoAvatars &&
+      `CUSTOMER AVATARS (from AnamayOS — phrase questions the way these people ask):\n${cap(aoAvatars, 4000)}`,
+    knowledge.brand_vibe &&
+      `BRAND & VIBE (extra notes):\n${cap(knowledge.brand_vibe, 3000)}`,
+    knowledge.customer_avatars &&
+      `CUSTOMER AVATARS (extra notes):\n${cap(knowledge.customer_avatars, 3000)}`,
+    knowledge.info &&
+      `REFERENCE INFO (authoritative facts):\n${cap(knowledge.info, 6000)}`,
+    knowledge.faq_content &&
+      `EXISTING FAQ LIBRARY (reuse/adapt the relevant ones):\n${cap(knowledge.faq_content, 6000)}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/**
+ * Draft FAQs for a specific page/post, grounded in its own content plus the
+ * live brand reference. `extraPrompt` lets an admin steer the run.
+ */
+export async function generateFaqDraft(
+  pageId: string,
+  opts?: { extraPrompt?: string },
+): Promise<FaqDraft[]> {
+  const context = await buildPageContext(pageId);
+  if (!context || context.length < 40) {
+    throw new Error("Not enough page content to draft FAQs from");
+  }
+  const referenceText = await buildFullReference();
+  return draftFaqsFromContent({
+    referenceText,
+    contentText: context,
+    extraPrompt: opts?.extraPrompt,
+  });
 }
