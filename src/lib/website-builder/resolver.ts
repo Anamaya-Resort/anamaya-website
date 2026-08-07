@@ -74,7 +74,7 @@ export async function resolveContentPath(
   const { data: rows } = await sb
     .from("url_inventory")
     .select(
-      "id, title, url_path, post_type, cms_template_id, scraped_body_html, excerpt, date_published, date_modified, meta_title, meta_description, canonical_url, og_image_url, noindex",
+      "id, title, url_path, post_type, cms_template_id, excerpt, date_published, date_modified, meta_title, meta_description, canonical_url, og_image_url, noindex",
     )
     .eq("source_site", SOURCE_SITE)
     .eq("url_kind", "content")
@@ -94,7 +94,6 @@ export async function resolveContentPath(
   const body_html =
     content?.cms_body_html ??
     content?.content_rendered ??
-    row.scraped_body_html ??
     null;
 
   return {
