@@ -6,6 +6,7 @@ import {
   RedirectType,
 } from "next/navigation";
 import ProseHtml from "@/components/ProseHtml";
+import PageSchema from "@/components/seo/PageSchema";
 import TemplateRenderer from "@/components/templates/TemplateRenderer";
 import { resolveContentPath, bumpRedirectHit } from "@/lib/website-builder/resolver";
 import { getAllSettings } from "@/lib/website-builder/settings";
@@ -85,21 +86,34 @@ export default async function CatchAllPage({
 
   const r = resolution.row;
 
+  // Structured data for this page (one connected @graph: Resort + WebSite +
+  // WebPage + breadcrumb). Shared across both render paths below.
+  const schemaTitle = r.meta_title?.trim() || r.title || "Anamaya";
+  const schema = (
+    <PageSchema
+      pathname={`/${slug.join("/")}/`}
+      title={schemaTitle}
+      description={r.meta_description?.trim() || r.excerpt || undefined}
+      image={r.og_image_url || undefined}
+    />
+  );
+
   // When the row has a CMS template assigned, render via the template
   // pipeline (with per-page overrides). The HTML body fallback only
   // kicks in when no template is set — for migrated WP pages that
   // haven't yet been converted to the new framework.
   if (r.cms_template_id) {
     return (
-      <TemplateRenderer
-        templateId={r.cms_template_id}
-        pageId={r.id}
-      />
+      <>
+        {schema}
+        <TemplateRenderer templateId={r.cms_template_id} pageId={r.id} />
+      </>
     );
   }
 
   return (
     <article className="bg-white">
+      {schema}
       <header className="border-b border-anamaya-charcoal/10 bg-anamaya-cream px-6 py-16">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-balance text-4xl font-semibold leading-tight text-anamaya-charcoal sm:text-5xl">

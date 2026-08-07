@@ -4,6 +4,7 @@
 export const dynamic = "force-dynamic";
 
 import Shortcode from "@/components/blocks/Shortcode";
+import PageSchema from "@/components/seo/PageSchema";
 import TemplateRenderer from "@/components/templates/TemplateRenderer";
 import IntroSection from "@/components/home/IntroSection";
 import BookingSection from "@/components/home/BookingSection";
@@ -52,17 +53,22 @@ export default async function Home() {
   // Once the admin wires the homepage to a CMS template, the catch-all
   // template pipeline takes over. Until then, the static markup below
   // keeps the live site looking exactly the way it does today.
+  // Homepage structured data: WebSite + Resort + WebPage (+ no breadcrumb on
+  // home). The Resort node carries the full name/address/geo from AnamayaOS.
+  const schema = <PageSchema pathname="/" title="Anamaya" />;
+
   if (homepage?.cms_template_id) {
     return (
-      <TemplateRenderer
-        templateId={homepage.cms_template_id}
-        pageId={homepage.id}
-      />
+      <>
+        {schema}
+        <TemplateRenderer templateId={homepage.cms_template_id} pageId={homepage.id} />
+      </>
     );
   }
 
   return (
     <>
+      {schema}
       {/* [#hero_vid_1] — homepage hero. Edit at /admin/blocks. */}
       <Shortcode slug="hero_vid_1" />
 
