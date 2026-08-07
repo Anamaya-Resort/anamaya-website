@@ -5,7 +5,10 @@ import type { FaqKnowledgeSettings } from "@/lib/website-builder/settings";
 import {
   generateFaqSetAction,
   saveFaqNotesAction,
+  saveFaqSetAction,
+  applyFaqSetToPageAction,
   type BuilderResult,
+  type FaqSet,
 } from "./builder-actions";
 
 /**
@@ -41,11 +44,13 @@ export default function FaqBuilder({
   aoBrandName,
   avatars,
   articles,
+  initialSets,
 }: {
   initialNotes: FaqKnowledgeSettings;
   aoBrandName: string | null;
   avatars: AvatarOption[];
   articles: ArticleOption[];
+  initialSets: FaqSet[];
 }) {
   const [notes, setNotes] = useState<FaqKnowledgeSettings>(initialNotes);
   const [includeAoBrand, setIncludeAoBrand] = useState<boolean>(!!aoBrandName);
@@ -65,7 +70,80 @@ export default function FaqBuilder({
   const [msg, setMsg] = useState<{ kind: "error" | "ok"; text: string } | null>(
     null,
   );
+  const [sets, setSets] = useState<FaqSet[]>(initialSets);
+  const [currentSetId, setCurrentSetId] = useState<string | null>(null);
+  const [setName, setSetName] = useState("");
+  const [applyFilter, setApplyFilter] = useState("");
   const [pending, start] = useTransition();
+
+  const outItems = () =>
+    out.map((r) => ({
+      question: r.question,
+      answer: r.answer,
+      is_featured: r.is_featured,
+    }));
+
+  const applyMatches = useMemo(() => {
+    const q = applyFilter.trim().toLowerCase();
+    if (!q) return [];
+    return articles.filter((a) => a.title.toLowerCase().includes(q)).slice(0, 20);
+  }, [applyFilter, articles]);
+
+  function onSaveSet() {
+    start(async () => {
+      const res = await saveFaqSetAction({
+        id: currentSetId ?? undefined,
+        name: setName,
+        items: outItems(),
+      });
+      if (!res.ok) {
+        setMsg({ kind: "error", text: res.error });
+        return;
+      }
+      setCurrentSetId(res.set.id);
+      setSets((s) => [res.set, ...s.filter((x) => x.id !== res.set.id)]);
+      setMsg({ kind: "ok", text: `Saved as ${res.set.code}.` });
+    });
+  }
+
+  function loadSet(set: FaqSet) {
+    setOut(
+      set.items.map((i) => ({
+        key: `o${seq++}`,
+        question: i.question,
+        answer: i.answer,
+        is_featured: i.is_featured,
+      })),
+    );
+    setCurrentSetId(set.id);
+    setSetName(set.name);
+    setMsg({
+      kind: "ok",
+      text: `Loaded ${set.code}. Edit and re-save, or apply it to a page.`,
+    });
+  }
+
+  function applyToPage(a: ArticleOption) {
+    if (!out.length) {
+      setMsg({ kind: "error", text: "Nothing to apply. Generate or load a set first." });
+      return;
+    }
+    if (
+      !window.confirm(
+        `Apply these ${out.length} FAQs to "${a.title}"? This replaces that page's current FAQs and publishes them.`,
+      )
+    )
+      return;
+    start(async () => {
+      const res = await applyFaqSetToPageAction({ pageId: a.id, items: outItems() });
+      setMsg(
+        res.ok
+          ? { kind: "ok", text: `Applied to "${a.title}" and published.` }
+          : { kind: "error", text: res.error ?? "Failed to apply" },
+      );
+      if (res.ok) setApplyFilter("");
+    });
+  }
 
   const pickedIds = useMemo(() => new Set(picked.map((p) => p.id)), [picked]);
   const matches = useMemo(() => {
@@ -268,6 +346,38 @@ export default function FaqBuilder({
             )}
           </div>
         </div>
+
+        <div className={card}>
+          <div className={cardHead}>Saved sets ({sets.length})</div>
+          <div className="px-3 py-3 text-[13px]">
+            {sets.length === 0 ? (
+              <p className="text-[12px] italic text-[#50575e]">
+                None yet. Generate FAQs, then Save as set.
+              </p>
+            ) : (
+              <ul className="space-y-1">
+                {sets.map((s) => (
+                  <li key={s.id} className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate">
+                      <strong>{s.code}</strong>
+                      {s.name ? ` — ${s.name}` : ""}{" "}
+                      <span className="text-[11px] text-[#50575e]">
+                        ({s.items.length})
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => loadSet(s)}
+                      className="shrink-0 text-[11px] font-semibold text-[#2271b1] hover:underline"
+                    >
+                      load
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* RIGHT — prompt + generator + output */}
@@ -384,10 +494,55 @@ export default function FaqBuilder({
               </div>
             ))}
             {out.length > 0 && (
-              <p className="text-[12px] italic text-[#50575e]">
-                Next step (coming): save this set with a FAQ-# code to drop into
-                specific articles, and the schema follows automatically.
-              </p>
+              <div className="space-y-3 border-t border-[#dcdcde] pt-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={setName}
+                    onChange={(e) => setSetName(e.target.value)}
+                    placeholder="Set name (optional)"
+                    className={`${input} flex-1`}
+                  />
+                  <button
+                    type="button"
+                    onClick={onSaveSet}
+                    disabled={pending}
+                    className={btnGhost}
+                  >
+                    {currentSetId ? "Update set" : "Save as set"}
+                  </button>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[12px] font-semibold text-[#50575e]">
+                    Apply to a page — publishes its FAQs (and schema)
+                  </label>
+                  <input
+                    type="text"
+                    value={applyFilter}
+                    onChange={(e) => setApplyFilter(e.target.value)}
+                    placeholder="Search a page or post to apply to…"
+                    className={input}
+                  />
+                  {applyMatches.length > 0 && (
+                    <ul className="mt-1 max-h-40 overflow-auto rounded-sm border border-[#dcdcde]">
+                      {applyMatches.map((a) => (
+                        <li key={a.id}>
+                          <button
+                            type="button"
+                            onClick={() => applyToPage(a)}
+                            className="block w-full px-2 py-1 text-left hover:bg-[#f0f6fb]"
+                          >
+                            {a.title}{" "}
+                            <span className="text-[11px] text-[#50575e]">
+                              ({a.postType})
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>

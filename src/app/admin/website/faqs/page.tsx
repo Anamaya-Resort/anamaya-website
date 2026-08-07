@@ -3,6 +3,7 @@ import { getAOAIContext } from "@/lib/ao-ai-context";
 import { supabaseServerOrNull } from "@/lib/supabase-server";
 import { decodeEntities } from "@/lib/website-builder/decode";
 import PageHeader from "../_components/PageHeader";
+import type { FaqSet } from "./builder-actions";
 import FaqBuilder, { type ArticleOption, type AvatarOption } from "./FaqBuilder";
 
 /**
@@ -42,11 +43,22 @@ async function loadArticles(): Promise<ArticleOption[]> {
     }));
 }
 
+async function loadFaqSets(): Promise<FaqSet[]> {
+  const sb = supabaseServerOrNull();
+  if (!sb) return [];
+  const { data } = await sb
+    .from("faq_sets")
+    .select("id, code, name, items")
+    .order("created_at", { ascending: false });
+  return (data ?? []) as FaqSet[];
+}
+
 export default async function FaqBuilderPage() {
-  const [notes, ao, articles] = await Promise.all([
+  const [notes, ao, articles, sets] = await Promise.all([
     getFaqKnowledge(),
     getAOAIContext(),
     loadArticles(),
+    loadFaqSets(),
   ]);
 
   const avatars: AvatarOption[] = (ao.archetypes ?? [])
@@ -70,6 +82,7 @@ export default async function FaqBuilderPage() {
         aoBrandName={ao.guides[0]?.name ?? null}
         avatars={avatars}
         articles={articles}
+        initialSets={sets}
       />
     </div>
   );
