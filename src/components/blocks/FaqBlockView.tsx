@@ -87,10 +87,13 @@ export default function FaqBlockView({
         </header>
 
         <div>
-          {/* Featured: always open. */}
-          {featured.map((f) => (
-            <FaqItem key={f.id} faq={f} defaultOpen />
-          ))}
+          {/* Featured: always open. Wrapped in .faq-speakable so the block's
+              schema can mark these top answers as best for voice/AI read-aloud. */}
+          <div className="faq-speakable">
+            {featured.map((f) => (
+              <FaqItem key={f.id} faq={f} defaultOpen />
+            ))}
+          </div>
 
           {/* The rest: tucked in a collapsible panel, still in the page source
               so machines read them. */}

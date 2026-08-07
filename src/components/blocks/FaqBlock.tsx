@@ -65,6 +65,17 @@ export default async function FaqBlock({
       name: f.question,
       acceptedAnswer: { "@type": "Answer", text: f.answer },
     })),
+    // Tell voice / AI assistants which text is best read aloud: the featured
+    // (top, always-open) answers. The `.faq-speakable` selector wraps them in
+    // FaqBlockView. Only include it when there is featured content to point at.
+    ...(featuredView.length > 0
+      ? {
+          speakable: {
+            "@type": "SpeakableSpecification",
+            cssSelector: [".faq-speakable"],
+          },
+        }
+      : {}),
   };
   // Escape the JSON so a question/answer containing "</script>" (or "<", "&")
   // can't break out of the <script type="application/ld+json"> element. These
