@@ -18,7 +18,12 @@ import {
  */
 
 export type AvatarOption = { id: string; name: string; description: string | null };
-export type ArticleOption = { id: string; title: string; postType: string };
+export type ArticleOption = {
+  id: string;
+  title: string;
+  postType: string;
+  urlPath: string | null;
+};
 
 type OutRow = {
   key: string;
@@ -67,9 +72,10 @@ export default function FaqBuilder({
   const [filter, setFilter] = useState("");
   const [prompt, setPrompt] = useState("");
   const [out, setOut] = useState<OutRow[]>([]);
-  const [msg, setMsg] = useState<{ kind: "error" | "ok"; text: string } | null>(
-    null,
-  );
+  const [msg, setMsg] = useState<{
+    kind: "error" | "ok" | "warn";
+    text: string;
+  } | null>(null);
   const [sets, setSets] = useState<FaqSet[]>(initialSets);
   const [currentSetId, setCurrentSetId] = useState<string | null>(null);
   const [setName, setSetName] = useState("");
@@ -135,13 +141,21 @@ export default function FaqBuilder({
     )
       return;
     start(async () => {
-      const res = await applyFaqSetToPageAction({ pageId: a.id, items: outItems() });
+      const res = await applyFaqSetToPageAction({
+        pageId: a.id,
+        items: outItems(),
+        publicPath: a.urlPath ?? undefined,
+      });
+      if (!res.ok) {
+        setMsg({ kind: "error", text: res.error ?? "Failed to apply" });
+        return;
+      }
+      setApplyFilter("");
       setMsg(
-        res.ok
-          ? { kind: "ok", text: `Applied to "${a.title}" and published.` }
-          : { kind: "error", text: res.error ?? "Failed to apply" },
+        res.warning
+          ? { kind: "warn", text: `Applied to "${a.title}". ${res.warning}` }
+          : { kind: "ok", text: `Applied to "${a.title}" and published.` },
       );
-      if (res.ok) setApplyFilter("");
     });
   }
 
@@ -186,6 +200,7 @@ export default function FaqBuilder({
         includeAoBrand,
         avatarIds: [...avatarSel],
         manual: manualSel,
+        manualNotes: notes,
         articleIds: picked.map((p) => p.id),
       });
       apply(res);
@@ -276,9 +291,14 @@ export default function FaqBuilder({
                 </label>
                 <textarea
                   value={notes[field] ?? ""}
-                  onChange={(e) =>
-                    setNotes((n) => ({ ...n, [field]: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNotes((n) => ({ ...n, [field]: val }));
+                    // Typing content into an empty field auto-includes it, so
+                    // notes aren't silently dropped from a run.
+                    if (val.trim() && !manualSel[field])
+                      setManualSel((s) => ({ ...s, [field]: true }));
+                  }}
                   rows={3}
                   className={input}
                 />
@@ -406,7 +426,9 @@ export default function FaqBuilder({
                 className={
                   msg.kind === "error"
                     ? "rounded-sm border border-[#d63638] bg-[#fcf0f1] px-3 py-2 text-[13px] text-[#8a1f21]"
-                    : "rounded-sm border border-[#68a67d] bg-[#f0faf3] px-3 py-2 text-[13px] text-[#1e7e34]"
+                    : msg.kind === "warn"
+                      ? "rounded-sm border border-[#dba617] bg-[#fcf9e8] px-3 py-2 text-[13px] text-[#8a6d00]"
+                      : "rounded-sm border border-[#68a67d] bg-[#f0faf3] px-3 py-2 text-[13px] text-[#1e7e34]"
                 }
               >
                 {msg.text}

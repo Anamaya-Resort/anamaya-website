@@ -27,7 +27,7 @@ async function loadArticles(): Promise<ArticleOption[]> {
   if (!sb) return [];
   const { data } = await sb
     .from("url_inventory")
-    .select("id, title, post_type")
+    .select("id, title, post_type, url_path")
     .eq("url_kind", "content")
     .eq("source_site", "v2")
     .not("title", "is", null)
@@ -40,6 +40,7 @@ async function loadArticles(): Promise<ArticleOption[]> {
       id: r.id as string,
       title: decodeEntities(String(r.title)),
       postType: String(r.post_type),
+      urlPath: (r.url_path as string | null) ?? null,
     }));
 }
 
@@ -50,7 +51,26 @@ async function loadFaqSets(): Promise<FaqSet[]> {
     .from("faq_sets")
     .select("id, code, name, items")
     .order("created_at", { ascending: false });
-  return (data ?? []) as FaqSet[];
+  // items is freeform jsonb — coerce defensively so a malformed row can't crash
+  // the editor with undefined question/answer.
+  return (data ?? []).map((r) => {
+    const rawItems = Array.isArray(r.items) ? (r.items as unknown[]) : [];
+    return {
+      id: r.id as string,
+      code: r.code as string,
+      name: (r.name as string) ?? "",
+      items: rawItems
+        .map((i) => {
+          const o = (i ?? {}) as Record<string, unknown>;
+          return {
+            question: String(o.question ?? ""),
+            answer: String(o.answer ?? ""),
+            is_featured: !!o.is_featured,
+          };
+        })
+        .filter((i) => i.question && i.answer),
+    };
+  });
 }
 
 export default async function FaqBuilderPage() {
