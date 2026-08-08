@@ -90,11 +90,11 @@ export default async function FaqBuilderPage() {
       <PageHeader title="FAQs" />
 
       <p className="mb-4 max-w-3xl text-[13px] leading-relaxed text-[#50575e]">
-        Build FAQ sets here. On the left, tick the information the AI should use
-        — your AnamayOS brand voice and customer avatars, your own notes, and any
-        website articles. On the right, give it a prompt, generate, and edit the
-        result. Your notes are saved for reuse; nothing here is shown to visitors
-        until FAQs are published on a page.
+        Make FAQs for a specific article. On the right, choose the article and
+        generate — it uses that article&rsquo;s own content plus the reference
+        you tick on the left (brand voice, one or two customer avatars, your
+        notes). Edit the result, then apply it straight to that article. Nothing
+        shows to visitors until it&rsquo;s applied and the page has an FAQ block.
       </p>
 
       <FaqBuilder
