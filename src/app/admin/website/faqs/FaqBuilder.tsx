@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import type { FaqKnowledgeSettings } from "@/lib/website-builder/settings";
 import {
   generateFaqSetAction,
+  refineFaqsAction,
   saveFaqNotesAction,
   saveFaqSetAction,
   applyFaqSetToPageAction,
@@ -131,6 +132,37 @@ export default function FaqBuilder({
         articleIds: targetArticle ? [targetArticle.id] : [],
       });
       apply(res);
+    });
+  }
+
+  function onRefine() {
+    if (!out.length) {
+      setMsg({ kind: "error", text: "Generate a set first, then refine it." });
+      return;
+    }
+    const instruction = prompt.trim();
+    if (!instruction) {
+      setMsg({
+        kind: "error",
+        text: "Type your change in the prompt box, e.g. “fix #5 and #7 to include our brand name”.",
+      });
+      return;
+    }
+    start(async () => {
+      const res = await refineFaqsAction({ items: outItems(), instruction });
+      if (!res.ok) {
+        setMsg({ kind: "error", text: res.error });
+        return;
+      }
+      setOut(
+        res.faqs.map((f) => ({
+          key: `o${seq++}`,
+          question: f.question,
+          answer: f.answer,
+          is_featured: f.is_featured,
+        })),
+      );
+      setMsg({ kind: "ok", text: `Refined (${res.faqs.length} FAQs).` });
     });
   }
 
@@ -403,29 +435,47 @@ export default function FaqBuilder({
           <div className="space-y-3 px-3 py-3">
             <div>
               <label htmlFor="faq_prompt" className="mb-1 block text-[12px] font-semibold text-[#50575e]">
-                Prompt / instructions (optional)
+                Prompt / instructions
               </label>
               <textarea
                 id="faq_prompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={2}
-                placeholder="e.g. focus on travel, safety, and what's included. Keep answers to 1-2 sentences."
+                placeholder="New set: e.g. focus on travel & what's included. Refine: e.g. fix #5 and #7 to include our brand name."
                 className={input}
               />
             </div>
-            <button
-              type="button"
-              onClick={onGenerate}
-              disabled={pending || !targetArticle}
-              className={btn}
-            >
-              {pending
-                ? "Working…"
-                : targetArticle
-                  ? `Generate FAQs for this article`
-                  : "Choose an article above first"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onGenerate}
+                disabled={pending || !targetArticle}
+                className={btn}
+              >
+                {pending
+                  ? "Working…"
+                  : targetArticle
+                    ? `Generate FAQs for this article`
+                    : "Choose an article above first"}
+              </button>
+              {out.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onRefine}
+                  disabled={pending}
+                  className={btnGhost}
+                >
+                  Refine with this instruction
+                </button>
+              )}
+            </div>
+            {out.length > 0 && (
+              <p className="text-[11px] italic text-[#50575e]">
+                Generate makes a fresh set. Refine applies your instruction to the
+                current list (by number), leaving the rest unchanged.
+              </p>
+            )}
             {msg && (
               <div
                 className={
@@ -464,26 +514,31 @@ export default function FaqBuilder({
                 Nothing yet. Choose an article, tick reference on the left, and Generate.
               </p>
             )}
-            {out.map((r) => (
+            {out.map((r, idx) => (
               <div key={r.key} className="rounded-sm border border-[#dcdcde] px-3 py-2">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-[12px] font-semibold text-[#1d2327]">
-                    <input
-                      type="checkbox"
-                      checked={r.is_featured}
-                      onChange={(e) =>
-                        setOut((o) =>
-                          o.map((x) =>
-                            x.key === r.key
-                              ? { ...x, is_featured: e.target.checked }
-                              : x,
-                          ),
-                        )
-                      }
-                      className="h-4 w-4"
-                    />
-                    Featured
-                  </label>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[12px] font-semibold text-[#50575e]">
+                      #{idx + 1}
+                    </span>
+                    <label className="flex items-center gap-2 text-[12px] font-semibold text-[#1d2327]">
+                      <input
+                        type="checkbox"
+                        checked={r.is_featured}
+                        onChange={(e) =>
+                          setOut((o) =>
+                            o.map((x) =>
+                              x.key === r.key
+                                ? { ...x, is_featured: e.target.checked }
+                                : x,
+                            ),
+                          )
+                        }
+                        className="h-4 w-4"
+                      />
+                      Featured
+                    </label>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setOut((o) => o.filter((x) => x.key !== r.key))}

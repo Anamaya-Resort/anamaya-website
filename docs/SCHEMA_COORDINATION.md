@@ -41,13 +41,13 @@ If you need a type not listed, add a row here and claim it before building.
   `Question`/`Answer` nodes. Two emitters = duplicate FAQ nodes = a schema error.
 - **Shape:** a single `FAQPage` node with `mainEntity: [{ @type: Question, name,
   acceptedAnswer: { @type: Answer, text } }, ...]`, plus a `speakable`
-  (`SpeakableSpecification`, `cssSelector: [".faq-speakable"]`) pointing at the
-  featured answers for voice/AI read-aloud.
+  (`SpeakableSpecification`, `cssSelector: [".faq-speakable"]`) pointing at ALL
+  the answers for voice/AI read-aloud.
 - **When it renders:** only when the page (a) has a template that includes a
   `faq` block AND (b) has **approved** FAQs in `page_faqs` (gated by
   `page_faq_meta.approved`). Otherwise the block renders nothing and emits no
   schema. Server-rendered, so it's in the crawled HTML.
-- **`.faq-speakable`:** the CSS class wrapping the featured answers
+- **`.faq-speakable`:** the CSS class wrapping the whole FAQ list
   (`FaqBlockView.tsx`). The schema agent should NOT target this selector with
   its own `speakable`.
 

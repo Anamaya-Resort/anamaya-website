@@ -65,10 +65,11 @@ export default async function FaqBlock({
       name: f.question,
       acceptedAnswer: { "@type": "Answer", text: f.answer },
     })),
-    // Tell voice / AI assistants which text is best read aloud: the featured
-    // (top, always-open) answers. The `.faq-speakable` selector wraps them in
-    // FaqBlockView. Only include it when there is featured content to point at.
-    ...(featuredView.length > 0
+    // Tell voice / AI assistants which text is best read aloud. The
+    // `.faq-speakable` selector wraps ALL the answers in FaqBlockView, so every
+    // Q&A is a read-aloud candidate (per current best practice), not just the
+    // featured ones.
+    ...(all.length > 0
       ? {
           speakable: {
             "@type": "SpeakableSpecification",

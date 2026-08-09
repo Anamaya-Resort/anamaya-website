@@ -9,6 +9,7 @@ import { buildPageContext } from "@/lib/ai/retreat-recommender";
 import { replacePageFaqs } from "@/lib/website-builder/faqs";
 import {
   draftFaqsFromContent,
+  refineFaqDrafts,
   formatAoBrand,
   formatAoAvatars,
   cap,
@@ -112,6 +113,35 @@ export async function generateFaqSetAction(
       ok: false,
       error: e instanceof Error ? e.message : "Something went wrong",
     };
+  }
+}
+
+/** Refine the current output list with an editor instruction, e.g. "fix #5 and
+ *  #7 to include our brand name". Returns the full revised list. */
+export async function refineFaqsAction(args: {
+  items: FaqSetItem[];
+  instruction: string;
+}): Promise<BuilderResult> {
+  const items = cleanItems(args.items);
+  if (!items.length) {
+    return { ok: false, error: "Generate a set first, then refine it." };
+  }
+  const instruction = (args.instruction ?? "").trim();
+  if (!instruction) {
+    return {
+      ok: false,
+      error:
+        "Type your change in the prompt box (e.g. 'fix #5 and #7 to include our brand name').",
+    };
+  }
+  try {
+    const faqs = await refineFaqDrafts({ items, instruction });
+    if (!faqs.length) {
+      return { ok: false, error: "The AI returned nothing. Try rephrasing." };
+    }
+    return { ok: true, faqs };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Refine failed" };
   }
 }
 

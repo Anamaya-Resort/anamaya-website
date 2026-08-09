@@ -87,28 +87,29 @@ export function formatAoAvatars(archetypes: AOArchetype[]): string {
     .join("\n");
 }
 
+const REFINE_SYSTEM_PROMPT = [
+  "You revise an existing list of website FAQs for a wellness/yoga retreat resort.",
+  "You are given the current FAQs (numbered) and an instruction from the editor.",
+  "Apply the instruction, then return the FULL list in the same order.",
+  "Rules:",
+  "- Change ONLY what the instruction asks. Leave every other FAQ exactly as-is, word for word, including its featured flag.",
+  "- Keep answers accurate — do not invent prices, dates, or policies. Keep the warm, direct brand voice.",
+  "- Do not add or remove FAQs unless the instruction says to.",
+].join("\n");
+
 /**
- * Shared LLM core: assemble the user message from reference + content + steer,
- * call OpenAI, parse the JSON, and apply the featured safety net. Throws on
- * failure (no key, API error, bad JSON) — callers decide whether to surface.
+ * Shared LLM call: send a system prompt + user message, parse the JSON FAQ
+ * list. `featuredSafetyNet` forces the first three featured when the model
+ * marks none/too many — used for fresh generation, NOT refine (which must
+ * preserve the editor's featured flags). Throws on failure.
  */
-export async function draftFaqsFromContent(opts: {
-  referenceText?: string;
-  contentText?: string;
-  extraPrompt?: string;
-}): Promise<FaqDraft[]> {
+async function runFaqCompletion(
+  systemPrompt: string,
+  userContent: string,
+  featuredSafetyNet = true,
+): Promise<FaqDraft[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
-
-  const steer = (opts.extraPrompt ?? "").trim();
-  const userContent = [
-    steer ? `INSTRUCTIONS FROM THE EDITOR:\n${steer}` : "",
-    opts.referenceText || "",
-    opts.contentText ? `PAGE / ARTICLE CONTENT:\n${opts.contentText}` : "",
-    'Return JSON of the exact shape: {"faqs":[{"question":"...","answer":"...","featured":true|false}]}',
-  ]
-    .filter(Boolean)
-    .join("\n\n");
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -121,7 +122,7 @@ export async function draftFaqsFromContent(opts: {
       temperature: 0.4,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
     }),
@@ -139,7 +140,7 @@ export async function draftFaqsFromContent(opts: {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new Error("FAQ draft was not valid JSON");
+    throw new Error("FAQ response was not valid JSON");
   }
 
   const faqs = Array.isArray(parsed.faqs) ? parsed.faqs : [];
@@ -151,14 +152,59 @@ export async function draftFaqsFromContent(opts: {
     }))
     .filter((f) => f.question && f.answer);
 
-  // Safety net: if the model marked none (or too many) as featured, keep the
-  // first three as the always-visible set.
-  const featuredCount = cleaned.filter((f) => f.is_featured).length;
-  if (cleaned.length && (featuredCount === 0 || featuredCount > 5)) {
-    cleaned.forEach((f, i) => (f.is_featured = i < 3));
+  if (featuredSafetyNet) {
+    const featuredCount = cleaned.filter((f) => f.is_featured).length;
+    if (cleaned.length && (featuredCount === 0 || featuredCount > 5)) {
+      cleaned.forEach((f, i) => (f.is_featured = i < 3));
+    }
   }
-
   return cleaned;
+}
+
+/**
+ * Fresh generation: assemble the user message from reference + content + steer.
+ */
+export async function draftFaqsFromContent(opts: {
+  referenceText?: string;
+  contentText?: string;
+  extraPrompt?: string;
+}): Promise<FaqDraft[]> {
+  const steer = (opts.extraPrompt ?? "").trim();
+  const userContent = [
+    steer ? `INSTRUCTIONS FROM THE EDITOR:\n${steer}` : "",
+    opts.referenceText || "",
+    opts.contentText ? `PAGE / ARTICLE CONTENT:\n${opts.contentText}` : "",
+    'Return JSON of the exact shape: {"faqs":[{"question":"...","answer":"...","featured":true|false}]}',
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  return runFaqCompletion(SYSTEM_PROMPT, userContent, true);
+}
+
+/**
+ * Refine an existing list: apply the editor's instruction (e.g. "fix #5 and #7
+ * to include our brand name") and return the FULL revised list, leaving
+ * untouched FAQs word-for-word. Featured flags are preserved.
+ */
+export async function refineFaqDrafts(opts: {
+  items: { question: string; answer: string; is_featured: boolean }[];
+  instruction: string;
+}): Promise<FaqDraft[]> {
+  const instruction = (opts.instruction ?? "").trim();
+  if (!instruction) throw new Error("Add an instruction to refine with");
+  const current = opts.items
+    .map(
+      (f, i) =>
+        `${i + 1}. [${f.is_featured ? "featured" : "not featured"}]\n   Q: ${f.question}\n   A: ${f.answer}`,
+    )
+    .join("\n");
+  const userContent = [
+    "CURRENT FAQS (numbered):",
+    current,
+    `INSTRUCTION: ${instruction}`,
+    'Return the FULL revised list in order as JSON {"faqs":[{"question":"...","answer":"...","featured":true|false}]}.',
+  ].join("\n\n");
+  return runFaqCompletion(REFINE_SYSTEM_PROMPT, userContent, false);
 }
 
 /** The full brand reference (AO brand + avatars + knowledge notes), as used by
