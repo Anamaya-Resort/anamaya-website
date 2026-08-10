@@ -192,7 +192,7 @@ function CalendarRow({
               {dates}
             </div>
           )}
-          <a href={pageHref} className="block">
+          <a href={linkHref} className="block">
             <h4
               className="font-heading text-xl font-semibold leading-tight hover:opacity-80 sm:text-2xl"
               style={{ color: headingColor }}
