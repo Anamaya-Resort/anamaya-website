@@ -77,27 +77,41 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-/** Lowest finite positive price we can find on a retreat, or null. */
+/**
+ * Lowest finite positive price on a retreat, or null. AnamayOS stores
+ * pricing_options as an OBJECT keyed by lodging id ({ "5": { price, ... } }),
+ * one per room, so we min across the room prices.
+ */
 function priceFromRow(row: Record<string, unknown>): number | null {
   const curve = Number(row.curve_start_price);
   if (Number.isFinite(curve) && curve > 0) return curve;
   const opts = row.pricing_options;
-  if (Array.isArray(opts)) {
-    const nums = opts
-      .map((o) => {
-        const r = o as Record<string, unknown>;
-        return Number(r.price ?? r.amount ?? r.rate ?? r.base_price);
-      })
-      .filter((n) => Number.isFinite(n) && n > 0);
-    if (nums.length) return Math.min(...nums);
-  }
-  return null;
+  const list =
+    Array.isArray(opts) ? opts : opts && typeof opts === "object" ? Object.values(opts) : [];
+  const nums = list
+    .map((o) => {
+      const r = (o ?? {}) as Record<string, unknown>;
+      return Number(r.price ?? r.amount ?? r.rate ?? r.base_price);
+    })
+    .filter((n) => Number.isFinite(n) && n > 0);
+  return nums.length ? Math.min(...nums) : null;
 }
 
+/**
+ * Best image URL. Prefer the AO-set feature_image_url; else read the `images`
+ * bag, which AO stores as an OBJECT keyed by size ({ large: { url } }, ...).
+ */
 function pickImage(row: Record<string, unknown>): string | null {
   const feat = row.feature_image_url;
   if (typeof feat === "string" && feat) return feat;
   const imgs = row.images;
+  if (imgs && typeof imgs === "object" && !Array.isArray(imgs)) {
+    const bag = imgs as Record<string, unknown>;
+    for (const k of ["large", "full", "medium", "thumbnail"]) {
+      const size = bag[k] as Record<string, unknown> | undefined;
+      if (size && typeof size.url === "string" && size.url) return size.url;
+    }
+  }
   if (Array.isArray(imgs) && imgs.length) {
     const first = imgs[0];
     if (typeof first === "string") return first;
