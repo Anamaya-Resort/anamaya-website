@@ -6,7 +6,6 @@ import {
   pickImage,
   stripHtml,
   formatDateRange,
-  retreatHref,
   clamp,
   type RetreatCardData,
 } from "./RetreatCard";
@@ -42,8 +41,8 @@ export default async function RetreatsCalendarBlock({
   const c = content ?? {};
   const heading = c.heading ?? "Upcoming Retreats";
   const subheading = c.subheading ?? "";
-  const bookLabel = c.book_label ?? "Book Now";
-  const urlPattern = c.url_pattern || "/retreats/{slug}/";
+  const bookLabel = c.book_label ?? "Book This Retreat";
+  const urlPattern = c.url_pattern || "/retreat/{slug}/";
   const maxCount = clamp(c.max_count ?? 100, 1, 200);
   const groupByMonth = c.group_by_month ?? true;
   const containerWidth = c.container_width_px ?? 1100;
@@ -150,8 +149,12 @@ function CalendarRow({
   const dates = formatDateRange(r.start_date, r.end_date);
   const tagline = decodeEntities(stripHtml(r.tagline ?? r.excerpt ?? r.description ?? ""));
   const image = pickImage(r);
-  const pageHref = retreatHref(r, urlPattern);
+  // The retreat's own detail page — only exists when AO has a website_slug.
+  // We do NOT fall back to the booking link here, so "More Info" always
+  // means "see the details", never "go to Retreat Guru".
+  const detailHref = r.website_slug ? urlPattern.replace(/\{slug\}/g, r.website_slug) : null;
   const bookHref = r.registration_link || r.external_link || null;
+  const linkHref = detailHref ?? bookHref ?? "#";
 
   return (
     <li>
@@ -160,7 +163,7 @@ function CalendarRow({
         style={cardStyle}
       >
         <a
-          href={pageHref}
+          href={linkHref}
           className="group relative block h-44 overflow-hidden bg-anamaya-charcoal/5 sm:h-full"
           aria-label={title}
         >
@@ -201,7 +204,15 @@ function CalendarRow({
             <p className="line-clamp-2 text-[15px] leading-relaxed opacity-90">{tagline}</p>
           )}
           <div className="mt-auto flex flex-wrap items-center gap-3 pt-2">
-            {bookHref ? (
+            {detailHref && (
+              <a
+                href={detailHref}
+                className="inline-block rounded-full border border-anamaya-green px-5 py-2 text-xs font-semibold uppercase tracking-wider text-anamaya-green transition-colors hover:bg-anamaya-green hover:text-white"
+              >
+                More Info
+              </a>
+            )}
+            {bookHref && (
               <a
                 href={bookHref}
                 target="_blank"
@@ -209,13 +220,6 @@ function CalendarRow({
                 className="inline-block rounded-full bg-anamaya-green px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark"
               >
                 {r.is_sold_out ? "Join Waitlist" : bookLabel}
-              </a>
-            ) : (
-              <a
-                href={pageHref}
-                className="inline-block rounded-full border border-anamaya-green px-5 py-2 text-xs font-semibold uppercase tracking-wider text-anamaya-green transition-colors hover:bg-anamaya-green hover:text-white"
-              >
-                View Details
               </a>
             )}
           </div>

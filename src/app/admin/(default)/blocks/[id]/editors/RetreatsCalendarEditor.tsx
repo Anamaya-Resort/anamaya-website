@@ -20,8 +20,8 @@ function normalize(c: RetreatsCalendarContent | null | undefined): RetreatsCalen
     ...normalizeLayoutWidths(c, 1100),
     heading: c?.heading ?? "Upcoming Retreats",
     subheading: c?.subheading ?? "",
-    book_label: c?.book_label ?? "Book Now",
-    url_pattern: c?.url_pattern ?? "/retreats/{slug}/",
+    book_label: c?.book_label ?? "Book This Retreat",
+    url_pattern: c?.url_pattern ?? "/retreat/{slug}/",
     max_count: c?.max_count ?? 100,
     group_by_month: c?.group_by_month ?? true,
     bg_color: c?.bg_color ?? "",
@@ -98,7 +98,7 @@ function Form({ state }: { state: BlockEditorState<RetreatsCalendarContent> }) {
               className={inputCls}
               value={draft.book_label ?? ""}
               onChange={(e) => patch({ book_label: e.target.value })}
-              placeholder="Book Now"
+              placeholder="Book This Retreat"
             />
           </label>
           <label className="block">
@@ -128,7 +128,7 @@ function Form({ state }: { state: BlockEditorState<RetreatsCalendarContent> }) {
               className={inputCls}
               value={draft.url_pattern ?? ""}
               onChange={(e) => patch({ url_pattern: e.target.value })}
-              placeholder="/retreats/{slug}/"
+              placeholder="/retreat/{slug}/"
             />
             <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
               <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[11px]">
