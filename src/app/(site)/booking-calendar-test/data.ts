@@ -1,5 +1,6 @@
 import "server-only";
 import { aoSupabaseAdminOrNull } from "@/lib/ao-supabase";
+import { decodeEntities } from "@/lib/website-builder/decode";
 
 /**
  * Data + week-grid model for the booking calendar.
@@ -109,7 +110,8 @@ function pickImage(row: Record<string, unknown>): string | null {
 }
 
 function stripHtml(s: string | null | undefined): string {
-  return (s ?? "").replace(/<[^>]+>/g, " ").replace(/&#?\w+;/g, " ").replace(/\s+/g, " ").trim();
+  // Strip tags, then DECODE entities (not drop them) so "&amp;" becomes "&".
+  return decodeEntities((s ?? "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 }
 
 /** Split "Retreat Name - Teacher" on a spaced dash; word-hyphens are safe. */
@@ -141,7 +143,7 @@ export async function getBookingCalendarData(): Promise<CalendarData> {
     .filter((r) => r.start_date && r.end_date)
     .map((r) => {
       const row = r as Record<string, unknown>;
-      const { title, teacher } = splitTeacher(String(row.name ?? "Untitled retreat"));
+      const { title, teacher } = splitTeacher(decodeEntities(String(row.name ?? "Untitled retreat")));
       const spaces = Number(row.available_spaces);
       return {
         id: String(row.id),
