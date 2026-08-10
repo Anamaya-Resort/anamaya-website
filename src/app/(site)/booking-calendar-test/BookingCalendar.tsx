@@ -93,10 +93,10 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-      <div className="flex gap-8">
+    <div className="mx-auto w-[90%] max-w-[1600px] px-2 sm:px-4">
+      <div className="flex gap-10">
         {/* LEFT — tower (desktop only). Sticky so it stays as the grid scrolls. */}
-        <aside className="hidden md:block md:w-[300px] lg:w-[340px] shrink-0">
+        <aside className="hidden md:block md:w-[380px] lg:w-[460px] shrink-0">
           <div className="sticky top-24">
             <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-anamaya-mint/50 bg-white/60 shadow-sm">
               {selected ? (
@@ -112,7 +112,7 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
         <div
           ref={scrollRef}
           onScroll={onScroll}
-          className="relative h-[78vh] flex-1 overflow-y-auto pr-1"
+          className="relative h-[80vh] flex-1 overflow-y-auto pr-1"
           style={{
             maskImage:
               "linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)",
@@ -120,7 +120,7 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
               "linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)",
           }}
         >
-          <div className="flex flex-col gap-2 py-[32vh]">
+          <div className="flex flex-col gap-3 py-[32vh]">
             {weeks.map((w) => (
               <WeekRow
                 key={w.key}
@@ -160,11 +160,11 @@ function TowerContext({ monthLabel }: { monthLabel: string }) {
       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-anamaya-green">
         Upcoming Retreats
       </p>
-      <h2 className="mt-6 font-heading text-5xl font-semibold leading-none text-anamaya-charcoal">
+      <h2 className="mt-6 font-heading text-6xl font-semibold leading-none text-anamaya-charcoal">
         {month}
       </h2>
-      <p className="mt-2 font-heading text-2xl text-anamaya-charcoal/50">{year}</p>
-      <p className="mt-8 max-w-[20ch] text-sm italic text-anamaya-charcoal/60">
+      <p className="mt-3 font-heading text-3xl text-anamaya-charcoal/50">{year}</p>
+      <p className="mt-8 max-w-[22ch] text-base italic text-anamaya-charcoal/60">
         Scroll the calendar, then tap any retreat to see its details here.
       </p>
     </div>
@@ -191,40 +191,40 @@ function TowerDetail({
           <img
             src={r.image}
             alt={r.title}
-            className={`w-full object-cover ${embedded ? "h-40 rounded-2xl" : "h-44"}`}
+            className={`w-full object-cover ${embedded ? "h-44 rounded-2xl" : "h-56"}`}
           />
         ) : (
-          <div className={`w-full bg-anamaya-mint/30 ${embedded ? "h-24 rounded-2xl" : "h-32"}`} />
+          <div className={`w-full bg-anamaya-mint/30 ${embedded ? "h-28 rounded-2xl" : "h-40"}`} />
         )}
         {!embedded && (
           <button
             aria-label="Close"
             onClick={onClose}
-            className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/85 text-anamaya-charcoal shadow hover:bg-white"
+            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-lg text-anamaya-charcoal shadow hover:bg-white"
           >
             ×
           </button>
         )}
       </div>
 
-      <div className={`flex flex-1 flex-col ${embedded ? "pt-4" : "p-4"}`}>
+      <div className={`flex flex-1 flex-col ${embedded ? "pt-4" : "p-5"}`}>
         <p className="text-xs font-semibold uppercase tracking-wider text-anamaya-green">
           {fmtRange(r.startISO, r.endISO)}
         </p>
-        <h3 className="mt-1 font-heading text-xl font-semibold leading-tight text-anamaya-charcoal">
+        <h3 className="mt-1 font-heading text-2xl font-semibold leading-tight text-anamaya-charcoal">
           {r.title}
         </h3>
-        {r.teacher && <p className="mt-0.5 text-sm text-anamaya-charcoal/70">with {r.teacher}</p>}
+        {r.teacher && <p className="mt-0.5 text-base text-anamaya-charcoal/70">with {r.teacher}</p>}
 
         {(spots || price) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {price && (
-              <span className="rounded-full bg-anamaya-green/10 px-3 py-1 text-xs font-semibold text-anamaya-green">
+              <span className="rounded-full bg-anamaya-green/10 px-3 py-1 text-sm font-semibold text-anamaya-green">
                 {price}
               </span>
             )}
             {spots && (
-              <span className="rounded-full bg-anamaya-charcoal/5 px-3 py-1 text-xs font-semibold text-anamaya-charcoal/70">
+              <span className="rounded-full bg-anamaya-charcoal/5 px-3 py-1 text-sm font-semibold text-anamaya-charcoal/70">
                 {spots}
               </span>
             )}
@@ -232,23 +232,23 @@ function TowerDetail({
         )}
 
         {r.blurb && (
-          <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-anamaya-charcoal/80">
+          <p className="mt-3 line-clamp-5 text-base leading-relaxed text-anamaya-charcoal/80">
             {r.blurb}
           </p>
         )}
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto pt-5">
           {r.bookHref ? (
             <a
               href={r.bookHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="block rounded-full bg-anamaya-green px-5 py-2.5 text-center text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark"
+              className="block rounded-full bg-anamaya-green px-5 py-3 text-center text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark"
             >
               {r.isSoldOut && r.waitlist ? "Join Waitlist" : "Book on Retreat Guru"}
             </a>
           ) : (
-            <span className="block rounded-full bg-anamaya-charcoal/10 px-5 py-2.5 text-center text-sm italic text-anamaya-charcoal/50">
+            <span className="block rounded-full bg-anamaya-charcoal/10 px-5 py-3 text-center text-sm italic text-anamaya-charcoal/50">
               Booking link coming soon
             </span>
           )}
@@ -274,8 +274,8 @@ function WeekRow({
   return (
     <div data-week-label={week.monthLabel}>
       {week.startsNewMonth && (
-        <div className="mb-1 mt-4 flex items-center gap-3 first:mt-0">
-          <span className="font-heading text-lg font-semibold tracking-wide text-anamaya-green">
+        <div className="mb-1.5 mt-6 flex items-center gap-3 first:mt-0">
+          <span className="font-heading text-2xl font-semibold tracking-wide text-anamaya-green">
             {week.monthLabel}
           </span>
           <span className="h-px flex-1 bg-anamaya-mint/50" />
@@ -283,26 +283,26 @@ function WeekRow({
       )}
 
       <div
-        className={`rounded-xl border p-2 transition-colors ${
+        className={`rounded-xl border p-3 transition-colors ${
           items.length
             ? "border-anamaya-mint/60 bg-white/50"
             : "border-transparent bg-anamaya-charcoal/[0.02]"
         }`}
       >
         {/* 8-cell date ruler (Sat .. Sat). */}
-        <div className="grid grid-cols-8 gap-1">
+        <div className="grid grid-cols-8 gap-1.5">
           {week.days.map((d, i) => {
             const isSat = i === 0 || i === 7;
             return (
               <div
                 key={d.iso}
-                className={`flex flex-col items-center rounded-md py-1 ${
+                className={`flex flex-col items-center rounded-md py-1.5 ${
                   isSat ? "bg-anamaya-mint/25" : ""
                 }`}
               >
-                <span className="text-[9px] uppercase text-anamaya-charcoal/40">{d.dayLetter}</span>
+                <span className="text-[11px] uppercase text-anamaya-charcoal/40">{d.dayLetter}</span>
                 <span
-                  className={`text-xs ${
+                  className={`text-base ${
                     items.length ? "text-anamaya-charcoal/80" : "text-anamaya-charcoal/35"
                   }`}
                 >
@@ -315,7 +315,7 @@ function WeekRow({
 
         {/* Retreat bar(s) for this week — repeated in each week they span. */}
         {items.length > 0 && (
-          <div className="mt-1.5 flex flex-col gap-1.5">
+          <div className="mt-2 flex flex-col gap-2">
             {items.map((r) => {
               const spots = spotsLabel(r);
               const price = priceLabel(r);
@@ -324,7 +324,7 @@ function WeekRow({
                 <button
                   key={r.id}
                   onClick={() => onSelect(r.id)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all ${
+                  className={`flex w-full items-center gap-4 rounded-lg px-4 py-3 text-left transition-all ${
                     active
                       ? "bg-anamaya-green text-white shadow"
                       : "bg-anamaya-cream hover:bg-anamaya-mint/30"
@@ -335,15 +335,15 @@ function WeekRow({
                     <img
                       src={r.image}
                       alt=""
-                      className="h-9 w-9 shrink-0 rounded-md object-cover"
+                      className="h-[72px] w-[108px] shrink-0 rounded-md object-cover"
                     />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold leading-tight">
+                    <span className="block truncate text-base font-semibold leading-tight">
                       {r.title}
                     </span>
                     <span
-                      className={`block truncate text-xs ${
+                      className={`block truncate text-sm ${
                         active ? "text-white/80" : "text-anamaya-charcoal/55"
                       }`}
                     >
@@ -352,7 +352,7 @@ function WeekRow({
                   </span>
                   {(price || spots) && (
                     <span
-                      className={`hidden shrink-0 text-right text-[11px] font-semibold sm:block ${
+                      className={`hidden shrink-0 text-right text-xs font-semibold sm:block ${
                         active ? "text-white" : "text-anamaya-green"
                       }`}
                     >
