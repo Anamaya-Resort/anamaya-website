@@ -25,6 +25,7 @@ export type CalRetreat = {
   image: string | null;
   blurb: string | null;
   bookHref: string | null;
+  infoHref: string | null; // on-site retreat detail page ("More Info")
   isSoldOut: boolean;
   waitlist: boolean;
   availableSpaces: number | null; // null until AO populates it
@@ -168,6 +169,11 @@ export async function getBookingCalendarData(): Promise<CalendarData> {
         image: pickImage(row),
         blurb: stripHtml((row.tagline as string) || (row.excerpt as string) || (row.description as string)),
         bookHref: (row.registration_link as string) || (row.external_link as string) || null,
+        // On-site retreat page (route is /retreat/{slug}, singular). Fall back
+        // to the external anamaya.com link when there's no website_slug.
+        infoHref: row.website_slug
+          ? `/retreat/${String(row.website_slug)}/`
+          : (row.external_link as string) || null,
         isSoldOut: row.is_sold_out === true,
         waitlist: row.waitlist_enabled === true,
         availableSpaces: Number.isFinite(spaces) ? spaces : null,

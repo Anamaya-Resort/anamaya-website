@@ -237,6 +237,15 @@ function TowerDetail({
           </p>
         )}
 
+        {r.infoHref && (
+          <a
+            href={r.infoHref}
+            className="mt-3 inline-block self-start rounded-full border border-anamaya-green px-5 py-2 text-sm font-semibold uppercase tracking-wider text-anamaya-green transition-colors hover:bg-anamaya-green hover:text-white"
+          >
+            More Info
+          </a>
+        )}
+
         <div className="mt-auto pt-5">
           {r.bookHref ? (
             <a
@@ -245,7 +254,7 @@ function TowerDetail({
               rel="noopener noreferrer"
               className="block rounded-full bg-anamaya-green px-5 py-3 text-center text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark"
             >
-              {r.isSoldOut && r.waitlist ? "Join Waitlist" : "Book on Retreat Guru"}
+              {r.isSoldOut && r.waitlist ? "Join Waitlist" : "Book Now"}
             </a>
           ) : (
             <span className="block rounded-full bg-anamaya-charcoal/10 px-5 py-3 text-center text-sm italic text-anamaya-charcoal/50">
