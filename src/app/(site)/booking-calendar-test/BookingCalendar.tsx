@@ -296,13 +296,15 @@ function WeekRow({
             return (
               <div
                 key={d.iso}
-                className={`flex flex-col items-center rounded-md py-1.5 ${
+                className={`flex flex-col items-center rounded-md py-0.5 leading-none ${
                   isSat ? "bg-anamaya-mint/25" : ""
                 }`}
               >
-                <span className="text-[11px] uppercase text-anamaya-charcoal/40">{d.dayLetter}</span>
+                <span className="text-[10px] uppercase leading-none text-anamaya-charcoal/40">
+                  {d.dayLetter}
+                </span>
                 <span
-                  className={`text-base ${
+                  className={`mt-0.5 text-sm leading-none ${
                     items.length ? "text-anamaya-charcoal/80" : "text-anamaya-charcoal/35"
                   }`}
                 >
