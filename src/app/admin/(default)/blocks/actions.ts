@@ -198,6 +198,12 @@ function emptyContentFor(typeSlug: string): unknown {
       html: "",
       padding_y_px: 32,
     };
+    case "reactions": return {
+      heading: "Enjoyed this story?",
+      modal_question: "How do you feel about this post?",
+      align: "center",
+      padding_y_px: 40,
+    };
     default:           return {};
   }
 }

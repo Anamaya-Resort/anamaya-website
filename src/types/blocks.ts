@@ -1212,6 +1212,21 @@ export type UiAgentContent = OverlayMixin & {
   property_id_scope?: string | null;
 };
 
+/**
+ * Reactions block. A self-contained affection widget for the bottom of an
+ * article/post template: a hollow terracotta heart that opens a LIKE / LOVE /
+ * MARRY modal; the reacted state shows LIKED / LOVED / TRULY LOVED with a
+ * small/medium/large heart. One vote per device. Records against the current
+ * page path (read at runtime) via /api/reactions, and pings /api/views.
+ * Holds display settings only — the counts live in article_engagement.
+ */
+export type ReactionsContent = {
+  heading?: string; // small prompt shown above the heart
+  modal_question?: string; // the question at the top of the modal
+  align?: "left" | "center" | "right";
+  padding_y_px?: number;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -1247,7 +1262,8 @@ export type BlockTypeSlug =
   | "google_map_with_text"
   | "testimonials"
   | "image_slideshow"
-  | "faq";
+  | "faq"
+  | "reactions";
 
 export type BlockRecord = {
   id: string;
