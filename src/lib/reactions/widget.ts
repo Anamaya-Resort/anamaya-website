@@ -12,14 +12,15 @@
 // (localStorage). Fires a view ping on load (client-side, so it still counts
 // even when this HTML is served from the CDN cache).
 
+// Clean, symmetric heart (Material-style), viewBox 0 0 24 24.
 const HEART_PATH =
-  "M12 21s-6.7-4.35-9.3-8.7C1 9.3 2.4 5.8 6 5.8c2 0 3.3 1.2 4 2.4.7-1.2 2-2.4 4-2.4 3.6 0 5 3.5 3.3 6.5C18.7 16.65 12 21 12 21z";
+  "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z";
 
 export const REACTION_WIDGET = `
 <div id="anamaya-react" data-state="0" role="group" aria-label="React to this post">
   <div class="ar-inner">
     <button type="button" class="ar-heart" aria-label="React to this post">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}"/></svg>
+      <svg viewBox="0 0 24 24" width="28" height="28" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="${HEART_PATH}"/></svg>
     </button>
     <span class="ar-label"></span>
   </div>
@@ -37,19 +38,21 @@ export const REACTION_WIDGET = `
 #anamaya-react{max-width:680px;margin:40px auto 8px;padding:26px 20px 4px;border-top:1px solid #e2ded1;text-align:center;font-family:"Oswald","Arial Narrow",system-ui,sans-serif;}
 #anamaya-react .ar-inner{display:inline-flex;align-items:center;gap:12px;}
 #anamaya-react .ar-heart{background:none;border:0;cursor:pointer;padding:6px;line-height:0;display:inline-flex;}
-#anamaya-react .ar-heart svg{width:26px;height:26px;transition:width .18s ease,height .18s ease;}
+/* Force square dimensions with !important + max-width:none so the host WP
+   theme's img/svg rules can't stretch or shrink the heart. */
+#anamaya-react .ar-heart svg{width:28px!important;height:28px!important;max-width:none!important;display:inline-block;vertical-align:middle;transition:width .18s ease,height .18s ease;}
 #anamaya-react .ar-heart path{fill:none;stroke:#b3b0a6;stroke-width:2;transition:fill .18s,stroke .18s;}
-#anamaya-react[data-state="0"] .ar-heart svg{width:26px;height:26px;}
-#anamaya-react[data-state="1"] .ar-heart svg{width:22px;height:22px;}
-#anamaya-react[data-state="2"] .ar-heart svg{width:30px;height:30px;}
-#anamaya-react[data-state="3"] .ar-heart svg{width:40px;height:40px;}
+#anamaya-react[data-state="0"] .ar-heart svg{width:28px!important;height:28px!important;}
+#anamaya-react[data-state="1"] .ar-heart svg{width:24px!important;height:24px!important;}
+#anamaya-react[data-state="2"] .ar-heart svg{width:32px!important;height:32px!important;}
+#anamaya-react[data-state="3"] .ar-heart svg{width:42px!important;height:42px!important;}
 #anamaya-react[data-state="1"] .ar-heart path,
 #anamaya-react[data-state="2"] .ar-heart path,
-#anamaya-react[data-state="3"] .ar-heart path{fill:#e0245e;stroke:#e0245e;}
+#anamaya-react[data-state="3"] .ar-heart path{fill:#ae564b;stroke:#ae564b;}
 #anamaya-react .ar-label{text-transform:uppercase;letter-spacing:.16em;font-size:13px;font-weight:600;color:#8b917f;}
 #anamaya-react[data-state="1"] .ar-label,
 #anamaya-react[data-state="2"] .ar-label,
-#anamaya-react[data-state="3"] .ar-label{color:#e0245e;}
+#anamaya-react[data-state="3"] .ar-label{color:#ae564b;}
 #anamaya-react .ar-modal{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(18,26,14,.55);backdrop-filter:blur(2px);padding:20px;}
 #anamaya-react .ar-modal[hidden]{display:none;}
 #anamaya-react .ar-card{background:#fff;border-radius:12px;max-width:420px;width:100%;padding:26px 22px;box-shadow:0 20px 60px rgba(0,0,0,.35);}
@@ -65,6 +68,13 @@ export const REACTION_WIDGET = `
 (function(){
   var root=document.getElementById('anamaya-react');
   if(!root||root.dataset.init)return;root.dataset.init='1';
+  // Move the widget to the END OF THE ARTICLE TEXT (not below the footer,
+  // which is where it's injected). Try the WP/Elementor content containers
+  // in order; fall back to leaving it where it is.
+  try{
+    var anchors=['.elementor-widget-theme-post-content .elementor-widget-container','.entry-content','article','main'];
+    for(var ai=0;ai<anchors.length;ai++){var host=document.querySelector(anchors[ai]);if(host){host.appendChild(root);break;}}
+  }catch(e){}
   var path=location.pathname;
   var STORE='anamaya_reactions',VIDK='anamaya_vid';
   function vid(){var v=null;try{v=localStorage.getItem(VIDK);}catch(e){}
