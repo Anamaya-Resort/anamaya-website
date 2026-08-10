@@ -115,12 +115,12 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
           className="relative h-[80vh] flex-1 overflow-y-auto pr-1"
           style={{
             maskImage:
-              "linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)",
+              "linear-gradient(to bottom, transparent 0%, #000 8%, #000 88%, transparent 100%)",
             WebkitMaskImage:
-              "linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)",
+              "linear-gradient(to bottom, transparent 0%, #000 8%, #000 88%, transparent 100%)",
           }}
         >
-          <div className="flex flex-col gap-3 py-[32vh]">
+          <div className="flex flex-col gap-3 pt-[7vh] pb-[20vh]">
             {weeks.map((w) => (
               <WeekRow
                 key={w.key}
