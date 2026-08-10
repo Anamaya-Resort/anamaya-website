@@ -2,6 +2,7 @@ import "server-only";
 import { supabaseServerOrNull } from "@/lib/supabase-server";
 import { POST_TYPES } from "./post-types";
 import { decodeEntities } from "./decode";
+import { canonicalizeSourcePath } from "./redirects";
 
 /** Which WP source we surface in the Website Builder. v2 = staging (newest). */
 const SOURCE_SITE = "v2";
@@ -21,6 +22,16 @@ export type ListRow = {
   has_template: boolean;
   /** Name of the assigned CMS template, e.g. "Home Page v1". Null = legacy. */
   template_name: string | null;
+  /** Admin "Featured" flag (url_inventory.featured). */
+  featured: boolean;
+  /** Reaction + view tallies from article_engagement (0s if none yet). */
+  engagement: {
+    like1: number; // LIKE
+    like2: number; // LOVE
+    like3: number; // MARRY
+    love_score: number; // 1·like1 + 2·like2 + 5·like3
+    views: number; // unique views (staff excluded)
+  };
 };
 
 export type ListStatusCounts = {
@@ -123,6 +134,7 @@ export async function listByPostType(
     date_modified?: string | null;
     cms_template_id?: string | null;
     author_id?: string | null;
+    featured?: boolean | null;
   }>;
 
   const authorIds = [
@@ -189,6 +201,40 @@ export async function listByPostType(
     for (const t of tpls ?? []) templateMap.set(t.id, t.name);
   }
 
+  // Reaction + view tallies per row, keyed by the CANONICAL url_path (same
+  // form the reaction/view APIs store). Empty until engagement accrues.
+  const canonOf = (p: string | null | undefined) =>
+    canonicalizeSourcePath(p ?? "");
+  const canonPaths = [
+    ...new Set(rawRows.map((r) => canonOf(r.url_path)).filter(Boolean)),
+  ];
+  const engByPath = new Map<
+    string,
+    { like1: number; like2: number; like3: number; love_score: number; views: number }
+  >();
+  if (canonPaths.length) {
+    const { data: eng } = await sb
+      .from("article_engagement")
+      .select("url_path, like1_count, like2_count, like3_count, love_score, view_count")
+      .in("url_path", canonPaths);
+    for (const e of (eng ?? []) as Array<{
+      url_path: string;
+      like1_count: number;
+      like2_count: number;
+      like3_count: number;
+      love_score: number;
+      view_count: number;
+    }>) {
+      engByPath.set(e.url_path, {
+        like1: e.like1_count,
+        like2: e.like2_count,
+        like3: e.like3_count,
+        love_score: e.love_score,
+        views: e.view_count,
+      });
+    }
+  }
+
   const statusCounts = await getStatusCountsForType(postType, opts.search);
 
   const rows: ListRow[] = rawRows.map((r) => ({
@@ -204,6 +250,15 @@ export async function listByPostType(
     template_name: r.cms_template_id
       ? templateMap.get(r.cms_template_id) ?? null
       : null,
+    featured: r.featured === true,
+    engagement:
+      engByPath.get(canonOf(r.url_path)) ?? {
+        like1: 0,
+        like2: 0,
+        like3: 0,
+        love_score: 0,
+        views: 0,
+      },
   }));
 
   return {

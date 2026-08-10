@@ -247,6 +247,25 @@ export default function ListShell({
                               </>
                             )}
                           </div>
+                          {/* Reactions + views tally (per the reaction system). */}
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-[#50575e]">
+                            <span>
+                              Likes:{" "}
+                              <span className="tabular-nums">1-{row.engagement.like1}</span>{" "}
+                              <span className="tabular-nums">2-{row.engagement.like2}</span>{" "}
+                              <span className="tabular-nums">3-{row.engagement.like3}</span>{" "}
+                              <span className="font-semibold text-[#1d2327]">
+                                Total={row.engagement.love_score}
+                              </span>
+                            </span>
+                            <span className="text-[#c3c4c7]">|</span>
+                            <span>
+                              Views:{" "}
+                              <span className="tabular-nums font-semibold text-[#1d2327]">
+                                {row.engagement.views}
+                              </span>
+                            </span>
+                          </div>
                         </td>
                       );
                     }
