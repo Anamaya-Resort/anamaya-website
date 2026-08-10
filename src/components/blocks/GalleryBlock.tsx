@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState } from "react";
 import type { GalleryContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
+import Lightbox from "@/components/Lightbox";
 import DecorationOverlay from "./shared/DecorationOverlay";
 import LayoutWidths from "./shared/LayoutWidths";
 
@@ -21,27 +22,6 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
   const lightbox = content?.lightbox !== false;
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";
   const pad = content?.padding_y_px ?? 64;
-
-  const close = useCallback(() => setActiveIdx(null), []);
-  const next = useCallback(
-    () => setActiveIdx((i) => (i === null ? null : (i + 1) % images.length)),
-    [images.length],
-  );
-  const prev = useCallback(
-    () => setActiveIdx((i) => (i === null ? null : (i - 1 + images.length) % images.length)),
-    [images.length],
-  );
-
-  useEffect(() => {
-    if (activeIdx === null) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") close();
-      else if (e.key === "ArrowRight") next();
-      else if (e.key === "ArrowLeft") prev();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [activeIdx, close, next, prev]);
 
   if (images.length === 0) return null;
 
@@ -127,46 +107,16 @@ export default function GalleryBlock({ content }: { content: GalleryContent }) {
         )}
       </LayoutWidths>
 
-      {lightbox && activeIdx !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={close}
-        >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              prev();
-            }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20"
-            aria-label="Previous"
-          >
-            ‹
-          </button>
-          <img
-            src={images[activeIdx].url}
-            alt={images[activeIdx].alt ?? ""}
-            className="max-h-[90vh] max-w-[90vw] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              next();
-            }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20"
-            aria-label="Next"
-          >
-            ›
-          </button>
-          {images[activeIdx].caption && (
-            <p className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded bg-black/60 px-4 py-2 text-sm text-white">
-              {images[activeIdx].caption}
-            </p>
-          )}
-        </div>
-      )}
+      <Lightbox
+        images={images.map((im) => ({
+          url: im.url,
+          alt: im.alt ?? null,
+          caption: im.caption ?? null,
+        }))}
+        index={lightbox ? activeIdx : null}
+        onClose={() => setActiveIdx(null)}
+        onIndex={setActiveIdx}
+      />
     </section>
   );
 }
