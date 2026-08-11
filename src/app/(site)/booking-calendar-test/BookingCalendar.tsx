@@ -5,10 +5,12 @@ import type { CalendarData, CalRetreat, CalWeek } from "./data";
 
 /**
  * Interactive booking calendar (client). Left: a 2:3 "tower" that shows the
- * month/year context by default and a retreat's details when one is picked.
- * Right: a continuous Sat-to-Sat week grid that fades at the top/bottom so the
- * centre weeks draw the eye. On a phone the tower is hidden and picking a
- * retreat slides up a detail sheet. Booking always links out to Retreat Guru.
+ * month/year context by default and a retreat's details when one is picked,
+ * over a faint washed-out backdrop of whichever retreat is centred on the
+ * right (crossfading as you scroll). Right: a continuous Sat-to-Sat week grid
+ * that fades at the top/bottom so the centre weeks draw the eye. On a phone
+ * the tower is hidden and picking a retreat slides up a detail sheet. Booking
+ * links out to Retreat Guru.
  */
 
 const MONTHS_SHORT = [
@@ -45,41 +47,70 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
   const byId = useMemo(() => new Map(retreats.map((r) => [r.id, r])), [retreats]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [monthLabel, setMonthLabel] = useState(weeks[0]?.monthLabel ?? "");
+  // Two crossfading backdrop slots; `active` says which one is shown.
+  const [bgSlots, setBgSlots] = useState<{ a: string | null; b: string | null; active: "a" | "b" }>(
+    { a: null, b: null, active: "a" },
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
   const selected = selectedId ? byId.get(selectedId) ?? null : null;
 
-  // Track which week sits nearest the vertical centre → tower month label.
-  const updateMonth = useCallback(() => {
+  // Push a new backdrop image into the idle slot and flip to it (crossfade).
+  const setBg = useCallback((url: string | null) => {
+    if (!url) return;
+    setBgSlots((prev) => {
+      const cur = prev.active === "a" ? prev.a : prev.b;
+      if (url === cur) return prev;
+      return prev.active === "a"
+        ? { a: prev.a, b: url, active: "b" }
+        : { a: url, b: prev.b, active: "a" };
+    });
+  }, []);
+
+  // On scroll: update the tower's month label AND the washed backdrop to the
+  // retreat image nearest the vertical centre of the grid.
+  const updateFocus = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const mid = el.getBoundingClientRect().top + el.clientHeight / 2;
+
     let bestLabel = "";
     let bestDist = Infinity;
     el.querySelectorAll<HTMLElement>("[data-week-label]").forEach((row) => {
       const rect = row.getBoundingClientRect();
-      const c = rect.top + rect.height / 2;
-      const dist = Math.abs(c - mid);
+      const dist = Math.abs(rect.top + rect.height / 2 - mid);
       if (dist < bestDist) {
         bestDist = dist;
         bestLabel = row.dataset.weekLabel ?? "";
       }
     });
     if (bestLabel) setMonthLabel(bestLabel);
-  }, []);
+
+    let bestImg: string | null = null;
+    let bestImgDist = Infinity;
+    el.querySelectorAll<HTMLElement>("[data-bg-image]").forEach((row) => {
+      const rect = row.getBoundingClientRect();
+      const dist = Math.abs(rect.top + rect.height / 2 - mid);
+      if (dist < bestImgDist) {
+        bestImgDist = dist;
+        bestImg = row.dataset.bgImage ?? null;
+      }
+    });
+    setBg(bestImg);
+  }, [setBg]);
 
   const onScroll = useCallback(() => {
     if (rafRef.current != null) return;
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = null;
-      updateMonth();
+      updateFocus();
     });
-  }, [updateMonth]);
+  }, [updateFocus]);
 
   useEffect(() => {
-    updateMonth();
-  }, [updateMonth]);
+    updateFocus();
+  }, [updateFocus]);
 
   if (!weeks.length) {
     return (
@@ -98,12 +129,44 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
         {/* LEFT — tower (desktop only). Sticky so it stays as the grid scrolls. */}
         <aside className="hidden md:block md:w-[380px] lg:w-[460px] shrink-0">
           <div className="sticky top-24">
-            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-anamaya-mint/50 bg-white/60 shadow-sm">
-              {selected ? (
-                <TowerDetail r={selected} onClose={() => setSelectedId(null)} />
-              ) : (
-                <TowerContext monthLabel={monthLabel} />
+            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-anamaya-mint/50 bg-anamaya-cream/70 shadow-sm">
+              {/* Washed-out backdrop of the retreat centred on the right,
+                  crossfading as you scroll. 25% opacity at top → 5% at bottom. */}
+              {[
+                { slot: "a" as const, url: bgSlots.a },
+                { slot: "b" as const, url: bgSlots.b },
+              ].map(({ slot, url }) =>
+                url ? (
+                  <div
+                    key={slot}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 transition-opacity duration-700 ease-out"
+                    style={{ opacity: bgSlots.active === slot ? 1 : 0 }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      style={{
+                        maskImage:
+                          "linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.05))",
+                        WebkitMaskImage:
+                          "linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.05))",
+                        filter: "saturate(0.9)",
+                      }}
+                    />
+                  </div>
+                ) : null,
               )}
+
+              <div className="relative z-10 h-full w-full">
+                {selected ? (
+                  <TowerDetail r={selected} onClose={() => setSelectedId(null)} />
+                ) : (
+                  <TowerContext monthLabel={monthLabel} />
+                )}
+              </div>
             </div>
           </div>
         </aside>
@@ -156,7 +219,7 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
 function TowerContext({ monthLabel }: { monthLabel: string }) {
   const [month, year] = monthLabel.split(" ");
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-anamaya-mint/25 to-anamaya-cream p-6 text-center">
+    <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center">
       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-anamaya-green">
         Upcoming Retreats
       </p>
@@ -280,8 +343,10 @@ function WeekRow({
   onSelect: (id: string) => void;
 }) {
   const items = week.retreatIds.map((id) => byId.get(id)).filter(Boolean) as CalRetreat[];
+  // First retreat image in this week — feeds the tower's washed backdrop.
+  const bgImage = items.find((r) => r.image)?.image ?? undefined;
   return (
-    <div data-week-label={week.monthLabel}>
+    <div data-week-label={week.monthLabel} data-bg-image={bgImage}>
       {week.startsNewMonth && (
         <div className="mb-1.5 mt-6 flex items-center gap-3 first:mt-0">
           <span className="font-heading text-2xl font-semibold tracking-wide text-anamaya-green">
