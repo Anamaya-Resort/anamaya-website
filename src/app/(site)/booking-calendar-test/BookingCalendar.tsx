@@ -436,7 +436,7 @@ function WeekRow({
                     />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-lg font-semibold leading-tight">
+                    <span className="block text-lg font-semibold leading-tight">
                       {r.title}
                     </span>
                     <span
