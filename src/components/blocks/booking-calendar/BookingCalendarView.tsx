@@ -406,62 +406,147 @@ function WeekRow({
           })}
         </div>
 
-        {/* Retreat bar(s) for this week — repeated in each week they span. */}
+        {/* Retreat bar(s) for this week. Two in a week → an "Oklahoma" pair:
+            each spans the full week (a thin tail reaches the far edge) so
+            neither looks like half a week. First body on the left with a tail
+            to the right; second body on the right with a tail to the left and
+            a grey-tan tint so it stands out. Single / 3+ use the normal card. */}
         {items.length > 0 && (
-          <div
-            className={`mt-2 grid gap-2 ${
-              items.length > 1 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
-            }`}
-          >
-            {items.map((r) => {
-              const spots = spotsLabel(r);
-              const price = priceLabel(r);
-              const active = r.id === selectedId;
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => onSelect(r.id)}
-                  className={`flex h-full w-full items-center gap-4 rounded-lg px-4 py-3 text-left transition-all ${
-                    active
-                      ? "bg-anamaya-green text-white shadow"
-                      : "bg-anamaya-cream hover:bg-anamaya-mint/30"
-                  } ${r.isSoldOut ? "opacity-70" : ""}`}
-                >
-                  {r.image && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={r.image}
-                      alt=""
-                      className="h-[130px] w-[130px] shrink-0 rounded-md object-cover"
-                    />
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-lg font-semibold leading-tight">
-                      {r.title}
-                    </span>
-                    <span
-                      className={`block truncate text-base ${
-                        active ? "text-white/80" : "text-anamaya-charcoal/55"
-                      }`}
-                    >
-                      {r.teacher ? `with ${r.teacher}` : fmtRange(r.startISO, r.endISO)}
-                    </span>
-                    {(price || spots) && (
-                      <span
-                        className={`mt-1 block text-sm font-semibold ${
-                          active ? "text-white" : "text-anamaya-green"
-                        }`}
-                      >
-                        {price ?? spots}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="mt-2 flex flex-col gap-2">
+            {items.length === 2
+              ? items.map((r, i) => (
+                  <OklahomaBar
+                    key={r.id}
+                    r={r}
+                    side={i === 0 ? "left" : "right"}
+                    active={r.id === selectedId}
+                    onSelect={onSelect}
+                  />
+                ))
+              : items.map((r) => (
+                  <NormalCard
+                    key={r.id}
+                    r={r}
+                    active={r.id === selectedId}
+                    onSelect={onSelect}
+                  />
+                ))}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+/** Image + title + teacher + price — the tall "body" of a retreat card. */
+function RetreatBody({ r, active }: { r: CalRetreat; active: boolean }) {
+  const price = priceLabel(r);
+  const spots = spotsLabel(r);
+  return (
+    <>
+      {r.image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={r.image}
+          alt=""
+          className="h-[130px] w-[130px] shrink-0 rounded-md object-cover"
+        />
+      )}
+      <span className="min-w-0 flex-1">
+        <span className="block text-lg font-semibold leading-tight">{r.title}</span>
+        {r.teacher && (
+          <span
+            className={`block text-base ${active ? "text-white/80" : "text-anamaya-charcoal/55"}`}
+          >
+            with {r.teacher}
+          </span>
+        )}
+        {(price || spots) && (
+          <span
+            className={`mt-1 block text-sm font-semibold ${
+              active ? "text-white" : "text-anamaya-green"
+            }`}
+          >
+            {price ?? spots}
+          </span>
+        )}
+      </span>
+    </>
+  );
+}
+
+/** Full-width retreat card — used for a single retreat, or 3+ in a week. */
+function NormalCard({
+  r,
+  active,
+  onSelect,
+}: {
+  r: CalRetreat;
+  active: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <button
+      onClick={() => onSelect(r.id)}
+      className={`flex w-full items-center gap-4 rounded-lg px-4 py-3 text-left transition-all ${
+        active ? "bg-anamaya-green text-white shadow" : "bg-anamaya-cream hover:bg-anamaya-mint/30"
+      } ${r.isSoldOut ? "opacity-70" : ""}`}
+    >
+      <RetreatBody r={r} active={active} />
+      {!r.teacher && (
+        <span
+          className={`shrink-0 self-center text-sm ${
+            active ? "text-white/80" : "text-anamaya-charcoal/55"
+          }`}
+        >
+          {fmtRange(r.startISO, r.endISO)}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/**
+ * "Oklahoma" bar: a tall body on one side and a thin tail (carrying the
+ * dates) reaching the far edge, so a retreat sharing a week still reads as a
+ * full-week retreat. `side` = which side the body sits on.
+ */
+function OklahomaBar({
+  r,
+  side,
+  active,
+  onSelect,
+}: {
+  r: CalRetreat;
+  side: "left" | "right";
+  active: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const left = side === "left";
+  const bg = active ? "bg-anamaya-green text-white" : left ? "bg-anamaya-cream" : "bg-[#ece7dd]";
+  return (
+    <button
+      onClick={() => onSelect(r.id)}
+      className={`block w-full text-left transition-all ${r.isSoldOut ? "opacity-70" : ""}`}
+    >
+      <div className={`flex items-center ${left ? "" : "flex-row-reverse"}`}>
+        {/* Body (tall) */}
+        <div
+          className={`flex basis-[58%] shrink-0 items-center gap-4 px-4 py-3 ${bg} ${
+            left ? "rounded-l-lg" : "rounded-r-lg"
+          }`}
+        >
+          <RetreatBody r={r} active={active} />
+        </div>
+        {/* Tail (thin) — reaches the far edge, carries the dates */}
+        <div
+          className={`flex h-10 flex-1 items-center px-4 text-sm font-semibold ${bg} ${
+            left ? "justify-end rounded-r-lg" : "justify-start rounded-l-lg"
+          } ${active ? "text-white" : "text-anamaya-charcoal/60"}`}
+        >
+          {fmtRange(r.startISO, r.endISO)}
+        </div>
+      </div>
+    </button>
   );
 }
