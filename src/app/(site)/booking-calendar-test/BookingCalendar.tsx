@@ -51,10 +51,23 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
   const [bgSlots, setBgSlots] = useState<{ a: string | null; b: string | null; active: "a" | "b" }>(
     { a: null, b: null, active: "a" },
   );
+  // The washed backdrop is switched off for the rest of the session once a
+  // retreat is selected — behind the detail card it only showed in the lower
+  // half and looked bad. A page refresh restores it.
+  const [bgFrozen, setBgFrozen] = useState(false);
+  const bgFrozenRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
   const selected = selectedId ? byId.get(selectedId) ?? null : null;
+
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id);
+    if (!bgFrozenRef.current) {
+      bgFrozenRef.current = true;
+      setBgFrozen(true);
+    }
+  }, []);
 
   // Push a new backdrop image into the idle slot and flip to it (crossfade).
   const setBg = useCallback((url: string | null) => {
@@ -97,7 +110,7 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
         bestImg = row.dataset.bgImage ?? null;
       }
     });
-    setBg(bestImg);
+    if (!bgFrozenRef.current) setBg(bestImg);
   }, [setBg]);
 
   const onScroll = useCallback(() => {
@@ -132,10 +145,11 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
             <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-anamaya-mint/50 bg-anamaya-cream/70 shadow-sm">
               {/* Washed-out backdrop of the retreat centred on the right,
                   crossfading as you scroll. 25% opacity at top → 5% at bottom. */}
-              {[
-                { slot: "a" as const, url: bgSlots.a },
-                { slot: "b" as const, url: bgSlots.b },
-              ].map(({ slot, url }) =>
+              {!bgFrozen &&
+                [
+                  { slot: "a" as const, url: bgSlots.a },
+                  { slot: "b" as const, url: bgSlots.b },
+                ].map(({ slot, url }) =>
                 url ? (
                   <div
                     key={slot}
@@ -190,7 +204,7 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
                 week={w}
                 byId={byId}
                 selectedId={selectedId}
-                onSelect={setSelectedId}
+                onSelect={handleSelect}
               />
             ))}
           </div>
