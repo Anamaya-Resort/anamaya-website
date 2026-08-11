@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { createItem } from "./actions";
 import { uploadWizardMedia } from "./upload-actions";
 
@@ -16,6 +16,17 @@ export type WizardTemplate = {
 // cms_template_id. Kept distinct from a template's UUID so it can live in the
 // same selected-set without colliding.
 const NONE_ID = "__none__";
+
+// --- Snapshot geometry -----------------------------------------------------
+// Each template card shows a scaled-down LIVE preview. We render the preview
+// at a full desktop viewport width inside the iframe, then CSS-scale the whole
+// iframe down so it reads as a tall thumbnail. The visible frame clips it via
+// overflow:hidden.
+const SNAP_W = 240; // visible card/snapshot width in px
+const SNAP_H = 340; // visible snapshot height in px (tall crop)
+const IFRAME_W = 1200; // logical viewport the preview renders at
+const SNAP_SCALE = SNAP_W / IFRAME_W; // 0.2
+const IFRAME_H = Math.round(SNAP_H / SNAP_SCALE); // logical iframe height
 
 type MediaItem = {
   // Stable client-side key; media is NOT persisted to the DB in Phase 1.
@@ -54,6 +65,7 @@ export default function NewPostWizard({
   const [body, setBody] = useState("");
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isCreating, startCreate] = useTransition();
+  const [pasteOpen, setPasteOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -110,7 +122,9 @@ export default function NewPostWizard({
 
   // Paste anywhere in the wizard: if the clipboard carries image/video files,
   // upload them. Text/HTML pastes into the body textarea fall through
-  // untouched (we only act when there are real files on the clipboard).
+  // untouched (we only act when there are real files on the clipboard). The
+  // explicit "Paste from clipboard" button + modal is the primary path; this
+  // is a convenience fallback.
   function handlePaste(e: React.ClipboardEvent) {
     const files = e.clipboardData?.files;
     if (!files || files.length === 0) return;
@@ -141,14 +155,15 @@ export default function NewPostWizard({
   }
 
   const canCreate = title.trim().length > 0 && !isCreating;
-  const cardBase =
-    "flex cursor-pointer items-start gap-2 rounded-sm border bg-white px-3 py-2 text-[13px] hover:border-[#2271b1] has-[:checked]:border-[#2271b1] has-[:checked]:bg-[#f0f6fc]";
 
   return (
-    <div className="mx-auto max-w-[820px] space-y-4" onPaste={handlePaste}>
+    <div
+      className="mx-auto max-w-[1200px] space-y-4 px-3"
+      onPaste={handlePaste}
+    >
       {/* STEP 1 — Choose templates + content */}
 
-      {/* Choose templates (multi-select) */}
+      {/* Choose templates (multi-select snapshots) */}
       <div className="rounded-sm border border-[#c3c4c7] bg-white">
         <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
           Choose templates
@@ -157,56 +172,55 @@ export default function NewPostWizard({
             {postTypeLabel.toLowerCase()} in. You can change it later.
           </span>
         </div>
-        <div className="grid gap-2 px-3 py-3 sm:grid-cols-2">
-          {/* None — rich-text fallback */}
-          <label
-            className={`${cardBase} ${
-              selectedTemplateIds.includes(NONE_ID)
-                ? "border-[#2271b1]"
-                : "border-[#dcdcde]"
-            }`}
+        <div className="flex flex-wrap gap-4 px-3 py-4">
+          {/* None — rich-text fallback (no iframe, simple placeholder) */}
+          <TemplateCard
+            selected={selectedTemplateIds.includes(NONE_ID)}
+            onToggle={() => toggleTemplate(NONE_ID)}
+            name="None (rich-text fallback)"
+            sub="Renders from the body HTML"
           >
-            <input
-              type="checkbox"
-              checked={selectedTemplateIds.includes(NONE_ID)}
-              onChange={() => toggleTemplate(NONE_ID)}
-              className="mt-0.5 h-4 w-4"
-            />
-            <span>
-              <span className="block font-semibold text-[#1d2327]">
-                None (rich-text fallback)
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-[#f6f7f7] px-3 text-center">
+              <span className="text-[22px] leading-none text-[#a7aaad]">
+                ¶
               </span>
-              <span className="block text-[12px] text-[#50575e]">
-                Renders from the body HTML instead of CMS blocks.
+              <span className="text-[11px] text-[#50575e]">
+                No template — rich text only
               </span>
-            </span>
-          </label>
+            </div>
+          </TemplateCard>
 
           {templates.map((t) => (
-            <label
+            <TemplateCard
               key={t.id}
-              className={`${cardBase} ${
-                selectedTemplateIds.includes(t.id)
-                  ? "border-[#2271b1]"
-                  : "border-[#dcdcde]"
-              }`}
+              selected={selectedTemplateIds.includes(t.id)}
+              onToggle={() => toggleTemplate(t.id)}
+              name={t.name}
+              sub={`${t.slug}${t.isDefault ? " · default" : ""}`}
+              mono
             >
-              <input
-                type="checkbox"
-                checked={selectedTemplateIds.includes(t.id)}
-                onChange={() => toggleTemplate(t.id)}
-                className="mt-0.5 h-4 w-4"
-              />
-              <span>
-                <span className="block font-semibold text-[#1d2327]">
-                  {t.name}
-                </span>
-                <span className="block font-mono text-[12px] text-[#50575e]">
-                  {t.slug}
-                  {t.isDefault ? " · default" : ""}
-                </span>
-              </span>
-            </label>
+              <div
+                style={{
+                  width: IFRAME_W,
+                  height: IFRAME_H,
+                  transform: `scale(${SNAP_SCALE})`,
+                  transformOrigin: "top left",
+                }}
+              >
+                <iframe
+                  src={`/preview/template/${t.id}`}
+                  title={`${t.name} preview`}
+                  loading="lazy"
+                  tabIndex={-1}
+                  style={{
+                    width: IFRAME_W,
+                    height: IFRAME_H,
+                    border: "0",
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
+            </TemplateCard>
           ))}
         </div>
       </div>
@@ -272,13 +286,22 @@ export default function NewPostWizard({
               }}
               className="hidden"
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded-sm border border-[#2271b1] bg-white px-3 py-1.5 text-[13px] text-[#2271b1] hover:bg-[#f6fbfd]"
-            >
-              Add images / videos
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-sm border border-[#2271b1] bg-white px-3 py-1.5 text-[13px] text-[#2271b1] hover:bg-[#f6fbfd]"
+              >
+                Add images / videos
+              </button>
+              <button
+                type="button"
+                onClick={() => setPasteOpen(true)}
+                className="rounded-sm border border-[#2271b1] bg-white px-3 py-1.5 text-[13px] text-[#2271b1] hover:bg-[#f6fbfd]"
+              >
+                Paste from clipboard
+              </button>
+            </div>
 
             {media.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-3">
@@ -387,6 +410,220 @@ export default function NewPostWizard({
         template, then opens the editor where you can refine content, SEO and
         publish settings.
       </p>
+
+      {pasteOpen && (
+        <PasteModal
+          onClose={() => setPasteOpen(false)}
+          onApprove={(file) => {
+            uploadOne(file);
+            setPasteOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// --- Template snapshot card -------------------------------------------------
+// A multi-select toggle. Clicking anywhere toggles selection; the snapshot
+// iframe inside has pointer-events:none so clicks always hit the card.
+function TemplateCard({
+  selected,
+  onToggle,
+  name,
+  sub,
+  mono,
+  children,
+}: {
+  selected: boolean;
+  onToggle: () => void;
+  name: string;
+  sub: string;
+  mono?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={selected}
+      onClick={onToggle}
+      style={{ width: SNAP_W }}
+      className={`group relative flex flex-col overflow-hidden rounded-sm border bg-white text-left transition-shadow hover:shadow-sm ${
+        selected
+          ? "border-[#2271b1] ring-2 ring-[#2271b1]"
+          : "border-[#dcdcde]"
+      }`}
+    >
+      {/* Selected checkmark badge */}
+      <span
+        className={`absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full border text-[12px] leading-none ${
+          selected
+            ? "border-[#2271b1] bg-[#2271b1] text-white"
+            : "border-[#c3c4c7] bg-white/90 text-transparent"
+        }`}
+        aria-hidden
+      >
+        ✓
+      </span>
+
+      {/* Tall snapshot viewport — clips the scaled iframe */}
+      <div
+        style={{ width: SNAP_W, height: SNAP_H }}
+        className="relative overflow-hidden border-b border-[#dcdcde] bg-white"
+      >
+        {children}
+      </div>
+
+      <div className="px-2 py-1.5">
+        <span className="block truncate text-[13px] font-semibold text-[#1d2327]">
+          {name}
+        </span>
+        <span
+          className={`block truncate text-[12px] text-[#50575e] ${
+            mono ? "font-mono" : ""
+          }`}
+        >
+          {sub}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+// --- Paste-from-clipboard modal ---------------------------------------------
+function PasteModal({
+  onClose,
+  onApprove,
+}: {
+  onClose: () => void;
+  onApprove: (file: File) => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const dropRef = useRef<HTMLDivElement | null>(null);
+
+  // Focus the paste target on open so ⌘V/Ctrl V lands here.
+  useEffect(() => {
+    dropRef.current?.focus();
+  }, []);
+
+  // Revoke the object URL when it changes / on unmount.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  // Close on Escape.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function handlePaste(e: React.ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    let imgFile: File | null = null;
+    if (items) {
+      for (const it of Array.from(items)) {
+        if (it.kind === "file" && it.type.startsWith("image/")) {
+          const f = it.getAsFile();
+          if (f) {
+            imgFile = f;
+            break;
+          }
+        }
+      }
+    }
+    if (!imgFile) {
+      setMessage("That wasn't an image — copy an image and try again.");
+      return;
+    }
+    e.preventDefault();
+    setMessage(null);
+    setFile(imgFile);
+    setPreviewUrl((old) => {
+      if (old) URL.revokeObjectURL(old);
+      return URL.createObjectURL(imgFile);
+    });
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[520px] rounded-sm border border-[#c3c4c7] bg-white shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2">
+          <span className="text-[13px] font-semibold text-[#1d2327]">
+            Paste from clipboard
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="text-[16px] leading-none text-[#50575e] hover:text-[#1d2327]"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="space-y-3 px-3 py-3">
+          <div
+            ref={dropRef}
+            tabIndex={0}
+            onPaste={handlePaste}
+            className="flex min-h-[200px] flex-col items-center justify-center rounded-sm border-2 border-dashed border-[#c3c4c7] bg-[#f6f7f7] p-3 text-center focus:border-[#2271b1] focus:outline-none"
+          >
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewUrl}
+                alt="Pasted preview"
+                className="max-h-[300px] max-w-full rounded-sm object-contain"
+              />
+            ) : (
+              <span className="text-[13px] text-[#50575e]">
+                Paste your image here (⌘V / Ctrl V)
+              </span>
+            )}
+          </div>
+
+          {message && (
+            <p className="text-[12px] text-[#d63638]">{message}</p>
+          )}
+          {file && (
+            <p className="text-[12px] text-[#50575e]">
+              Ready to add: {file.name || "pasted image"}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-sm border border-[#c3c4c7] bg-white px-3 py-1.5 text-[13px] text-[#1d2327] hover:bg-[#f0f0f1]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!file}
+            onClick={() => file && onApprove(file)}
+            className="rounded-sm bg-[#2271b1] px-3 py-1.5 text-[13px] font-medium text-white hover:bg-[#135e96] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Approve &amp; add
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import "server-only";
+import sharp from "sharp";
 import { supabaseServer } from "@/lib/supabase-server";
 
 // Same storage bucket the block editors upload into (see
@@ -23,11 +24,18 @@ function safeFileName(raw: string): string {
   return cleaned || "file";
 }
 
+/** Replace the trailing extension (if any) with `.webp`. */
+function toWebpKey(name: string): string {
+  return name.replace(/\.[a-z0-9]+$/i, "") + ".webp";
+}
+
 /**
- * Upload a single image or video for the Add-New-Post wizard. Stores the
- * file as-is (no transcoding, format-agnostic) so pasted PNG/JPG/WebP and
- * dropped videos all round-trip unchanged, then returns its public URL and
- * a coarse `kind` derived from the MIME type.
+ * Upload a single image or video for the Add-New-Post wizard.
+ *
+ * Raster images (PNG/JPG/WebP/…) are converted to WebP (quality 82) so
+ * stored media stays small and consistent. SVGs and videos are stored
+ * as-is (no transcoding) so vector art and moving footage round-trip
+ * unchanged. Returns the public URL and a coarse `kind` from the MIME type.
  *
  * Server action that RETURNS a value, so it's callable straight from the
  * wizard client component.
@@ -40,14 +48,27 @@ export async function uploadWizardMedia(
   if (file.size > MAX_BYTES) throw new Error("File too large (max 100 MB)");
 
   const mime = file.type || "";
-  const kind: "image" | "video" = mime.startsWith("video/") ? "video" : "image";
+  const isVideo = mime.startsWith("video/");
+  const isImage = mime.startsWith("image/");
+  // Convert raster images to WebP; leave SVG (vector) and video untouched.
+  const convertToWebp = isImage && mime !== "image/svg+xml";
+  const kind: "image" | "video" = isVideo ? "video" : "image";
 
-  const key = `wizard/${Date.now()}-${safeFileName(file.name)}`;
   const bytes = Buffer.from(await file.arrayBuffer());
 
+  let outBytes: Buffer = bytes;
+  let contentType = mime || "application/octet-stream";
+  let key = `wizard/${Date.now()}-${safeFileName(file.name)}`;
+
+  if (convertToWebp) {
+    outBytes = await sharp(bytes).webp({ quality: 82 }).toBuffer();
+    contentType = "image/webp";
+    key = `wizard/${Date.now()}-${toWebpKey(safeFileName(file.name))}`;
+  }
+
   const sb = supabaseServer();
-  const { error } = await sb.storage.from(BUCKET).upload(key, bytes, {
-    contentType: mime || "application/octet-stream",
+  const { error } = await sb.storage.from(BUCKET).upload(key, outBytes, {
+    contentType,
     upsert: false,
   });
   if (error) throw new Error(`wizard media upload: ${error.message}`);
