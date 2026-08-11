@@ -446,16 +446,16 @@ function WeekRow({
                     >
                       {r.teacher ? `with ${r.teacher}` : fmtRange(r.startISO, r.endISO)}
                     </span>
+                    {(price || spots) && (
+                      <span
+                        className={`mt-1 block text-sm font-semibold ${
+                          active ? "text-white" : "text-anamaya-green"
+                        }`}
+                      >
+                        {price ?? spots}
+                      </span>
+                    )}
                   </span>
-                  {(price || spots) && (
-                    <span
-                      className={`hidden shrink-0 text-right text-sm font-semibold sm:block ${
-                        active ? "text-white" : "text-anamaya-green"
-                      }`}
-                    >
-                      {price ?? spots}
-                    </span>
-                  )}
                 </button>
               );
             })}
