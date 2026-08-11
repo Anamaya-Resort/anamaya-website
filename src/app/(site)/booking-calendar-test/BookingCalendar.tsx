@@ -408,7 +408,11 @@ function WeekRow({
 
         {/* Retreat bar(s) for this week — repeated in each week they span. */}
         {items.length > 0 && (
-          <div className="mt-2 flex flex-col gap-2">
+          <div
+            className={`mt-2 grid gap-2 ${
+              items.length > 1 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
+            }`}
+          >
             {items.map((r) => {
               const spots = spotsLabel(r);
               const price = priceLabel(r);
@@ -417,7 +421,7 @@ function WeekRow({
                 <button
                   key={r.id}
                   onClick={() => onSelect(r.id)}
-                  className={`flex w-full items-center gap-4 rounded-lg px-4 py-3 text-left transition-all ${
+                  className={`flex h-full w-full items-center gap-4 rounded-lg px-4 py-3 text-left transition-all ${
                     active
                       ? "bg-anamaya-green text-white shadow"
                       : "bg-anamaya-cream hover:bg-anamaya-mint/30"
@@ -428,15 +432,15 @@ function WeekRow({
                     <img
                       src={r.image}
                       alt=""
-                      className="h-[72px] w-[108px] shrink-0 rounded-md object-cover"
+                      className="h-[130px] w-[130px] shrink-0 rounded-md object-cover"
                     />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-base font-semibold leading-tight">
+                    <span className="block truncate text-lg font-semibold leading-tight">
                       {r.title}
                     </span>
                     <span
-                      className={`block truncate text-sm ${
+                      className={`block truncate text-base ${
                         active ? "text-white/80" : "text-anamaya-charcoal/55"
                       }`}
                     >
@@ -445,7 +449,7 @@ function WeekRow({
                   </span>
                   {(price || spots) && (
                     <span
-                      className={`hidden shrink-0 text-right text-xs font-semibold sm:block ${
+                      className={`hidden shrink-0 text-right text-sm font-semibold sm:block ${
                         active ? "text-white" : "text-anamaya-green"
                       }`}
                     >
