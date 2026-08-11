@@ -27,6 +27,7 @@ import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
 import FaqBlock from "./FaqBlock";
 import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
+import BookingCalendarBlock from "./BookingCalendarBlock";
 import ServiceMenuBlock from "./ServiceMenuBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
@@ -99,6 +100,7 @@ export default async function Shortcode({
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "featured_retreats": return <FeaturedRetreatsBlock content={content} />;
     case "retreats_calendar": return <RetreatsCalendarBlock content={content} />;
+    case "booking_calendar": return <BookingCalendarBlock content={content} />;
     case "service_menu":      return <ServiceMenuBlock content={content} />;
     // No pageId via the shortcode path (block-preview iframe / direct use),
     // so page-context mode falls back to its "no page to read" state; a

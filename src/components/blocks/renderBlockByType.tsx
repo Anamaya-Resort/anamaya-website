@@ -28,6 +28,7 @@ import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
 import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
+import BookingCalendarBlock from "./BookingCalendarBlock";
 import ServiceMenuBlock from "./ServiceMenuBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
@@ -87,6 +88,7 @@ export default function renderBlockByType(
     case "featured_by_search":    return <FeaturedBySearchBlock content={content} pageId={ctx?.pageId} />;
     case "faq":                   return <FaqBlock content={content} pageId={ctx?.pageId} />;
     case "retreats_calendar":     return <RetreatsCalendarBlock content={content} />;
+    case "booking_calendar":      return <BookingCalendarBlock content={content} />;
     case "service_menu":          return <ServiceMenuBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text":  return <GoogleMapTextBlock content={content} />;

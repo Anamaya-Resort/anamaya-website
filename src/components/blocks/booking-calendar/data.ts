@@ -51,7 +51,7 @@ export type CalWeek = {
 export type CalendarData = { retreats: CalRetreat[]; weeks: CalWeek[] };
 
 const COLS =
-  "id, name, excerpt, description, tagline, start_date, end_date, feature_image_url, images, website_slug, registration_link, external_link, is_sold_out, waitlist_enabled, available_spaces, curve_start_price, pricing_options, currency";
+  "id, name, excerpt, description, tagline, start_date, end_date, feature_image_url, images, website_slug, registration_link, external_link, is_sold_out, waitlist_enabled, available_spaces, curve_start_price, pricing_options, currency, categories, ryt_hours, retreat_type";
 
 const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"]; // Sun..Sat
 
@@ -129,6 +129,16 @@ function stripHtml(s: string | null | undefined): string {
   return decodeEntities((s ?? "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 }
 
+/** Heuristic for whether a retreat is a Yoga Teacher Training. */
+function isYtt(row: Record<string, unknown>): boolean {
+  const cats = row.categories;
+  if (Array.isArray(cats) && cats.some((c) => String(c).toLowerCase() === "ytt")) return true;
+  if (Number(row.ryt_hours) > 0) return true;
+  const rt = String(row.retreat_type ?? "").toLowerCase();
+  if (rt.includes("ytt") || rt.includes("teacher")) return true;
+  return /teacher training|\bytt\b/i.test(String(row.name ?? ""));
+}
+
 /** Split "Retreat Name - Teacher" on a spaced dash; word-hyphens are safe. */
 function splitTeacher(name: string): { title: string; teacher: string | null } {
   const parts = name.split(/\s+[-–—]\s+/);
@@ -138,10 +148,14 @@ function splitTeacher(name: string): { title: string; teacher: string | null } {
   return { title: name.trim(), teacher: null };
 }
 
-export async function getBookingCalendarData(): Promise<CalendarData> {
+export async function getBookingCalendarData(
+  opts?: { retreatType?: "all" | "ytt" | "retreat"; onlyAvailable?: boolean },
+): Promise<CalendarData> {
   const ao = aoSupabaseAdminOrNull();
   if (!ao) return { retreats: [], weeks: [] };
   const today = isoOf(new Date());
+  const retreatType = opts?.retreatType ?? "all";
+  const onlyAvailable = opts?.onlyAvailable === true;
 
   const { data, error } = await ao
     .from("retreats")
@@ -156,6 +170,14 @@ export async function getBookingCalendarData(): Promise<CalendarData> {
 
   const retreats: CalRetreat[] = data
     .filter((r) => r.start_date && r.end_date)
+    // Gating: retreat type (YTT vs weekly retreat) and only-available.
+    .filter((r) => {
+      const row = r as Record<string, unknown>;
+      if (retreatType === "ytt" && !isYtt(row)) return false;
+      if (retreatType === "retreat" && isYtt(row)) return false;
+      if (onlyAvailable && row.is_sold_out === true) return false;
+      return true;
+    })
     .map((r) => {
       const row = r as Record<string, unknown>;
       const { title, teacher } = splitTeacher(decodeEntities(String(row.name ?? "Untitled retreat")));

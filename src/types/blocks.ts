@@ -1227,6 +1227,18 @@ export type ReactionsContent = {
   padding_y_px?: number;
 };
 
+/**
+ * Booking Calendar block — an interactive Saturday-to-Saturday retreats
+ * calendar fed live from AnamayOS. Content is just gating; the calendar's
+ * look is fixed. One block powers many filtered calendars.
+ */
+export type BookingCalendarContent = {
+  /** Which retreats to show: everything, YTTs only, or weekly retreats only. */
+  retreat_type?: "all" | "ytt" | "retreat";
+  /** Hide sold-out retreats (show only bookable ones). */
+  only_available?: boolean;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -1263,7 +1275,8 @@ export type BlockTypeSlug =
   | "testimonials"
   | "image_slideshow"
   | "faq"
-  | "reactions";
+  | "reactions"
+  | "booking_calendar";
 
 export type BlockRecord = {
   id: string;
