@@ -51,7 +51,7 @@ async function loadFaqSets(): Promise<FaqSet[]> {
     .from("faq_sets")
     .select("id, code, name, items")
     .order("created_at", { ascending: false });
-  // items is freeform jsonb — coerce defensively so a malformed row can't crash
+  // items is freeform jsonb, coerce defensively so a malformed row can't crash
   // the editor with undefined question/answer.
   return (data ?? []).map((r) => {
     const rawItems = Array.isArray(r.items) ? (r.items as unknown[]) : [];
@@ -91,7 +91,7 @@ export default async function FaqBuilderPage() {
 
       <p className="mb-4 max-w-3xl text-[13px] leading-relaxed text-[#50575e]">
         Make FAQs for a specific article. On the right, choose the article and
-        generate — it uses that article&rsquo;s own content plus the reference
+        generate. It uses that article&rsquo;s own content plus the reference
         you tick on the left (brand voice, one or two customer avatars, your
         notes). Edit the result, then apply it straight to that article. Nothing
         shows to visitors until it&rsquo;s applied and the page has an FAQ block.

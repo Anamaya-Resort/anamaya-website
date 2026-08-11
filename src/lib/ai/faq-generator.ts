@@ -31,16 +31,16 @@ export type FaqDraft = {
 };
 
 const SYSTEM_PROMPT = [
-  "You write concise, accurate FAQs for a wellness/yoga retreat resort's website.",
-  "You are given REFERENCE material about the business (brand voice, customer avatars, general info, and an existing FAQ library), and optionally the text of one or more pages/articles.",
-  "Produce FAQs that a real prospective guest would type into Google or ask an AI assistant.",
+  "You write concise, accurate FAQs for the Anamaya wellness and yoga retreat resort's website.",
+  "You are given REFERENCE material about the business (brand voice, customer avatars, general info, and an existing FAQ library), and the text of ONE article (a page or post).",
+  "The FAQs must be about THIS article's specific topic. Use the brand voice and avatars for TONE and phrasing only, never to change the subject. Do NOT add generic retreat or booking questions unless the article itself is about them.",
   "Rules:",
-  "- Answer using the REFERENCE material and any provided content. Do not invent prices, dates, policies, or facts that none of them support; skip a question rather than guess.",
-  "- Prefer the wording and answers from the REFERENCE info / FAQ library when they apply — they are authoritative.",
-  "- Match the BRAND VOICE, and phrase questions the way the described CUSTOMER AVATARS would ask them.",
-  "- Questions must sound like a real person ('Does the room have air conditioning?', 'How do I get there from the airport?'), not like a heading.",
-  "- Answers: 1-3 sentences, warm and direct, no fluff. Do not restate the question.",
-  "- Write 6 to 9 FAQs unless the instructions say otherwise. Mark the 3 most valuable / most-asked as featured.",
+  "- Answer only from the article content and the REFERENCE material. Do not invent prices, dates, policies, or facts none of them support; skip a question rather than guess.",
+  "- Prefer the wording and answers from the REFERENCE info or FAQ library when they apply. They are authoritative.",
+  "- Questions must sound like a real person searching about this topic, not like a heading.",
+  "- Answers: 1 to 3 sentences, warm and direct, no fluff. Do not restate the question. Refer to the business as 'Anamaya'.",
+  "- Never use em dashes or en dashes. Use commas or separate sentences instead.",
+  "- Write 6 to 9 FAQs unless the instructions say otherwise. Mark the 3 most valuable as featured.",
   "- No duplicate or near-duplicate questions.",
 ].join("\n");
 
@@ -88,14 +88,28 @@ export function formatAoAvatars(archetypes: AOArchetype[]): string {
 }
 
 const REFINE_SYSTEM_PROMPT = [
-  "You revise an existing list of website FAQs for a wellness/yoga retreat resort.",
+  "You revise an existing list of website FAQs for the Anamaya wellness and yoga retreat resort.",
   "You are given the current FAQs (numbered) and an instruction from the editor.",
   "Apply the instruction, then return the FULL list in the same order.",
   "Rules:",
   "- Change ONLY what the instruction asks. Leave every other FAQ exactly as-is, word for word, including its featured flag.",
-  "- Keep answers accurate — do not invent prices, dates, or policies. Keep the warm, direct brand voice.",
+  "- Keep answers accurate. Do not invent prices, dates, or policies. Keep the warm, direct brand voice, and refer to the business as 'Anamaya'.",
+  "- Never use em dashes or en dashes. Use commas or separate sentences instead.",
   "- Do not add or remove FAQs unless the instruction says to.",
 ].join("\n");
+
+/** Guarantee no em/en dashes in generated text (house style), even if the
+ *  model slips: em dash becomes a comma, en dash becomes a hyphen, then tidy
+ *  up spacing and doubled commas. */
+function noDashes(s: string): string {
+  return s
+    .replace(/\s*—\s*/g, ", ")
+    .replace(/–/g, "-")
+    .replace(/,\s*,/g, ",")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
 
 /**
  * Shared LLM call: send a system prompt + user message, parse the JSON FAQ
@@ -146,8 +160,8 @@ async function runFaqCompletion(
   const faqs = Array.isArray(parsed.faqs) ? parsed.faqs : [];
   const cleaned: FaqDraft[] = faqs
     .map((f) => ({
-      question: (f.question ?? "").trim(),
-      answer: (f.answer ?? "").trim(),
+      question: noDashes((f.question ?? "").trim()),
+      answer: noDashes((f.answer ?? "").trim()),
       is_featured: f.featured === true,
     }))
     .filter((f) => f.question && f.answer);
@@ -219,9 +233,9 @@ async function buildFullReference(): Promise<string> {
     (ao.archetypes ?? []).filter((a) => a.is_active !== false),
   );
   return [
-    aoBrand && `BRAND VOICE (from AnamayOS — match this):\n${aoBrand}`,
+    aoBrand && `BRAND VOICE (from AnamayOS, match this):\n${aoBrand}`,
     aoAvatars &&
-      `CUSTOMER AVATARS (from AnamayOS — phrase questions the way these people ask):\n${cap(aoAvatars, 4000)}`,
+      `CUSTOMER AVATARS (from AnamayOS, phrase questions the way these people ask):\n${cap(aoAvatars, 4000)}`,
     knowledge.brand_vibe &&
       `BRAND & VIBE (extra notes):\n${cap(knowledge.brand_vibe, 3000)}`,
     knowledge.customer_avatars &&

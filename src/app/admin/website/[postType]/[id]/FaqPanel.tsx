@@ -122,7 +122,7 @@ export default function FaqPanel({
       start(async () => {
         apply(
           await setFaqApprovedAction({ pageId, approved: false, ...paths }),
-          "Unpublished — no longer shown on the page.",
+          "Unpublished. No longer shown on the page.",
         );
       });
       return;
@@ -134,7 +134,7 @@ export default function FaqPanel({
       if (!saved.ok) return apply(saved);
       apply(
         await setFaqApprovedAction({ pageId, approved: true, ...paths }),
-        "Published — now shown on this page.",
+        "Published. Now shown on this page.",
       );
     });
   }
@@ -172,7 +172,7 @@ export default function FaqPanel({
     <div className="mt-4 rounded-sm border border-[#c3c4c7] bg-white">
       <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2">
         <span className="text-[13px] font-semibold text-[#1d2327]">
-          FAQs — &ldquo;For More Info&rdquo; block
+          FAQs: &ldquo;For More Info&rdquo; block
         </span>
         <span
           className={
@@ -181,7 +181,7 @@ export default function FaqPanel({
               : "rounded-full bg-[#fbf0dc] px-2 py-0.5 text-[11px] font-semibold text-[#8a6d00]"
           }
         >
-          {approved ? "Published — shown on this page" : "Draft — not shown publicly"}
+          {approved ? "Published, shown on this page" : "Draft, not shown publicly"}
         </span>
       </div>
 
@@ -302,7 +302,7 @@ export default function FaqPanel({
               <textarea
                 value={r.answer}
                 onChange={(e) => editRow(r.key, { answer: e.target.value }, true)}
-                placeholder="Short, warm, accurate answer (1–3 sentences)"
+                placeholder="Short, warm, accurate answer (1-3 sentences)"
                 rows={2}
                 className={`${inputCls} resize-y`}
               />

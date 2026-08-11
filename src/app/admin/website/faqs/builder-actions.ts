@@ -91,7 +91,7 @@ export async function generateFaqSetAction(
       return {
         ok: false,
         error:
-          "Pick at least one info source on the left (brand, avatars, notes, or an article) so the answers are grounded — a prompt on its own can invent facts.",
+          "Pick at least one info source on the left (brand, avatars, notes, or an article) so the answers are grounded. A prompt on its own can invent facts.",
       };
     }
 

@@ -66,7 +66,7 @@ export default function FaqBlockView({
       <div className="mx-auto px-6" style={{ maxWidth: widthCss }}>
         {isSample && (
           <p className="mb-6 rounded-md border border-dashed border-anamaya-charcoal/25 bg-white/50 px-4 py-2 text-center text-xs italic text-anamaya-charcoal/60">
-            Sample preview — on a real page these questions are generated from
+            Sample preview. On a real page these questions are generated from
             that page&rsquo;s own content and reviewed before publishing.
           </p>
         )}

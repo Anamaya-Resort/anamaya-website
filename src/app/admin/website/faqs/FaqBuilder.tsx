@@ -61,7 +61,7 @@ export default function FaqBuilder({
 }) {
   const [notes, setNotes] = useState<FaqKnowledgeSettings>(initialNotes);
   const [includeAoBrand, setIncludeAoBrand] = useState<boolean>(!!aoBrandName);
-  // Avatars start UNCHECKED — a good FAQ run usually leans on one or two.
+  // Avatars start UNCHECKED, since a good FAQ run usually leans on one or two.
   const [avatarSel, setAvatarSel] = useState<Set<string>>(() => new Set());
   const [manualSel, setManualSel] = useState({
     customer_avatars: !!initialNotes.customer_avatars,
@@ -257,7 +257,7 @@ export default function FaqBuilder({
                   onChange={(e) => setIncludeAoBrand(e.target.checked)}
                   className="h-4 w-4"
                 />
-                Brand voice — <strong>{aoBrandName}</strong>
+                Brand voice: <strong>{aoBrandName}</strong>
               </label>
             ) : (
               <p className="text-[12px] text-[#50575e]">No brand guide in AnamayOS.</p>
@@ -282,7 +282,7 @@ export default function FaqBuilder({
                       <span>
                         <strong>{a.name}</strong>
                         {a.description ? (
-                          <span className="text-[#50575e]"> — {a.description}</span>
+                          <span className="text-[#50575e]">: {a.description}</span>
                         ) : null}
                       </span>
                     </label>
@@ -348,7 +348,7 @@ export default function FaqBuilder({
                   <li key={s.id} className="flex items-center justify-between gap-2">
                     <span className="min-w-0 truncate">
                       <strong>{s.code}</strong>
-                      {s.name ? ` — ${s.name}` : ""}{" "}
+                      {s.name ? `: ${s.name}` : ""}{" "}
                       <span className="text-[11px] text-[#50575e]">
                         ({s.items.length})
                       </span>
