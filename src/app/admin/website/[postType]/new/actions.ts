@@ -31,6 +31,9 @@ export async function createItem(formData: FormData) {
   const postTypeSlug = String(formData.get("postTypeSlug") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const cmsTemplateRaw = String(formData.get("cms_template_id") ?? "");
+  // Optional body from the Add-New wizard. When absent (legacy simple form),
+  // `body` is null and we skip the content_items write entirely — backward-safe.
+  const bodyRaw = formData.get("body");
 
   const pt = getPostTypeBySlug(postTypeSlug);
   if (!pt) throw new Error("Unknown post type");
@@ -86,6 +89,23 @@ export async function createItem(formData: FormData) {
     .single();
   if (insErr) throw new Error(insErr.message);
   const newId = inserted.id as string;
+
+  // Carry the wizard's pasted body into the draft. Mirrors updateItem's
+  // content_items write so the editor opens with the body already in place.
+  // Empty body persists as null (falls back to migrated/scraped content).
+  if (bodyRaw !== null) {
+    const trimmed = String(bodyRaw).trim();
+    const cms_body_html = trimmed === "" ? null : String(bodyRaw);
+    const { error: bodyErr } = await sb.from("content_items").upsert(
+      {
+        url_inventory_id: newId,
+        cms_body_html,
+        cms_body_updated_at: now,
+      },
+      { onConflict: "url_inventory_id" },
+    );
+    if (bodyErr) throw new Error(bodyErr.message);
+  }
 
   revalidatePath(`/admin/website/${pt.slug}`);
   redirect(`/admin/website/${pt.slug}/${newId}`);
