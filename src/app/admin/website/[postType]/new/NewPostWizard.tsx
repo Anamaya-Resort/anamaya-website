@@ -20,15 +20,136 @@ export type WizardTemplate = {
 const NONE_ID = "__none__";
 
 // --- Snapshot geometry -----------------------------------------------------
-// Each template card shows a scaled-down LIVE preview. We render the preview
-// at a full desktop viewport width inside the iframe, then CSS-scale the whole
-// iframe down so it reads as a tall thumbnail. The visible frame clips it via
-// overflow:hidden.
-const SNAP_W = 240; // visible card/snapshot width in px
-const SNAP_H = 340; // visible snapshot height in px (tall crop)
-const IFRAME_W = 1200; // logical viewport the preview renders at
-const SNAP_SCALE = SNAP_W / IFRAME_W; // 0.2
-const IFRAME_H = Math.round(SNAP_H / SNAP_SCALE); // logical iframe height
+// Each template card shows a scaled-down LIVE preview that reads as a faithful
+// miniature of the WHOLE page on a laptop, not a tall top-crop of the hero.
+// We render the preview iframe at a real laptop width (LAPTOP_W) so it shows
+// the true desktop layout, then CSS-scale the whole thing down by
+// scale = CARD_W / LAPTOP_W. Because the iframe and /preview/template are
+// same-origin, on load we read the iframe's real content height and size the
+// card proportionally (capped at MAX_LOGICAL so very long pages don't produce
+// absurdly tall cards). See TemplateMini below.
+const LAPTOP_W = 1280; // logical laptop viewport the preview renders at
+const CARD_W = 300; // visible card/snapshot width in px; scale = CARD_W / LAPTOP_W ≈ 0.2344
+// Cap on the logical page height we actually show. Enough to reveal hero +
+// body + a couple of sections so templates look DIFFERENT, without letting a
+// very long page make a skyscraper card.
+const MAX_LOGICAL = 2600;
+// Fallback logical height when the same-origin height read fails or returns 0.
+const DEFAULT_LOGICAL = 2400;
+
+// --- Shared template miniature ---------------------------------------------
+// Renders /preview/template/... in an iframe at LAPTOP_W and CSS-scales the
+// whole thing to CARD_W, so the card is a proportional whole-page miniature of
+// the laptop layout. Each mini measures its own content height on load (the
+// iframe is same-origin), so multiple minis on one page size independently and
+// nothing blocks render on measurement. Used by both the Step-1 picker cards
+// and the Phase-2 preview strip.
+function TemplateMini({
+  src,
+  title,
+  cardW = CARD_W,
+}: {
+  src: string;
+  title: string;
+  cardW?: number;
+}) {
+  // Real content height of the iframe once loaded; null until measured.
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
+  const frameRef = useRef<HTMLIFrameElement | null>(null);
+  const roRef = useRef<ResizeObserver | null>(null);
+
+  const scale = cardW / LAPTOP_W;
+  // Logical (unscaled) height we actually render/clip to. Capped so long pages
+  // don't create skyscraper cards; falls back before measurement.
+  const logical = Math.min(contentHeight ?? DEFAULT_LOGICAL, MAX_LOGICAL);
+  const measured = contentHeight != null;
+  // Before measurement, reserve a neutral placeholder height so layout doesn't
+  // jump around while the iframe loads. After, use the true scaled height.
+  const cardHeight = measured
+    ? Math.round(logical * scale)
+    : Math.round(cardW * 1.3);
+  // Page is taller than what we show → hint there's more with a bottom fade.
+  const overflow = contentHeight != null && contentHeight > MAX_LOGICAL;
+
+  function readHeight(): number {
+    try {
+      return frameRef.current?.contentDocument?.documentElement?.scrollHeight ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function handleLoad() {
+    const h = readHeight();
+    setContentHeight(h > 0 ? h : DEFAULT_LOGICAL);
+    // The preview lazy-loads images, so the page keeps growing after `load`
+    // fires. Watch the same-origin document for size changes and re-measure;
+    // also re-read a couple of times as a fallback where RO is unavailable.
+    try {
+      const doc = frameRef.current?.contentDocument;
+      if (doc?.documentElement && "ResizeObserver" in window) {
+        roRef.current?.disconnect();
+        const ro = new ResizeObserver(() => {
+          const h2 = readHeight();
+          if (h2 > 0) setContentHeight(h2);
+        });
+        ro.observe(doc.documentElement);
+        roRef.current = ro;
+      }
+    } catch {
+      /* cross-origin — keep the load-time measurement */
+    }
+    [800, 2000].forEach((d) =>
+      setTimeout(() => {
+        const h3 = readHeight();
+        if (h3 > 0) setContentHeight(h3);
+      }, d),
+    );
+  }
+
+  useEffect(() => () => roRef.current?.disconnect(), []);
+
+  return (
+    <div
+      style={{ width: cardW, height: cardHeight }}
+      className="relative overflow-hidden bg-white"
+    >
+      <div
+        style={{
+          width: LAPTOP_W,
+          height: logical,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+        }}
+      >
+        <iframe
+          ref={frameRef}
+          src={src}
+          title={title}
+          loading="lazy"
+          tabIndex={-1}
+          onLoad={handleLoad}
+          style={{
+            width: LAPTOP_W,
+            height: logical,
+            border: "0",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
+      {overflow && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-8"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1))",
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 type MediaItem = {
   // Stable client-side key; media is NOT persisted to the DB in Phase 1.
@@ -220,7 +341,10 @@ export default function NewPostWizard({
             name="None (rich-text fallback)"
             sub="Renders from the body HTML"
           >
-            <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-[#f6f7f7] px-3 text-center">
+            <div
+              style={{ width: CARD_W, height: Math.round(CARD_W * 1.3) }}
+              className="flex flex-col items-center justify-center gap-1 bg-[#f6f7f7] px-3 text-center"
+            >
               <span className="text-[22px] leading-none text-[#a7aaad]">
                 ¶
               </span>
@@ -239,27 +363,10 @@ export default function NewPostWizard({
               sub={`${t.slug}${t.isDefault ? " · default" : ""}`}
               mono
             >
-              <div
-                style={{
-                  width: IFRAME_W,
-                  height: IFRAME_H,
-                  transform: `scale(${SNAP_SCALE})`,
-                  transformOrigin: "top left",
-                }}
-              >
-                <iframe
-                  src={`/preview/template/${t.id}`}
-                  title={`${t.name} preview`}
-                  loading="lazy"
-                  tabIndex={-1}
-                  style={{
-                    width: IFRAME_W,
-                    height: IFRAME_H,
-                    border: "0",
-                    pointerEvents: "none",
-                  }}
-                />
-              </div>
+              <TemplateMini
+                src={`/preview/template/${t.id}`}
+                title={`${t.name} preview`}
+              />
             </TemplateCard>
           ))}
         </div>
@@ -553,38 +660,18 @@ function PreviewStep({
                   onClick={() =>
                     setActiveIndex(templates.findIndex((x) => x.id === t.id))
                   }
-                  style={{ width: SNAP_W }}
+                  style={{ width: CARD_W }}
                   className={`group relative flex flex-col overflow-hidden rounded-sm border bg-white text-left transition-shadow hover:shadow-sm ${
                     isActive
                       ? "border-[#2271b1] ring-2 ring-[#2271b1]"
                       : "border-[#dcdcde]"
                   }`}
                 >
-                  <div
-                    style={{ width: SNAP_W, height: SNAP_H }}
-                    className="relative overflow-hidden border-b border-[#dcdcde] bg-white"
-                  >
-                    <div
-                      style={{
-                        width: IFRAME_W,
-                        height: IFRAME_H,
-                        transform: `scale(${SNAP_SCALE})`,
-                        transformOrigin: "top left",
-                      }}
-                    >
-                      <iframe
-                        src={previewUrl(t.id)}
-                        title={`${t.name} preview`}
-                        loading="lazy"
-                        tabIndex={-1}
-                        style={{
-                          width: IFRAME_W,
-                          height: IFRAME_H,
-                          border: "0",
-                          pointerEvents: "none",
-                        }}
-                      />
-                    </div>
+                  <div className="relative overflow-hidden border-b border-[#dcdcde] bg-white">
+                    <TemplateMini
+                      src={previewUrl(t.id)}
+                      title={`${t.name} preview`}
+                    />
                   </div>
                   <div className="px-2 py-1.5">
                     <span className="block truncate text-[13px] font-semibold text-[#1d2327]">
@@ -707,7 +794,7 @@ function TemplateCard({
       role="checkbox"
       aria-checked={selected}
       onClick={onToggle}
-      style={{ width: SNAP_W }}
+      style={{ width: CARD_W }}
       className={`group relative flex flex-col overflow-hidden rounded-sm border bg-white text-left transition-shadow hover:shadow-sm ${
         selected
           ? "border-[#2271b1] ring-2 ring-[#2271b1]"
@@ -726,11 +813,9 @@ function TemplateCard({
         ✓
       </span>
 
-      {/* Tall snapshot viewport — clips the scaled iframe */}
-      <div
-        style={{ width: SNAP_W, height: SNAP_H }}
-        className="relative overflow-hidden border-b border-[#dcdcde] bg-white"
-      >
+      {/* Snapshot viewport — the child (TemplateMini or the None placeholder)
+          sizes its own height so the card is a proportional page miniature. */}
+      <div className="relative overflow-hidden border-b border-[#dcdcde] bg-white">
         {children}
       </div>
 
