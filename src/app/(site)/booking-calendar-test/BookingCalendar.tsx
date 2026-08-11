@@ -145,7 +145,8 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
             <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-anamaya-mint/50 bg-anamaya-cream/70 shadow-sm">
               {/* Washed-out backdrop of the retreat centred on the right,
                   crossfading as you scroll. 25% opacity at top → 5% at bottom. */}
-              {!bgFrozen &&
+              {!selected &&
+                !bgFrozen &&
                 [
                   { slot: "a" as const, url: bgSlots.a },
                   { slot: "b" as const, url: bgSlots.b },
@@ -174,7 +175,9 @@ export default function BookingCalendar({ data }: { data: CalendarData }) {
                 ) : null,
               )}
 
-              <div className="relative z-10 h-full w-full">
+              <div
+                className={`relative z-10 h-full w-full ${selected ? "bg-anamaya-cream" : ""}`}
+              >
                 {selected ? (
                   <TowerDetail r={selected} onClose={() => setSelectedId(null)} />
                 ) : (
