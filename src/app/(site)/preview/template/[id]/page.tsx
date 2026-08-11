@@ -24,7 +24,13 @@ export const metadata: Metadata = {
 };
 
 type Params = { id: string };
-type Search = { variant?: string; page?: string };
+type Search = { variant?: string; page?: string; thumb?: string };
+
+// Thumbnail mode (?thumb=1): cover heroes size themselves with `height: NNvh`,
+// which balloons when this page is rendered inside a very tall thumbnail
+// iframe (vh is relative to the iframe's height). Cap the cover hero to a
+// fixed height so the WHOLE page renders at a normal scale for the miniature.
+const THUMB_CSS = `[data-hero-cover="true"]{height:420px !important;min-height:0 !important;}`;
 
 export default async function TemplatePreviewPage({
   params,
@@ -34,7 +40,8 @@ export default async function TemplatePreviewPage({
   searchParams: Promise<Search>;
 }) {
   const { id } = await params;
-  const { variant, page } = await searchParams;
+  const { variant, page, thumb } = await searchParams;
+  const isThumb = thumb === "1";
 
   const sb = supabaseServerOrNull();
   if (!sb) notFound();
@@ -50,10 +57,13 @@ export default async function TemplatePreviewPage({
   // that draft's per-slot overrides on unlocked blocks. Absent → template
   // defaults, exactly as before.
   return (
-    <TemplateRenderer
-      templateId={template.id}
-      variantSlug={variant}
-      pageId={page}
-    />
+    <>
+      {isThumb && <style dangerouslySetInnerHTML={{ __html: THUMB_CSS }} />}
+      <TemplateRenderer
+        templateId={template.id}
+        variantSlug={variant}
+        pageId={page}
+      />
+    </>
   );
 }

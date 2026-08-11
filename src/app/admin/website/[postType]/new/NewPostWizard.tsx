@@ -59,6 +59,9 @@ function TemplateMini({
   const roRef = useRef<ResizeObserver | null>(null);
 
   const scale = cardW / LAPTOP_W;
+  // Ask the preview to cap its cover hero (?thumb=1) so the whole page fits
+  // the mini at a normal scale instead of the hero ballooning via vh.
+  const thumbSrc = src + (src.includes("?") ? "&" : "?") + "thumb=1";
   // Logical (unscaled) height we actually render/clip to. Capped so long pages
   // don't create skyscraper cards; falls back before measurement.
   const logical = Math.min(contentHeight ?? DEFAULT_LOGICAL, MAX_LOGICAL);
@@ -124,7 +127,7 @@ function TemplateMini({
       >
         <iframe
           ref={frameRef}
-          src={src}
+          src={thumbSrc}
           title={title}
           loading="lazy"
           tabIndex={-1}
