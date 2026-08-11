@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 type Params = { id: string };
-type Search = { variant?: string };
+type Search = { variant?: string; page?: string };
 
 export default async function TemplatePreviewPage({
   params,
@@ -34,7 +34,7 @@ export default async function TemplatePreviewPage({
   searchParams: Promise<Search>;
 }) {
   const { id } = await params;
-  const { variant } = await searchParams;
+  const { variant, page } = await searchParams;
 
   const sb = supabaseServerOrNull();
   if (!sb) notFound();
@@ -45,5 +45,15 @@ export default async function TemplatePreviewPage({
     .maybeSingle();
   if (!template) notFound();
 
-  return <TemplateRenderer templateId={template.id} variantSlug={variant} />;
+  // When `page` is present (a draft url_inventory id, e.g. from the Add-New
+  // wizard's preview step), pass it as pageId so TemplateRenderer swaps in
+  // that draft's per-slot overrides on unlocked blocks. Absent → template
+  // defaults, exactly as before.
+  return (
+    <TemplateRenderer
+      templateId={template.id}
+      variantSlug={variant}
+      pageId={page}
+    />
+  );
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createItem } from "./actions";
+import { buildPreview, bindTemplate } from "./preview-actions";
 import { uploadWizardMedia } from "./upload-actions";
 
 export type WizardTemplate = {
@@ -66,6 +68,14 @@ export default function NewPostWizard({
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isCreating, startCreate] = useTransition();
   const [pasteOpen, setPasteOpen] = useState(false);
+
+  // --- Preview step ---------------------------------------------------------
+  // `step` drives which view shows. Step 1 ("edit") state above is preserved
+  // when we switch to "preview", so Back returns without losing anything.
+  const [step, setStep] = useState<"edit" | "preview">("edit");
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [isBuilding, startBuild] = useTransition();
+  const [buildError, setBuildError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -139,6 +149,55 @@ export default function NewPostWizard({
   }
 
   const canCreate = title.trim().length > 0 && !isCreating;
+
+  // The selected REAL templates, in list order — the ones the preview strip
+  // renders. The "None" sentinel has no template to render, so it's omitted.
+  const previewTemplates = templates.filter((t) =>
+    selectedTemplateIds.includes(t.id),
+  );
+
+  // Continue → build a preview draft (persist body + per-template overrides),
+  // then switch to the preview view. Needs a title and at least one real
+  // template so the strip is never empty.
+  const canContinue =
+    title.trim().length > 0 && previewTemplates.length > 0 && !isBuilding;
+
+  function handleContinue() {
+    setBuildError(null);
+    startBuild(async () => {
+      try {
+        const images = media
+          .filter((m) => m.status === "done" && m.kind === "image" && m.url)
+          .map((m) => m.url as string);
+        const { draftId: id } = await buildPreview({
+          postTypeSlug,
+          title,
+          body,
+          images,
+          selectedTemplateIds,
+          draftId: draftId ?? undefined,
+        });
+        setDraftId(id);
+        setStep("preview");
+      } catch (err) {
+        setBuildError(
+          err instanceof Error ? err.message : "Could not build preview",
+        );
+      }
+    });
+  }
+
+  // --- Preview view ---------------------------------------------------------
+  if (step === "preview" && draftId) {
+    return (
+      <PreviewStep
+        postTypeSlug={postTypeSlug}
+        draftId={draftId}
+        templates={previewTemplates}
+        onBack={() => setStep("edit")}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-3">
@@ -352,26 +411,31 @@ export default function NewPostWizard({
 
         <div className="flex items-center gap-3">
           {/*
-            PHASE 2 SEAM — "Continue to preview".
-            The next phase mounts a 3-up snapshot preview here (tall
-            side-by-side snapshots of `body` rendered in each of
-            `selectedTemplateIds`, click-to-expand to live HTML, hover
-            arrows mid-left/mid-right to cycle). It will receive
-            selectedTemplateIds, title, body and media as props. Until then
-            the button is disabled so nothing half-built ships.
+            Continue to preview — builds a draft with per-template slot
+            overrides from the pasted content, then shows tall side-by-side
+            snapshots of the content rendered in each selected template with a
+            live full-size view of the active one. Needs a title + ≥1 real
+            template selected.
           */}
           <div className="flex flex-col items-end">
             <button
               type="button"
-              disabled
-              title="Preview is coming in the next phase"
-              className="cursor-not-allowed rounded-sm bg-[#dcdcde] px-4 py-2 text-[13px] font-medium text-[#8c8f94]"
+              onClick={handleContinue}
+              disabled={!canContinue}
+              title={
+                canContinue
+                  ? "Preview your content in each selected template"
+                  : "Add a title and pick at least one template"
+              }
+              className="rounded-sm border border-[#2271b1] bg-white px-4 py-2 text-[13px] font-medium text-[#2271b1] hover:bg-[#f6fbfd] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Continue to preview →
+              {isBuilding ? "Building preview…" : "Continue to preview →"}
             </button>
-            <span className="mt-0.5 text-[11px] text-[#50575e]">
-              (preview coming next)
-            </span>
+            {buildError && (
+              <span className="mt-0.5 max-w-[220px] text-right text-[11px] text-[#d63638]">
+                {buildError}
+              </span>
+            )}
           </div>
 
           <button
@@ -400,6 +464,221 @@ export default function NewPostWizard({
           }}
         />
       )}
+    </div>
+  );
+}
+
+// --- Preview step -----------------------------------------------------------
+// Tall side-by-side snapshots of the pasted content rendered in each selected
+// template (windowed to ~3), plus a live full-size view of the ACTIVE one.
+// Hover arrows mid-left/right cycle the active template (wrap). "Use this
+// template" binds it to the draft and opens the editor.
+const PREVIEW_WINDOW = 3; // snapshots visible at once
+
+function PreviewStep({
+  postTypeSlug,
+  draftId,
+  templates,
+  onBack,
+}: {
+  postTypeSlug: string;
+  draftId: string;
+  templates: WizardTemplate[];
+  onBack: () => void;
+}) {
+  const router = useRouter();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isBinding, startBind] = useTransition();
+
+  const n = templates.length;
+  const active = templates[Math.min(activeIndex, n - 1)];
+
+  // Window the snapshot strip so the active card stays visible when there are
+  // more than PREVIEW_WINDOW templates. Keeps one card before the active one
+  // where possible.
+  const maxStart = Math.max(0, n - PREVIEW_WINDOW);
+  const windowStart = Math.min(Math.max(0, activeIndex - 1), maxStart);
+  const visible = templates.slice(windowStart, windowStart + PREVIEW_WINDOW);
+
+  function cycle(dir: -1 | 1) {
+    setActiveIndex((i) => (i + dir + n) % n);
+  }
+
+  function handleUse() {
+    startBind(async () => {
+      await bindTemplate(draftId, active.id, postTypeSlug);
+      router.push(`/admin/website/${postTypeSlug}/${draftId}`);
+    });
+  }
+
+  const previewUrl = (id: string) =>
+    `/preview/template/${id}?page=${encodeURIComponent(draftId)}`;
+
+  return (
+    <div className="mx-auto max-w-[1200px] space-y-4 px-3">
+      {/* Snapshot strip — click a card to make it active */}
+      <div className="rounded-sm border border-[#c3c4c7] bg-white">
+        <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2">
+          <span className="text-[13px] font-semibold text-[#1d2327]">
+            Preview
+            <span className="ml-2 text-[12px] font-normal text-[#50575e]">
+              Your content rendered in each selected template. Pick the one you
+              like.
+            </span>
+          </span>
+          {n > PREVIEW_WINDOW && (
+            <span className="text-[12px] text-[#50575e]">
+              {activeIndex + 1} / {n}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 px-3 py-4">
+          {n > PREVIEW_WINDOW && (
+            <button
+              type="button"
+              onClick={() => cycle(-1)}
+              aria-label="Previous template"
+              className="shrink-0 rounded-full border border-[#c3c4c7] bg-white px-2 py-1 text-[15px] leading-none text-[#50575e] hover:bg-[#f0f0f1]"
+            >
+              ‹
+            </button>
+          )}
+          <div className="flex flex-1 flex-wrap gap-4">
+            {visible.map((t) => {
+              const isActive = t.id === active.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() =>
+                    setActiveIndex(templates.findIndex((x) => x.id === t.id))
+                  }
+                  style={{ width: SNAP_W }}
+                  className={`group relative flex flex-col overflow-hidden rounded-sm border bg-white text-left transition-shadow hover:shadow-sm ${
+                    isActive
+                      ? "border-[#2271b1] ring-2 ring-[#2271b1]"
+                      : "border-[#dcdcde]"
+                  }`}
+                >
+                  <div
+                    style={{ width: SNAP_W, height: SNAP_H }}
+                    className="relative overflow-hidden border-b border-[#dcdcde] bg-white"
+                  >
+                    <div
+                      style={{
+                        width: IFRAME_W,
+                        height: IFRAME_H,
+                        transform: `scale(${SNAP_SCALE})`,
+                        transformOrigin: "top left",
+                      }}
+                    >
+                      <iframe
+                        src={previewUrl(t.id)}
+                        title={`${t.name} preview`}
+                        loading="lazy"
+                        tabIndex={-1}
+                        style={{
+                          width: IFRAME_W,
+                          height: IFRAME_H,
+                          border: "0",
+                          pointerEvents: "none",
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="px-2 py-1.5">
+                    <span className="block truncate text-[13px] font-semibold text-[#1d2327]">
+                      {t.name}
+                    </span>
+                    <span className="block truncate font-mono text-[12px] text-[#50575e]">
+                      {t.slug}
+                      {isActive ? " · active" : ""}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {n > PREVIEW_WINDOW && (
+            <button
+              type="button"
+              onClick={() => cycle(1)}
+              aria-label="Next template"
+              className="shrink-0 rounded-full border border-[#c3c4c7] bg-white px-2 py-1 text-[15px] leading-none text-[#50575e] hover:bg-[#f0f0f1]"
+            >
+              ›
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Live full-size view of the ACTIVE template, with hover cycle arrows */}
+      <div className="rounded-sm border border-[#c3c4c7] bg-white">
+        <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2">
+          <span className="text-[13px] font-semibold text-[#1d2327]">
+            {active.name}
+            <span className="ml-2 font-mono text-[12px] font-normal text-[#50575e]">
+              {active.slug}
+            </span>
+          </span>
+          <a
+            href={previewUrl(active.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[12px] text-[#2271b1] hover:underline"
+          >
+            Open in new tab ↗
+          </a>
+        </div>
+        <div className="group relative">
+          <iframe
+            key={active.id}
+            src={previewUrl(active.id)}
+            title={`${active.name} live preview`}
+            className="block w-full"
+            style={{ height: "820px", border: "0" }}
+          />
+          {n > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => cycle(-1)}
+                aria-label="Previous template"
+                className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-[#c3c4c7] bg-white/90 px-3 py-2 text-[18px] leading-none text-[#1d2327] opacity-0 shadow-sm transition-opacity hover:bg-white group-hover:opacity-100"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={() => cycle(1)}
+                aria-label="Next template"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-[#c3c4c7] bg-white/90 px-3 py-2 text-[18px] leading-none text-[#1d2327] opacity-0 shadow-sm transition-opacity hover:bg-white group-hover:opacity-100"
+              >
+                ›
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Footer actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-[13px] text-[#2271b1] hover:underline"
+        >
+          ← Back
+        </button>
+        <button
+          type="button"
+          onClick={handleUse}
+          disabled={isBinding}
+          className="rounded-sm bg-[#2271b1] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#135e96] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isBinding ? "Opening editor…" : "Use this template →"}
+        </button>
+      </div>
     </div>
   );
 }
