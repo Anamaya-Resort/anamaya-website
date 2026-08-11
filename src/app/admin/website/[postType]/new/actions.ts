@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getPostTypeBySlug } from "@/lib/website-builder/post-types";
+import { bodyToHtml } from "@/lib/website-builder/wizard-content";
 
 // Must match SOURCE_SITE in queries.ts / [id]/actions.ts. New rows are
 // created on the same staging mirror the admin reads and edits.
@@ -95,7 +96,8 @@ export async function createItem(formData: FormData) {
   // Empty body persists as null (falls back to migrated/scraped content).
   if (bodyRaw !== null) {
     const trimmed = String(bodyRaw).trim();
-    const cms_body_html = trimmed === "" ? null : String(bodyRaw);
+    // Preserve paragraph/line spacing: plain text -> <p>/<br>, HTML kept as-is.
+    const cms_body_html = trimmed === "" ? null : bodyToHtml(String(bodyRaw));
     const { error: bodyErr } = await sb.from("content_items").upsert(
       {
         url_inventory_id: newId,
