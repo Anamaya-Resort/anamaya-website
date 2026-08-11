@@ -120,22 +120,6 @@ export default function NewPostWizard({
     for (const file of Array.from(files)) uploadOne(file);
   }
 
-  // Paste anywhere in the wizard: if the clipboard carries image/video files,
-  // upload them. Text/HTML pastes into the body textarea fall through
-  // untouched (we only act when there are real files on the clipboard). The
-  // explicit "Paste from clipboard" button + modal is the primary path; this
-  // is a convenience fallback.
-  function handlePaste(e: React.ClipboardEvent) {
-    const files = e.clipboardData?.files;
-    if (!files || files.length === 0) return;
-    const mediaFiles = Array.from(files).filter(
-      (f) => f.type.startsWith("image/") || f.type.startsWith("video/"),
-    );
-    if (mediaFiles.length === 0) return;
-    e.preventDefault();
-    for (const f of mediaFiles) uploadOne(f);
-  }
-
   function removeMedia(localId: string) {
     setMedia((prev) => prev.filter((m) => m.localId !== localId));
   }
@@ -157,10 +141,7 @@ export default function NewPostWizard({
   const canCreate = title.trim().length > 0 && !isCreating;
 
   return (
-    <div
-      className="mx-auto max-w-[1200px] space-y-4 px-3"
-      onPaste={handlePaste}
-    >
+    <div className="mx-auto max-w-[1200px] space-y-4 px-3">
       {/* STEP 1 — Choose templates + content */}
 
       {/* Choose templates (multi-select snapshots) */}
@@ -252,8 +233,7 @@ export default function NewPostWizard({
             <label className="mb-1 block text-[12px] font-semibold text-[#1d2327]">
               Body
               <span className="ml-2 font-normal text-[#50575e]">
-                Paste plain text or HTML / blocks. Pasted images and videos are
-                uploaded automatically.
+                Paste plain text or HTML / blocks.
               </span>
             </label>
             <textarea
@@ -509,6 +489,41 @@ function PasteModal({
     dropRef.current?.focus();
   }, []);
 
+  // Auto-read the clipboard when the modal opens (it opened from a button
+  // click — a user gesture — so the read is allowed), so the image appears
+  // without the user pressing ⌘V. If the browser denies clipboard-read or
+  // there's no image on the clipboard, we silently fall back to the manual
+  // paste target below.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!navigator.clipboard?.read) return;
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const type = item.types.find((t) => t.startsWith("image/"));
+          if (!type) continue;
+          const blob = await item.getType(type);
+          const ext = type.split("/")[1] || "png";
+          const f = new File([blob], `pasted.${ext}`, { type });
+          if (cancelled) return;
+          setMessage(null);
+          setFile(f);
+          setPreviewUrl((old) => {
+            if (old) URL.revokeObjectURL(old);
+            return URL.createObjectURL(f);
+          });
+          return;
+        }
+      } catch {
+        // Clipboard-read denied or unavailable — manual ⌘V paste still works.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Revoke the object URL when it changes / on unmount.
   useEffect(() => {
     return () => {
@@ -544,6 +559,7 @@ function PasteModal({
       return;
     }
     e.preventDefault();
+    e.stopPropagation();
     setMessage(null);
     setFile(imgFile);
     setPreviewUrl((old) => {
