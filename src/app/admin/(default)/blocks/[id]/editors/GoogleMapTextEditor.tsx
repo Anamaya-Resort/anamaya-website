@@ -33,6 +33,8 @@ function normalize(c: GoogleMapTextContent | null | undefined): GoogleMapTextCon
     marker_label: c?.marker_label ?? "Anamaya Resort",
     open_label: c?.open_label ?? "Open in Google Maps ↗",
     map_corner_radius_px: c?.map_corner_radius_px ?? 0,
+    embed_url: c?.embed_url ?? "",
+    full_width_map: c?.full_width_map ?? false,
 
     html: c?.html ?? "",
     text_color: c?.text_color ?? "",
@@ -286,6 +288,30 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               directions. Leave blank to drop a precise pin at the
               coordinates with no place card.
             </p>
+          </label>
+          <label className="block sm:col-span-2">
+            <span className={labelCls}>Custom embed URL (optional)</span>
+            <input
+              className={inputCls}
+              value={draft.embed_url ?? ""}
+              onChange={(e) => patch({ embed_url: e.target.value })}
+              placeholder="https://www.google.com/maps/d/embed?mid=…"
+            />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              Paste a Google My Maps embed URL (a custom map with your own
+              markers/routes) to override the pin above. Get it from My Maps →
+              ⋮ → Embed on my site (use the <code>src</code> of the iframe).
+            </p>
+          </label>
+          <label className="flex items-center gap-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={draft.full_width_map ?? false}
+              onChange={(e) => patch({ full_width_map: e.target.checked })}
+            />
+            <span className="text-sm text-anamaya-charcoal">
+              Full-width map (no text column) — large &amp; centered
+            </span>
           </label>
           <label className="block sm:col-span-2">
             <span className={labelCls}>Open-in-Maps link text</span>

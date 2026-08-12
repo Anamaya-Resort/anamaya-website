@@ -518,6 +518,12 @@ export type GoogleMapTextContent = BlockCta & {
   marker_label?: string;              // shown on the embed pin + open link
   open_label?: string;                // corner-link text; default "Open in Google Maps ↗"
   map_corner_radius_px?: number;      // default 0
+  /** Custom embed iframe src (e.g. a Google My Maps ".../maps/d/embed?mid=…"
+   *  URL). When set it OVERRIDES the computed single-pin embed — used for
+   *  custom maps with multiple routes/markers. */
+  embed_url?: string;
+  /** Show the map full-width with no text column (large + centered). */
+  full_width_map?: boolean;
 
   // ── Text ────────────────────────────────────────────────────────────
   html?: string;

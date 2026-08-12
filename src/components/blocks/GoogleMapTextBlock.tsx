@@ -77,6 +77,40 @@ export default function GoogleMapTextBlock({
     ? `https://www.google.com/maps/place/${labelQ}/@${lat},${lng},${zoom}z`
     : `https://www.google.com/maps/place/${lat},${lng}/@${lat},${lng},${zoom}z`;
 
+  // A custom embed URL (e.g. a Google My Maps ".../maps/d/embed?mid=…") wins
+  // over the computed single-pin embed. When set, the coord-based
+  // "Open in Google Maps" corner link is meaningless so it's hidden.
+  const customSrc = (content?.embed_url ?? "").trim();
+  const iframeSrc = customSrc || embedSrc;
+  const fullWidth = content?.full_width_map === true;
+
+  const mapInner = (
+    <>
+      {previewStaticMap && !customSrc && (
+        <StaticTileMap lat={lat} lng={lng} zoom={zoom} radius={radius} />
+      )}
+      <iframe
+        src={iframeSrc}
+        title={label ? `Map: ${label}` : customSrc ? "Map" : `Map at ${lat}, ${lng}`}
+        className="relative z-10 block h-full w-full"
+        style={{ border: 0 }}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        allowFullScreen
+      />
+      {!customSrc && (
+        <a
+          href={openHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-3 right-3 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-anamaya-charcoal shadow-md ring-1 ring-anamaya-charcoal/15 transition-colors hover:bg-white"
+        >
+          {openLabel}
+        </a>
+      )}
+    </>
+  );
+
   const gridCols = mapOnLeft
     ? `${mapPct}% ${textPct}%`
     : `${textPct}% ${mapPct}%`;
@@ -102,26 +136,7 @@ export default function GoogleMapTextBlock({
           overflow: "hidden",
         }}
       >
-        {previewStaticMap && (
-          <StaticTileMap lat={lat} lng={lng} zoom={zoom} radius={radius} />
-        )}
-        <iframe
-          src={embedSrc}
-          title={label ? `Map: ${label}` : `Map at ${lat}, ${lng}`}
-          className="relative z-10 block h-full w-full"
-          style={{ border: 0 }}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          allowFullScreen
-        />
-        <a
-          href={openHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute bottom-3 right-3 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-anamaya-charcoal shadow-md ring-1 ring-anamaya-charcoal/15 transition-colors hover:bg-white"
-        >
-          {openLabel}
-        </a>
+        {mapInner}
       </div>
     </div>
   );
@@ -136,6 +151,25 @@ export default function GoogleMapTextBlock({
       <CtaButton cta={content ?? {}} />
     </div>
   );
+
+  // Full-width, centered map with no text column (e.g. a My Maps routes map).
+  if (fullWidth) {
+    return (
+      <section
+        className="w-full"
+        style={{ backgroundColor: bg, color, paddingTop: padY, paddingBottom: padY }}
+      >
+        <div className="mx-auto w-full px-6" style={{ maxWidth: containerWidth }}>
+          <div
+            className="relative w-full overflow-hidden"
+            style={{ height: hasFixedHeight ? containerHeightPx : 460, borderRadius: radius }}
+          >
+            {mapInner}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
