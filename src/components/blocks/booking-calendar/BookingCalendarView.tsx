@@ -529,7 +529,7 @@ function OklahomaBar({
       onClick={() => onSelect(r.id)}
       className={`block w-full text-left transition-all ${r.isSoldOut ? "opacity-70" : ""}`}
     >
-      <div className={`flex items-center ${left ? "" : "flex-row-reverse"}`}>
+      <div className={`flex items-end ${left ? "" : "flex-row-reverse"}`}>
         {/* Body (tall) */}
         <div
           className={`flex basis-[58%] shrink-0 items-center gap-4 px-4 py-3 ${bg} ${
