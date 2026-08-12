@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import type { UiTopContent } from "@/types/blocks";
 import { useHeaderOptional } from "@/contexts/HeaderContext";
 import { useChromeOptional } from "@/contexts/ChromeContext";
-import HeaderAuth from "../HeaderAuth";
 
 const SCROLL_THRESHOLD_VH = 0.4;
 
@@ -35,7 +34,6 @@ export default function UiTopBlock({ content }: { content: UiTopContent }) {
   const header = useHeaderOptional();
   const chrome = useChromeOptional();
   const overVideo = header?.overVideo ?? false;
-  const user = chrome?.user ?? null;
   const openMenu = () => chrome?.setMenuOpen(true);
 
   const [scrolled, setScrolled] = useState(false);
@@ -82,21 +80,8 @@ export default function UiTopBlock({ content }: { content: UiTopContent }) {
           />
         </Link>
 
-        {/* Order (left -> right): user (name + avatar), a divider, then the
-            CALENDAR and MENU actions pinned to the far right. */}
+        {/* Minimal actions, pinned right: CALENDAR + MENU only. */}
         <nav className="flex items-center gap-3 sm:gap-4">
-          <HeaderAuth user={user} lightMode={lightMode} />
-
-          {/* Divider separating the user identity from the action buttons.
-              Hidden on mobile where the user label/Sign-In collapses. */}
-          <span
-            aria-hidden
-            className={[
-              "mx-1 hidden h-6 w-px sm:block",
-              lightMode ? "bg-white/30" : "bg-anamaya-charcoal/15",
-            ].join(" ")}
-          />
-
           <Link
             href={ctaHref}
             className={[

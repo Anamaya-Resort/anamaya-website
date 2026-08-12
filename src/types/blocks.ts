@@ -524,6 +524,9 @@ export type GoogleMapTextContent = BlockCta & {
   embed_url?: string;
   /** Show the map full-width with no text column (large + centered). */
   full_width_map?: boolean;
+  /** Flank the (full-width) map left & right with the sideways-flower motif
+   *  at 50% opacity. */
+  flower_frame?: boolean;
 
   // ── Text ────────────────────────────────────────────────────────────
   html?: string;

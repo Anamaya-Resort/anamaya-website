@@ -154,18 +154,34 @@ export default function GoogleMapTextBlock({
 
   // Full-width, centered map with no text column (e.g. a My Maps routes map).
   if (fullWidth) {
+    const flower = content?.flower_frame === true;
+    const flowerImg = (flip: boolean) => (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src="/journal/flower-sideways-right.webp"
+        alt=""
+        aria-hidden
+        className={`hidden shrink-0 self-center opacity-50 sm:block${flip ? " -scale-x-100" : ""}`}
+        style={{ width: "clamp(44px, 6vw, 92px)" }}
+      />
+    );
     return (
       <section
         className="w-full"
         style={{ backgroundColor: bg, color, paddingTop: padY, paddingBottom: padY }}
       >
-        <div className="mx-auto w-full px-6" style={{ maxWidth: containerWidth }}>
+        <div
+          className="mx-auto flex w-full items-stretch gap-3 px-6 sm:gap-6"
+          style={{ maxWidth: containerWidth }}
+        >
+          {flower && flowerImg(true)}
           <div
             className="relative w-full overflow-hidden"
             style={{ height: hasFixedHeight ? containerHeightPx : 460, borderRadius: radius }}
           >
             {mapInner}
           </div>
+          {flower && flowerImg(false)}
         </div>
       </section>
     );

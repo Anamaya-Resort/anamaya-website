@@ -35,6 +35,7 @@ function normalize(c: GoogleMapTextContent | null | undefined): GoogleMapTextCon
     map_corner_radius_px: c?.map_corner_radius_px ?? 0,
     embed_url: c?.embed_url ?? "",
     full_width_map: c?.full_width_map ?? false,
+    flower_frame: c?.flower_frame ?? false,
 
     html: c?.html ?? "",
     text_color: c?.text_color ?? "",
@@ -311,6 +312,16 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
             />
             <span className="text-sm text-anamaya-charcoal">
               Full-width map (no text column) — large &amp; centered
+            </span>
+          </label>
+          <label className="flex items-center gap-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={draft.flower_frame ?? false}
+              onChange={(e) => patch({ flower_frame: e.target.checked })}
+            />
+            <span className="text-sm text-anamaya-charcoal">
+              Flower frame — flank the full-width map left &amp; right (50% opacity)
             </span>
           </label>
           <label className="block sm:col-span-2">
