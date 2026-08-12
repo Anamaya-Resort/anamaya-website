@@ -88,6 +88,7 @@ const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set([
   "retreats_calendar",
   "booking_calendar",
   "service_menu",
+  "service_cards",
   "testimonials",
 ]);
 

@@ -38,6 +38,7 @@ import FeaturedBySearchEditor from "./editors/FeaturedBySearchEditor";
 import RetreatsCalendarEditor from "./editors/RetreatsCalendarEditor";
 import BookingCalendarEditor from "./editors/BookingCalendarEditor";
 import ServiceMenuEditor from "./editors/ServiceMenuEditor";
+import ServiceCardsEditor from "./editors/ServiceCardsEditor";
 import FaqEditor from "./editors/FaqEditor";
 import ReactionsEditor from "./editors/ReactionsEditor";
 import SmallFormOverImageEditor from "./editors/SmallFormOverImageEditor";
@@ -458,6 +459,18 @@ export default async function EditBlock({
       )}
       {block.type_slug === "service_menu" && (
         <ServiceMenuEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "service_cards" && (
+        <ServiceCardsEditor
           blockId={id}
           name={block.name}
           slug={block.slug}

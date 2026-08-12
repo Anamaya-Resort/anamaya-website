@@ -1082,6 +1082,47 @@ export type ServiceMenuContent = LayoutWidthsContent & {
   padding_y_px?: number;       // section vertical padding; default 64
 };
 
+/** One manual service card for ServiceCardsContent.items. Every field is
+ *  optional; a blank `image_url` renders NO image (text goes full width). */
+export type ServiceCardItem = {
+  name?: string;          // service name (card title)
+  price?: string;         // free-form price text, e.g. "$25 + tax" (blank → "Enquire")
+  blurb?: string;         // one-line summary shown above "More info"
+  description?: string;   // longer text revealed by the "More info" accordion
+  image_url?: string;     // right-side 3:2 image; blank = no image column
+  route?: string;         // optional "Route" meta row inside the accordion
+  duration?: string;      // optional "Time" meta row inside the accordion
+  link_label?: string;    // optional accordion link label
+  link_href?: string;     // optional accordion link href
+};
+
+/**
+ * Service Cards — an "advanced" service list. Each service is a CARD with a
+ * name, price, one-line blurb, a native <details> "More info" accordion
+ * (longer description + optional route/time rows + a link), and a RIGHT-SIDE
+ * 3:2 image. Cards WITHOUT an image render full-width text (never an empty
+ * box). Dual-mode: when `domain` is set it reads live from AnamayaOS
+ * (service_catalog by domain), otherwise it renders the manual `items` list
+ * stored on the block. Mirrors ServiceMenuBlock (AO by domain) +
+ * DetailsRatesDynamicBlock (AO OR manual fallback).
+ */
+export type ServiceCardsContent = LayoutWidthsContent & {
+  /** When set, read AnamayaOS service_catalog by this domain (live mode).
+   *  Blank = manual mode using `items`. */
+  domain?: string;
+  /** Optional overall section heading above the cards. Default "". */
+  heading?: string;
+  /** Show the ornate red divider + flower bookends under the heading. */
+  show_divider?: boolean;
+  /** Manual service cards (fallback / used when `domain` is blank). */
+  items?: ServiceCardItem[];
+  bg_color?: string;           // brand token or hex; auto = transparent
+  text_color?: string;         // brand token or hex; auto = charcoal
+  heading_color?: string;      // brand token or hex; auto = olive-dark
+  container_width_px?: number; // max-width of the card column; default 760
+  padding_y_px?: number;       // section vertical padding; default 64
+};
+
 /**
  * Featured by Search — AI-recommended retreats. Same card design as
  * FeaturedRetreatsContent, but instead of the is_featured flag it ranks
@@ -1276,7 +1317,8 @@ export type BlockTypeSlug =
   | "image_slideshow"
   | "faq"
   | "reactions"
-  | "booking_calendar";
+  | "booking_calendar"
+  | "service_cards";
 
 export type BlockRecord = {
   id: string;

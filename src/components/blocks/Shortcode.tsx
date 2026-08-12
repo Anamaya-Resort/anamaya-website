@@ -29,6 +29,7 @@ import FaqBlock from "./FaqBlock";
 import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
 import BookingCalendarBlock from "./BookingCalendarBlock";
 import ServiceMenuBlock from "./ServiceMenuBlock";
+import ServiceCardsBlock from "./ServiceCardsBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
 import TwoColumnBlock from "./TwoColumnBlock";
@@ -102,6 +103,7 @@ export default async function Shortcode({
     case "retreats_calendar": return <RetreatsCalendarBlock content={content} />;
     case "booking_calendar": return <BookingCalendarBlock content={content} />;
     case "service_menu":      return <ServiceMenuBlock content={content} />;
+    case "service_cards":     return <ServiceCardsBlock content={content} />;
     // No pageId via the shortcode path (block-preview iframe / direct use),
     // so page-context mode falls back to its "no page to read" state; a
     // typed search phrase still works.

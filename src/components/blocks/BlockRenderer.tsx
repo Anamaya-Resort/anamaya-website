@@ -30,6 +30,7 @@ import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
 import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
 import BookingCalendarBlock from "./BookingCalendarBlock";
 import ServiceMenuBlock from "./ServiceMenuBlock";
+import ServiceCardsBlock from "./ServiceCardsBlock";
 import FaqBlock from "./FaqBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
 import GoogleMapTextBlock from "./GoogleMapTextBlock";
@@ -77,6 +78,7 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "retreats_calendar": return <RetreatsCalendarBlock content={content} />;
     case "booking_calendar": return <BookingCalendarBlock content={content} />;
     case "service_menu":      return <ServiceMenuBlock content={content} />;
+    case "service_cards":     return <ServiceCardsBlock content={content} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text": return <GoogleMapTextBlock content={content} />;
     case "testimonials":   return <TestimonialsBlock content={content} />;
