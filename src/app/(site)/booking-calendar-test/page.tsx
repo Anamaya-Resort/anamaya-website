@@ -29,11 +29,11 @@ export default async function BookingCalendarTestPage() {
 
       <main className="min-h-screen bg-anamaya-cream pt-24 pb-10">
         <div className="mx-auto mb-6 max-w-3xl px-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-anamaya-green">
-            Preview — now powered by the Booking Calendar block
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-anamaya-green">
+            Upcoming Retreats
           </p>
-          <h1 className="mt-2 font-heading text-3xl font-semibold text-anamaya-charcoal">
-            Booking Calendar — test
+          <h1 className="mt-2 font-heading text-4xl font-semibold text-anamaya-charcoal sm:text-5xl">
+            Booking Calendar
           </h1>
         </div>
 

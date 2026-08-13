@@ -413,6 +413,8 @@ function WeekRow({
             a grey-tan tint so it stands out. Single / 3+ use the normal card. */}
         {items.length === 2 ? (
           <div className="mt-2">
+            {/* Top "bun" — matches the bottom tails' thickness, pure white. */}
+            <div className="h-6 rounded-t-lg bg-white" />
             <OklahomaBar
               r={items[0]}
               side="left"
@@ -457,8 +459,11 @@ function RetreatBody({ r, active, big }: { r: CalRetreat; active: boolean; big?:
         <img
           src={r.image}
           alt=""
+          // Big (patty) images are a tall 3:2, cropped 10% above centre so
+          // off-centre faces/heads near the top aren't cut off.
+          style={big ? { objectPosition: "50% 40%" } : undefined}
           className={`shrink-0 rounded-md object-cover ${
-            big ? "h-[156px] w-[156px]" : "h-[130px] w-[130px]"
+            big ? "h-[224px] w-[150px]" : "h-[130px] w-[130px]"
           }`}
         />
       )}
@@ -544,7 +549,7 @@ function OklahomaBar({
     // the onClick still fires via bubbling from the auto children.
     <button
       onClick={() => onSelect(r.id)}
-      className={`pointer-events-none block w-full text-left ${overlap ? "-mt-[188px]" : ""} ${
+      className={`pointer-events-none block w-full text-left ${overlap ? "-mt-[240px]" : ""} ${
         r.isSoldOut ? "opacity-70" : ""
       }`}
     >
@@ -552,8 +557,8 @@ function OklahomaBar({
         {/* Meat (patty) — fixed height so the two patties overlap cleanly;
             image sits on the outer edge. */}
         <div
-          className={`pointer-events-auto flex h-[188px] basis-[46%] shrink-0 items-center gap-4 overflow-hidden p-4 ${bg} ${
-            left ? "flex-row rounded-l-lg" : "flex-row-reverse rounded-r-lg"
+          className={`pointer-events-auto flex h-[240px] basis-[46%] shrink-0 items-start gap-4 overflow-hidden px-4 pb-4 pt-0 ${bg} ${
+            left ? "flex-row rounded-bl-lg" : "flex-row-reverse rounded-br-lg"
           }`}
         >
           <RetreatBody r={r} active={active} big />
