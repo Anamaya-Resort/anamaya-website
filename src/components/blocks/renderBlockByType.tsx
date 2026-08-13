@@ -37,6 +37,7 @@ import TestimonialsBlock from "./TestimonialsBlock";
 import ImageSlideshowBlock from "./ImageSlideshowBlock";
 import FaqBlock from "./FaqBlock";
 import ReactionsBlock from "./ReactionsBlock";
+import InfoCardBlock from "./InfoCardBlock";
 
 /**
  * Renders a block from its type slug and resolved content. The single
@@ -97,6 +98,7 @@ export default function renderBlockByType(
     case "testimonials":          return <TestimonialsBlock content={content} />;
     case "image_slideshow":       return <ImageSlideshowBlock content={content} />;
     case "reactions":             return <ReactionsBlock content={content} />;
+    case "info_card":             return <InfoCardBlock content={content} />;
     default:                      return null;
   }
 }

@@ -29,6 +29,7 @@ import ThreeColumnBlock from "@/components/blocks/ThreeColumnBlock";
 import SmallFormOverImageBlock from "@/components/blocks/SmallFormOverImageBlock";
 import GoogleMapTextBlock from "@/components/blocks/GoogleMapTextBlock";
 import ImageSlideshowBlock from "@/components/blocks/ImageSlideshowBlock";
+import InfoCardBlock from "@/components/blocks/InfoCardBlock";
 import FaqBlockView, {
   SAMPLE_FEATURED as FAQ_SAMPLE_FEATURED,
   SAMPLE_MORE as FAQ_SAMPLE_MORE,
@@ -286,6 +287,8 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
       );
     case "image_slideshow":
       return <ImageSlideshowBlock content={content} />;
+    case "info_card":
+      return <InfoCardBlock content={content} />;
     default:
       return (
         <div className="flex h-24 items-center justify-center bg-zinc-100 text-xs text-anamaya-charcoal/50">

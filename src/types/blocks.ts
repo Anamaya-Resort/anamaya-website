@@ -1289,6 +1289,28 @@ export type BookingCalendarContent = {
   only_available?: boolean;
 };
 
+/**
+ * Info Card — the first VERTICAL block (shape='vertical'), built for the side
+ * column of a two-column template. A compact card: heading, a highlighted
+ * value (e.g. a price), quick-fact rows, and a CTA. Every vertical block also
+ * carries `responsive_mode` (see below), read by the two-column renderer.
+ */
+export type InfoCardContent = {
+  /** Vertical-block responsive behavior. "fixed" = always visible (stacks
+   *  inline on narrow screens); "hidden" = collapses into a left-edge
+   *  slide-out tab on narrow screens. */
+  responsive_mode?: "fixed" | "hidden";
+  heading?: string;
+  subheading?: string;
+  highlight_label?: string; // e.g. "From"
+  highlight_value?: string; // e.g. "$895"
+  rows?: { label: string; value: string }[];
+  cta_label?: string;
+  cta_href?: string;
+  bg_color?: string;
+  text_color?: string;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -1327,7 +1349,8 @@ export type BlockTypeSlug =
   | "faq"
   | "reactions"
   | "booking_calendar"
-  | "service_cards";
+  | "service_cards"
+  | "info_card";
 
 export type BlockRecord = {
   id: string;

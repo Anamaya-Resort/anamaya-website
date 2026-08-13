@@ -28,6 +28,7 @@ import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
 import FaqBlock from "./FaqBlock";
 import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
 import BookingCalendarBlock from "./BookingCalendarBlock";
+import InfoCardBlock from "./InfoCardBlock";
 import ServiceMenuBlock from "./ServiceMenuBlock";
 import ServiceCardsBlock from "./ServiceCardsBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
@@ -102,6 +103,7 @@ export default async function Shortcode({
     case "featured_retreats": return <FeaturedRetreatsBlock content={content} />;
     case "retreats_calendar": return <RetreatsCalendarBlock content={content} />;
     case "booking_calendar": return <BookingCalendarBlock content={content} />;
+    case "info_card":        return <InfoCardBlock content={content} />;
     case "service_menu":      return <ServiceMenuBlock content={content} />;
     case "service_cards":     return <ServiceCardsBlock content={content} />;
     // No pageId via the shortcode path (block-preview iframe / direct use),

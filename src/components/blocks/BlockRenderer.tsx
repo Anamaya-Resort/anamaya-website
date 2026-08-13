@@ -37,6 +37,7 @@ import GoogleMapTextBlock from "./GoogleMapTextBlock";
 import TestimonialsBlock from "./TestimonialsBlock";
 import ImageSlideshowBlock from "./ImageSlideshowBlock";
 import ReactionsBlock from "./ReactionsBlock";
+import InfoCardBlock from "./InfoCardBlock";
 
 /** Renders a single block-usage by dispatching on type. Null if unknown. */
 export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
@@ -84,6 +85,7 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "testimonials":   return <TestimonialsBlock content={content} />;
     case "image_slideshow": return <ImageSlideshowBlock content={content} />;
     case "reactions":      return <ReactionsBlock content={content} />;
+    case "info_card":      return <InfoCardBlock content={content} />;
     default: {
       console.warn(`[blocks] unknown block type: ${usage.block.type_slug}`);
       return null;
