@@ -451,7 +451,17 @@ function WeekRow({
 }
 
 /** Image + title + teacher + price — the tall "body" of a retreat card. */
-function RetreatBody({ r, active, big }: { r: CalRetreat; active: boolean; big?: boolean }) {
+function RetreatBody({
+  r,
+  active,
+  big,
+  imgAlign = "start",
+}: {
+  r: CalRetreat;
+  active: boolean;
+  big?: boolean;
+  imgAlign?: "start" | "end";
+}) {
   const price = priceLabel(r);
   const spots = spotsLabel(r);
   return (
@@ -461,10 +471,12 @@ function RetreatBody({ r, active, big }: { r: CalRetreat; active: boolean; big?:
         <img
           src={r.image}
           alt=""
-          // Big (patty) image: square, pinned to the top edge (self-start)
-          // while the text beside it stays vertically centred.
+          // Big (patty) image: square, pinned to the top or bottom edge per
+          // side; the text beside it stays vertically centred.
           className={`shrink-0 rounded-md object-cover ${
-            big ? "h-[156px] w-[156px] self-start" : "h-[130px] w-[130px]"
+            big
+              ? `h-[156px] w-[156px] ${imgAlign === "end" ? "self-end" : "self-start"}`
+              : "h-[130px] w-[130px]"
           }`}
         />
       )}
@@ -558,11 +570,11 @@ function OklahomaBar({
         {/* Meat (patty) — fixed height so the two patties overlap cleanly;
             image sits on the outer edge. */}
         <div
-          className={`pointer-events-auto flex h-[188px] basis-[46%] shrink-0 items-center gap-4 overflow-hidden px-4 pb-4 pt-0 ${bg} ${
-            left ? "flex-row rounded-bl-lg" : "flex-row-reverse rounded-br-lg"
+          className={`pointer-events-auto flex h-[188px] basis-[46%] shrink-0 items-center gap-4 overflow-hidden px-4 ${bg} ${
+            left ? "pt-0 pb-4 flex-row rounded-bl-lg" : "pb-0 pt-4 flex-row-reverse rounded-br-lg"
           }`}
         >
-          <RetreatBody r={r} active={active} big />
+          <RetreatBody r={r} active={active} big imgAlign={left ? "start" : "end"} />
         </div>
         {/* Tail (thin) — crosses past the middle along the bottom, carries dates */}
         <div
