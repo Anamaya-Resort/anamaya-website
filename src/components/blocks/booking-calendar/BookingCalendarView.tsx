@@ -478,9 +478,14 @@ function RetreatBody({
             with {r.teacher}
           </span>
         )}
+        <span
+          className={`mt-1 block text-sm ${active ? "text-white/80" : "text-anamaya-charcoal/55"}`}
+        >
+          {fmtRange(r.startISO, r.endISO)}
+        </span>
         {(price || spots) && (
           <span
-            className={`mt-1 block text-sm font-semibold ${
+            className={`mt-0.5 block text-sm font-semibold ${
               active ? "text-white" : "text-anamaya-green"
             }`}
           >
@@ -510,15 +515,6 @@ function NormalCard({
       } ${r.isSoldOut ? "opacity-70" : ""}`}
     >
       <RetreatBody r={r} active={active} />
-      {!r.teacher && (
-        <span
-          className={`shrink-0 self-center text-sm ${
-            active ? "text-white/80" : "text-anamaya-charcoal/55"
-          }`}
-        >
-          {fmtRange(r.startISO, r.endISO)}
-        </span>
-      )}
     </button>
   );
 }
@@ -547,20 +543,15 @@ function HamburgerPair({
   const rActive = right.id === selectedId;
   const lBg = lActive ? "bg-anamaya-green text-white" : "bg-[#f7f7f7]";
   const rBg = rActive ? "bg-anamaya-green text-white" : "bg-[#ece7dd]";
-  const lText = lActive ? "text-white" : "text-anamaya-charcoal/60";
-  const rText = rActive ? "text-white" : "text-anamaya-charcoal/60";
   return (
-    <div className="relative mt-2 h-[236px]">
+    <div className="relative mt-2 h-[248px]">
       {/* LEFT retreat: top bun (full width) + left patty (left half). */}
       <button
         onClick={() => onSelect(left.id)}
         className={`pointer-events-none absolute inset-0 text-left ${left.isSoldOut ? "opacity-70" : ""}`}
       >
-        <div
-          className={`pointer-events-auto flex h-6 items-center rounded-t-lg px-4 text-sm font-semibold ${lBg} ${lText}`}
-        >
-          {fmtRange(left.startISO, left.endISO)}
-        </div>
+        {/* Top bun — 50% thicker than the bottom to read evenly. */}
+        <div className={`pointer-events-auto h-9 rounded-t-lg ${lBg}`} />
         <div
           className={`pointer-events-auto flex h-[188px] w-1/2 items-center gap-4 overflow-hidden px-4 pb-4 pt-0 ${lBg}`}
         >
@@ -572,7 +563,7 @@ function HamburgerPair({
           pushed down 24px so the two patties line up side by side. */}
       <button
         onClick={() => onSelect(right.id)}
-        className={`pointer-events-none absolute inset-x-0 top-6 text-left ${right.isSoldOut ? "opacity-70" : ""}`}
+        className={`pointer-events-none absolute inset-x-0 top-9 text-left ${right.isSoldOut ? "opacity-70" : ""}`}
       >
         <div className="flex justify-end">
           <div
@@ -581,11 +572,7 @@ function HamburgerPair({
             <RetreatBody r={right} active={rActive} big imgAlign="end" />
           </div>
         </div>
-        <div
-          className={`pointer-events-auto flex h-6 items-center justify-end rounded-b-lg px-4 text-sm font-semibold ${rBg} ${rText}`}
-        >
-          {fmtRange(right.startISO, right.endISO)}
-        </div>
+        <div className={`pointer-events-auto h-6 rounded-b-lg ${rBg}`} />
       </button>
     </div>
   );
