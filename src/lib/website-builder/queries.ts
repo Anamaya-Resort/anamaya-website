@@ -270,6 +270,61 @@ export async function listByPostType(
   };
 }
 
+/** A single soft-deleted row for the combined "Deleted" view. Lighter than
+ *  ListRow — the deleted list only needs enough to show the row, link to its
+ *  editor, and label its type. */
+export type TrashedRow = {
+  id: string;
+  post_type: string;
+  title: string;
+  url_path: string;
+  date_published: string | null;
+  date_modified: string | null;
+};
+
+/**
+ * All trashed content rows across every post type (the combined "Deleted"
+ * view). Mirrors listByPostType's base filters but drops the post_type
+ * constraint and pins wp_status to 'trash'. Newest first by date_modified.
+ */
+export async function listAllTrashed(): Promise<TrashedRow[]> {
+  const sb = supabaseServerOrNull();
+  if (!sb) return [];
+
+  // select("*") mirrors listByPostType: avoids a 400 if a column is briefly
+  // missing from PostgREST's schema cache.
+  const { data, error } = await sb
+    .from("url_inventory")
+    .select("*")
+    .eq("source_site", SOURCE_SITE)
+    .eq("url_kind", "content")
+    .eq("wp_status", "trash")
+    .order("date_modified", { ascending: false, nullsFirst: false });
+
+  if (error || !data) {
+    console.error("[website deleted] listAllTrashed select failed:", error);
+    return [];
+  }
+
+  const rawRows = data as unknown as Array<{
+    id: string;
+    post_type?: string | null;
+    title?: string | null;
+    url_path?: string | null;
+    date_published?: string | null;
+    date_modified?: string | null;
+  }>;
+
+  return rawRows.map((r) => ({
+    id: r.id,
+    post_type: r.post_type ?? "",
+    title: decodeEntities(r.title ?? "(no title)"),
+    url_path: r.url_path ?? "",
+    date_published: r.date_published ?? null,
+    date_modified: r.date_modified ?? null,
+  }));
+}
+
 async function getStatusCountsForType(
   postType: string,
   search?: string,

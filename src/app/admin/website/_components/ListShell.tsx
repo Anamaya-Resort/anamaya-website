@@ -1,7 +1,12 @@
-import { Fragment } from "react";
+"use client";
+
+import { Fragment, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { PostTypeColumn, PostTypeConfig } from "@/lib/website-builder/post-types";
 import type { ListResult } from "@/lib/website-builder/queries";
+import { useRowSelection } from "./useRowSelection";
+import { bulkTrashItems } from "../[postType]/[id]/actions";
 
 const COLUMN_LABELS: Record<PostTypeColumn, string> = {
   title: "Title",
@@ -75,6 +80,32 @@ export default function ListShell({
   const { rows, statusCounts, totalCount, page, perPage } = result;
   const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
 
+  // Client selection layer: which visible rows are checked + the chosen
+  // bulk action. Drives every checkbox and the two Apply toolbars.
+  const router = useRouter();
+  const selection = useRowSelection();
+  const [bulkAction, setBulkAction] = useState<"" | "trash">("");
+
+  const visibleIds = rows.map((r) => r.id);
+  const allSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selection.isSelected(id));
+  const canApply = bulkAction === "trash" && selection.count > 0;
+
+  async function handleApply() {
+    if (bulkAction !== "trash" || selection.count === 0) return;
+    const ids = Array.from(selection.selected);
+    if (
+      !confirm(
+        `Move ${ids.length} ${ids.length === 1 ? "item" : "items"} to Trash?`,
+      )
+    )
+      return;
+    await bulkTrashItems(pt.slug, ids);
+    selection.clear();
+    setBulkAction("");
+    router.refresh();
+  }
+
   const taxonomyByName = (taxonomy: string) => (row: (typeof rows)[number]) =>
     row.terms.filter((t) => t.taxonomy === taxonomy);
 
@@ -114,19 +145,21 @@ export default function ListShell({
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
             <select
-              disabled
               aria-label="Bulk actions"
               className="h-7 rounded-sm border border-[#8c8f94] bg-white px-2 text-[13px] disabled:opacity-50"
-              defaultValue=""
+              value={bulkAction}
+              onChange={(e) =>
+                setBulkAction(e.target.value === "trash" ? "trash" : "")
+              }
             >
               <option value="">Bulk actions</option>
-              <option>Edit</option>
-              <option>Move to Trash</option>
+              <option value="trash">Move to Trash</option>
             </select>
             <button
               type="button"
-              disabled
               aria-label="Apply bulk action"
+              disabled={!canApply}
+              onClick={handleApply}
               className="h-7 rounded-sm border border-[#8c8f94] bg-white px-3 text-[13px] disabled:opacity-50"
             >
               Apply
@@ -164,9 +197,10 @@ export default function ListShell({
               <th className="w-8 px-3 py-2">
                 <input
                   type="checkbox"
-                  disabled
                   aria-label="Select all"
                   className="h-4 w-4 align-middle"
+                  checked={allSelected}
+                  onChange={(e) => selection.setMany(visibleIds, e.target.checked)}
                 />
               </th>
               {pt.columns.map((col) => (
@@ -202,9 +236,10 @@ export default function ListShell({
                   <td className="px-3 py-2">
                     <input
                       type="checkbox"
-                      disabled
                       aria-label={`Select ${row.title}`}
                       className="h-4 w-4 align-middle"
+                      checked={selection.isSelected(row.id)}
+                      onChange={() => selection.toggle(row.id)}
                     />
                   </td>
                   {pt.columns.map((col) => {
@@ -377,9 +412,10 @@ export default function ListShell({
               <th className="w-8 px-3 py-2">
                 <input
                   type="checkbox"
-                  disabled
                   aria-label="Select all"
                   className="h-4 w-4 align-middle"
+                  checked={allSelected}
+                  onChange={(e) => selection.setMany(visibleIds, e.target.checked)}
                 />
               </th>
               {pt.columns.map((col) => (
@@ -401,17 +437,21 @@ export default function ListShell({
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[13px] text-[#50575e]">
         <div className="flex items-center gap-1">
           <select
-            disabled
             aria-label="Bulk actions"
             className="h-7 rounded-sm border border-[#8c8f94] bg-white px-2 disabled:opacity-50"
-            defaultValue=""
+            value={bulkAction}
+            onChange={(e) =>
+              setBulkAction(e.target.value === "trash" ? "trash" : "")
+            }
           >
             <option value="">Bulk actions</option>
+            <option value="trash">Move to Trash</option>
           </select>
           <button
             type="button"
-            disabled
             aria-label="Apply bulk action"
+            disabled={!canApply}
+            onClick={handleApply}
             className="h-7 rounded-sm border border-[#8c8f94] bg-white px-3 disabled:opacity-50"
           >
             Apply

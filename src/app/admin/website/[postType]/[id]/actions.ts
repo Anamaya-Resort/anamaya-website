@@ -139,6 +139,32 @@ export async function trashItem(formData: FormData) {
   redirect(`/admin/website/${pt.slug}?status=trash`);
 }
 
+/**
+ * Bulk "Move to Trash" for the list view's bulk-actions toolbar.
+ *
+ * Mirrors trashItem() but operates on many ids at once and takes plain
+ * args (called directly from the client selection layer, not a form).
+ * Scoped to the resolved post type + source site, exactly like the
+ * single-item action, so an id from another type/site can't be trashed
+ * through this path.
+ */
+export async function bulkTrashItems(postTypeSlug: string, ids: string[]) {
+  const pt = getPostTypeBySlug(postTypeSlug);
+  if (!pt) throw new Error("Unknown post type");
+  if (!ids.length) return;
+
+  const sb = supabaseServer();
+  const { error } = await sb
+    .from("url_inventory")
+    .update({ wp_status: "trash" })
+    .in("id", ids)
+    .eq("post_type", pt.postType)
+    .eq("source_site", SOURCE_SITE);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/website/${pt.slug}`);
+}
+
 export async function restoreItem(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const postTypeSlug = String(formData.get("postTypeSlug") ?? "");

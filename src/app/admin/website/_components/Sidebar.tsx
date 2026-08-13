@@ -22,6 +22,7 @@ import {
   Code2,
   Sparkles,
   HelpCircle,
+  Trash2,
   Settings,
 } from "lucide-react";
 import { POST_TYPES } from "@/lib/website-builder/post-types";
@@ -95,6 +96,7 @@ export default function Sidebar() {
       icon: Sparkles,
     },
     { label: "FAQs", href: "/admin/website/faqs", icon: HelpCircle },
+    { label: "Deleted", href: "/admin/website/deleted", icon: Trash2 },
     { label: "Settings", href: "/admin/website/settings", icon: Settings },
   ];
 
