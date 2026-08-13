@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import TemplateEditor from "@/components/admin/templates/TemplateEditor";
 import LivePreviewButton from "@/components/admin/templates/LivePreviewButton";
 import TemplateHeaderEditor from "./TemplateHeaderEditor";
+import TemplateLayoutControl from "./TemplateLayoutControl";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +72,7 @@ export default async function EditTemplate({
 
   const { data: variants } = await sb
     .from("page_template_variants")
-    .select("id, slug, name, is_default")
+    .select("id, slug, name, is_default, layout, aside_position")
     .eq("page_template_id", id)
     .order("created_at");
 
@@ -237,6 +238,14 @@ export default async function EditTemplate({
             templateName={template.name}
             variantId={defaultVariant.id}
             variantSlug={defaultVariant.slug}
+          />
+        )}
+        {defaultVariant && (
+          <TemplateLayoutControl
+            templateId={template.id}
+            variantId={defaultVariant.id}
+            layout={(defaultVariant as { layout?: string }).layout}
+            asidePosition={(defaultVariant as { aside_position?: string }).aside_position}
           />
         )}
         {/* Live Preview button hangs into the right gutter, anchored

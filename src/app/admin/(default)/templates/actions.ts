@@ -79,6 +79,27 @@ export async function updateVariantSlugFromForm(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/** Set a variant's column layout: one_col | two_col, and which side the
+ *  aside column sits on (left | right). Vertical-shaped blocks fill the aside
+ *  when the variant is two_col. */
+export async function updateVariantLayoutFromForm(formData: FormData) {
+  const variantId = String(formData.get("variant_id") ?? "").trim();
+  const templateId = String(formData.get("template_id") ?? "").trim();
+  const layout = String(formData.get("layout") ?? "").trim() === "two_col" ? "two_col" : "one_col";
+  const asidePosition =
+    String(formData.get("aside_position") ?? "").trim() === "left" ? "left" : "right";
+  if (!variantId) return;
+  const sb = supabaseServer();
+  const { error } = await sb
+    .from("page_template_variants")
+    .update({ layout, aside_position: asidePosition })
+    .eq("id", variantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/templates");
+  if (templateId) revalidatePath(`/admin/templates/${templateId}`);
+  revalidatePath("/", "layout");
+}
+
 /**
  * Delete a template. Cascades to variants and variant_blocks via the FK
  * definitions in migration 0013. Block rows themselves are untouched —

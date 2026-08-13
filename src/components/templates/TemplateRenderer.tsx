@@ -52,13 +52,32 @@ export default async function TemplateRenderer({
   }
   if (!templateRowId) return null;
 
-  const variantQuery = sb
-    .from("page_template_variants")
-    .select("id")
-    .eq("page_template_id", templateRowId);
-  const { data: variant } = await (variantSlug
-    ? variantQuery.eq("slug", variantSlug).maybeSingle()
-    : variantQuery.eq("is_default", true).maybeSingle());
+  // Variant + its chosen column layout (layout / aside_position added in
+  // 0063). Defensive: on an old DB without those columns, fall back to id
+  // only and treat the template as single-column.
+  type VariantRow = { id: string; layout?: string | null; aside_position?: string | null };
+  let variant: VariantRow | null = null;
+  {
+    const q = sb
+      .from("page_template_variants")
+      .select("id, layout, aside_position")
+      .eq("page_template_id", templateRowId);
+    const res = await (variantSlug
+      ? q.eq("slug", variantSlug).maybeSingle()
+      : q.eq("is_default", true).maybeSingle());
+    if (!res.error) {
+      variant = res.data as VariantRow | null;
+    } else {
+      const q2 = sb
+        .from("page_template_variants")
+        .select("id")
+        .eq("page_template_id", templateRowId);
+      const res2 = await (variantSlug
+        ? q2.eq("slug", variantSlug).maybeSingle()
+        : q2.eq("is_default", true).maybeSingle());
+      variant = (res2.data ?? null) as VariantRow | null;
+    }
+  }
   if (!variant) {
     return (
       <div className="mx-auto my-6 max-w-xl rounded border border-dashed border-zinc-300 px-4 py-3 text-sm italic text-anamaya-charcoal/60">
@@ -66,6 +85,8 @@ export default async function TemplateRenderer({
       </div>
     );
   }
+  const layout = variant.layout === "two_col" ? "two_col" : "one_col";
+  const asidePos: "left" | "right" = variant.aside_position === "left" ? "left" : "right";
 
   // Fetch all variant blocks with their resolved master content. We need
   // type_slug + content directly so renderBlockByType can dispatch
@@ -152,34 +173,50 @@ export default async function TemplateRenderer({
   const main = rendered.filter((r) => r.shape !== "vertical");
   const aside = rendered.filter((r) => r.shape === "vertical");
 
-  // No vertical blocks → single column, exactly as before (backward compatible).
-  if (aside.length === 0) {
-    return <>{main.map((r) => r.node)}</>;
+  // Single column unless the template variant is explicitly two-column AND has
+  // vertical blocks for the side column. Renders in original order.
+  if (layout !== "two_col" || aside.length === 0) {
+    return <>{rendered.map((r) => r.node)}</>;
   }
 
   const fixedAside = aside.filter((r) => r.mode !== "hidden");
   const hiddenAside = aside.filter((r) => r.mode === "hidden");
 
+  const mainCol = <div className="min-w-0 lg:flex-1">{main.map((r) => r.node)}</div>;
+  const asideCol = (
+    <aside className="hidden lg:block lg:w-[350px] lg:shrink-0">
+      <div className="sticky top-24 space-y-6 py-8">{aside.map((r) => r.node)}</div>
+    </aside>
+  );
+
   return (
     <>
-      {/* Two-column: the main column narrows; vertical blocks fill a sticky
-          side column on the right. */}
-      <div className="mx-auto w-full max-w-[1400px] px-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:px-8">
-        <div className="min-w-0">{main.map((r) => r.node)}</div>
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-6 py-8">{aside.map((r) => r.node)}</div>
-        </aside>
+      {/* Two-column: main column + a sticky side column, on the left or right
+          per the template's aside_position. Flexbox (not an arbitrary grid
+          value), so it reliably sits side-by-side and stacks below lg. */}
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-10 px-4 lg:flex-row lg:px-8">
+        {asidePos === "left" ? (
+          <>
+            {asideCol}
+            {mainCol}
+          </>
+        ) : (
+          <>
+            {mainCol}
+            {asideCol}
+          </>
+        )}
       </div>
 
       {/* Narrow screens: FIXED vertical blocks stack inline below the main… */}
       {fixedAside.length > 0 && (
-        <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 lg:hidden">
+        <div className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 lg:hidden">
           {fixedAside.map((r) => r.node)}
         </div>
       )}
-      {/* …and HIDDEN ones tuck into the left slide-out drawer. */}
+      {/* …and HIDDEN ones tuck into a slide-out tab on the aside side. */}
       {hiddenAside.length > 0 && (
-        <TemplateAsideDrawer>{hiddenAside.map((r) => r.node)}</TemplateAsideDrawer>
+        <TemplateAsideDrawer side={asidePos}>{hiddenAside.map((r) => r.node)}</TemplateAsideDrawer>
       )}
     </>
   );
