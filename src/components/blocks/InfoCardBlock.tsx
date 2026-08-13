@@ -14,7 +14,10 @@ export default function InfoCardBlock({ content }: { content: InfoCardContent })
   const rows = Array.isArray(c.rows) ? c.rows.filter((r) => r && (r.label || r.value)) : [];
 
   return (
-    <aside className="w-full" style={{ color: text }}>
+    // Vertical block: cap the width so it reads as a narrow side card in wide
+    // contexts (block-maker preview, full-bleed) while still filling the
+    // narrower side column of a two-column template.
+    <aside className="mx-auto w-full max-w-[360px]" style={{ color: text }}>
       <div
         className="rounded-2xl border border-anamaya-mint/50 p-6 shadow-sm"
         style={{ backgroundColor: bg }}
