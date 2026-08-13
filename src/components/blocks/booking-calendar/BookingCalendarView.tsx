@@ -271,10 +271,12 @@ function TowerDetail({
           <img
             src={r.image}
             alt={r.title}
-            className={`w-full object-cover ${embedded ? "h-44 rounded-2xl" : "h-56"}`}
+            // Wide 3:2, cropped 10% above centre so off-centre heads aren't cut off.
+            style={{ objectPosition: "50% 40%" }}
+            className={`aspect-[3/2] w-full object-cover ${embedded ? "rounded-2xl" : ""}`}
           />
         ) : (
-          <div className={`w-full bg-anamaya-mint/30 ${embedded ? "h-28 rounded-2xl" : "h-40"}`} />
+          <div className={`aspect-[3/2] w-full bg-anamaya-mint/30 ${embedded ? "rounded-2xl" : ""}`} />
         )}
         {!embedded && (
           <button
@@ -459,11 +461,10 @@ function RetreatBody({ r, active, big }: { r: CalRetreat; active: boolean; big?:
         <img
           src={r.image}
           alt=""
-          // Big (patty) images are a tall 3:2, cropped 10% above centre so
-          // off-centre faces/heads near the top aren't cut off.
-          style={big ? { objectPosition: "50% 40%" } : undefined}
+          // Big (patty) image: square, pinned to the top edge (self-start)
+          // while the text beside it stays vertically centred.
           className={`shrink-0 rounded-md object-cover ${
-            big ? "h-[224px] w-[150px]" : "h-[130px] w-[130px]"
+            big ? "h-[156px] w-[156px] self-start" : "h-[130px] w-[130px]"
           }`}
         />
       )}
@@ -549,7 +550,7 @@ function OklahomaBar({
     // the onClick still fires via bubbling from the auto children.
     <button
       onClick={() => onSelect(r.id)}
-      className={`pointer-events-none block w-full text-left ${overlap ? "-mt-[240px]" : ""} ${
+      className={`pointer-events-none block w-full text-left ${overlap ? "-mt-[188px]" : ""} ${
         r.isSoldOut ? "opacity-70" : ""
       }`}
     >
@@ -557,7 +558,7 @@ function OklahomaBar({
         {/* Meat (patty) — fixed height so the two patties overlap cleanly;
             image sits on the outer edge. */}
         <div
-          className={`pointer-events-auto flex h-[240px] basis-[46%] shrink-0 items-start gap-4 overflow-hidden px-4 pb-4 pt-0 ${bg} ${
+          className={`pointer-events-auto flex h-[188px] basis-[46%] shrink-0 items-center gap-4 overflow-hidden px-4 pb-4 pt-0 ${bg} ${
             left ? "flex-row rounded-bl-lg" : "flex-row-reverse rounded-br-lg"
           }`}
         >
