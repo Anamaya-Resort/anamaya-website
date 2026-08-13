@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { POST_TYPES } from "@/lib/website-builder/post-types";
 import type { TrashedRow } from "@/lib/website-builder/queries";
 import { useRowSelection } from "../_components/useRowSelection";
+import RoundCheckbox from "../_components/RoundCheckbox";
 import { bulkRestoreItems, bulkPurgeItems } from "./actions";
 
 /** Resolve a post_type value to its admin label + list slug (for the edit
@@ -78,7 +79,7 @@ export default function DeletedListShell({ rows }: { rows: TrashedRow[] }) {
       <div className="mb-2 flex flex-wrap items-center gap-1">
         <select
           aria-label="Bulk actions"
-          className="h-7 rounded-sm border border-[#8c8f94] bg-white px-2 text-[13px] disabled:opacity-50"
+          className="h-7 rounded-full border border-[#8c8f94] bg-white px-3 text-[13px] disabled:opacity-50"
           value={bulkAction}
           onChange={(e) => {
             const v = e.target.value;
@@ -94,22 +95,20 @@ export default function DeletedListShell({ rows }: { rows: TrashedRow[] }) {
           aria-label="Apply bulk action"
           disabled={!canApply}
           onClick={handleApply}
-          className="h-7 rounded-sm border border-[#8c8f94] bg-white px-3 text-[13px] disabled:opacity-50"
+          className="h-7 rounded-full border border-[#8c8f94] bg-white px-4 text-[13px] disabled:opacity-50"
         >
           Apply
         </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-sm border border-[#c3c4c7] bg-white">
+      <div className="overflow-hidden rounded-2xl border border-[#c3c4c7] bg-white">
         <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-[#c3c4c7] bg-[#f6f7f7] text-left">
               <th className="w-8 px-3 py-2">
-                <input
-                  type="checkbox"
+                <RoundCheckbox
                   aria-label="Select all"
-                  className="h-4 w-4 align-middle"
                   checked={allSelected}
                   onChange={(e) => selection.setMany(visibleIds, e.target.checked)}
                 />
@@ -142,10 +141,8 @@ export default function DeletedListShell({ rows }: { rows: TrashedRow[] }) {
                     className="border-t border-[#f0f0f1] align-top hover:bg-[#f6f7f7]"
                   >
                     <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
+                      <RoundCheckbox
                         aria-label={`Select ${row.title}`}
-                        className="h-4 w-4 align-middle"
                         checked={selection.isSelected(row.id)}
                         onChange={() => selection.toggle(row.id)}
                       />

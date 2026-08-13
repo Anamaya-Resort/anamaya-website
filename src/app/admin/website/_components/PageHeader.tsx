@@ -16,7 +16,7 @@ export default function PageHeader({
       {addNew && (
         <Link
           href={addNew.href}
-          className="rounded-sm border border-[#2271b1] bg-white px-2 py-[1px] text-[13px] text-[#2271b1] hover:bg-[#f6fbfd] hover:text-[#135e96]"
+          className="rounded-full border border-[#2271b1] bg-white px-3 py-[1px] text-[13px] text-[#2271b1] hover:bg-[#f6fbfd] hover:text-[#135e96]"
         >
           {addNew.label}
         </Link>

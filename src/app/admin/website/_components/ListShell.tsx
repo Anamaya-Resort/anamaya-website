@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { PostTypeColumn, PostTypeConfig } from "@/lib/website-builder/post-types";
 import type { ListResult } from "@/lib/website-builder/queries";
 import { useRowSelection } from "./useRowSelection";
+import RoundCheckbox from "./RoundCheckbox";
 import { bulkTrashItems } from "../[postType]/[id]/actions";
 
 const COLUMN_LABELS: Record<PostTypeColumn, string> = {
@@ -146,7 +147,7 @@ export default function ListShell({
           <div className="flex items-center gap-1">
             <select
               aria-label="Bulk actions"
-              className="h-7 rounded-sm border border-[#8c8f94] bg-white px-2 text-[13px] disabled:opacity-50"
+              className="h-7 rounded-full border border-[#8c8f94] bg-white px-3 text-[13px] disabled:opacity-50"
               value={bulkAction}
               onChange={(e) =>
                 setBulkAction(e.target.value === "trash" ? "trash" : "")
@@ -160,7 +161,7 @@ export default function ListShell({
               aria-label="Apply bulk action"
               disabled={!canApply}
               onClick={handleApply}
-              className="h-7 rounded-sm border border-[#8c8f94] bg-white px-3 text-[13px] disabled:opacity-50"
+              className="h-7 rounded-full border border-[#8c8f94] bg-white px-4 text-[13px] disabled:opacity-50"
             >
               Apply
             </button>
@@ -177,12 +178,12 @@ export default function ListShell({
             defaultValue={currentSearch ?? ""}
             aria-label={`Search ${pt.pluralLabel}`}
             placeholder={`Search ${pt.pluralLabel}`}
-            className="h-7 w-56 rounded-sm border border-[#8c8f94] bg-white px-2 text-[13px]"
+            className="h-7 w-56 rounded-full border border-[#8c8f94] bg-white px-3 text-[13px]"
           />
           <button
             type="submit"
             aria-label="Submit search"
-            className="h-7 rounded-sm border border-[#2271b1] bg-white px-3 text-[13px] text-[#2271b1] hover:bg-[#f6fbfd]"
+            className="h-7 rounded-full border border-[#2271b1] bg-white px-4 text-[13px] text-[#2271b1] hover:bg-[#f6fbfd]"
           >
             Search
           </button>
@@ -190,15 +191,13 @@ export default function ListShell({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-sm border border-[#c3c4c7] bg-white">
+      <div className="overflow-hidden rounded-2xl border border-[#c3c4c7] bg-white">
         <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-[#c3c4c7] bg-[#f6f7f7] text-left">
               <th className="w-8 px-3 py-2">
-                <input
-                  type="checkbox"
+                <RoundCheckbox
                   aria-label="Select all"
-                  className="h-4 w-4 align-middle"
                   checked={allSelected}
                   onChange={(e) => selection.setMany(visibleIds, e.target.checked)}
                 />
@@ -234,10 +233,8 @@ export default function ListShell({
                   className="border-t border-[#f0f0f1] align-top hover:bg-[#f6f7f7]"
                 >
                   <td className="px-3 py-2">
-                    <input
-                      type="checkbox"
+                    <RoundCheckbox
                       aria-label={`Select ${row.title}`}
-                      className="h-4 w-4 align-middle"
                       checked={selection.isSelected(row.id)}
                       onChange={() => selection.toggle(row.id)}
                     />
@@ -410,10 +407,8 @@ export default function ListShell({
           <tfoot>
             <tr className="border-t border-[#c3c4c7] bg-[#f6f7f7] text-left">
               <th className="w-8 px-3 py-2">
-                <input
-                  type="checkbox"
+                <RoundCheckbox
                   aria-label="Select all"
-                  className="h-4 w-4 align-middle"
                   checked={allSelected}
                   onChange={(e) => selection.setMany(visibleIds, e.target.checked)}
                 />
@@ -438,7 +433,7 @@ export default function ListShell({
         <div className="flex items-center gap-1">
           <select
             aria-label="Bulk actions"
-            className="h-7 rounded-sm border border-[#8c8f94] bg-white px-2 disabled:opacity-50"
+            className="h-7 rounded-full border border-[#8c8f94] bg-white px-3 disabled:opacity-50"
             value={bulkAction}
             onChange={(e) =>
               setBulkAction(e.target.value === "trash" ? "trash" : "")
@@ -452,7 +447,7 @@ export default function ListShell({
             aria-label="Apply bulk action"
             disabled={!canApply}
             onClick={handleApply}
-            className="h-7 rounded-sm border border-[#8c8f94] bg-white px-3 disabled:opacity-50"
+            className="h-7 rounded-full border border-[#8c8f94] bg-white px-4 disabled:opacity-50"
           >
             Apply
           </button>
@@ -470,7 +465,7 @@ export default function ListShell({
                   page: page > 1 ? String(page - 1) : undefined,
                 })}
                 aria-disabled={page <= 1}
-                className={`rounded-sm border border-[#8c8f94] bg-white px-2 ${
+                className={`rounded-full border border-[#8c8f94] bg-white px-2.5 ${
                   page <= 1
                     ? "pointer-events-none opacity-40"
                     : "hover:bg-[#f6f7f7]"
@@ -488,7 +483,7 @@ export default function ListShell({
                   page: String(page + 1),
                 })}
                 aria-disabled={page >= totalPages}
-                className={`rounded-sm border border-[#8c8f94] bg-white px-2 ${
+                className={`rounded-full border border-[#8c8f94] bg-white px-2.5 ${
                   page >= totalPages
                     ? "pointer-events-none opacity-40"
                     : "hover:bg-[#f6f7f7]"
