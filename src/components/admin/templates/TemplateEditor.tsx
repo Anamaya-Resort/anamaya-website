@@ -405,7 +405,7 @@ function TemplateRow({
           dark left panel above instead. */}
       {!row.is_overlay && (
         <aside
-          className="absolute w-48 bg-white p-2.5 text-[11px] ring-1 ring-zinc-200"
+          className="absolute w-44 bg-white p-2 text-[11px] ring-1 ring-zinc-200"
           // z-index lifts the active panel above any sibling whose
           // panel happens to overlap it. Default 5 (so we sit above
           // the row preview), 30 when active. The pointer cursor +

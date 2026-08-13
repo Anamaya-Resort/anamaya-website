@@ -221,7 +221,11 @@ export default async function EditTemplate({
     // blocks).
     <div
       className="mx-[calc(50%-50vw)] w-screen"
-      style={{ paddingLeft: "10vw", paddingRight: "10vw" }}
+      // Gutters hold the per-row info panels + Live Preview button, which
+      // hang past the preview's right edge. 10vw alone is narrower than a
+      // panel on normal screens, so they ran off the right of the viewport;
+      // max(240px, 10vw) guarantees the panel always fits on-screen.
+      style={{ paddingLeft: "max(240px, 10vw)", paddingRight: "max(240px, 10vw)" }}
     >
       <header className="relative mb-6">
         <div>
