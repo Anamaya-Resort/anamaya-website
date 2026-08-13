@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import { supabaseServerOrNull } from "@/lib/supabase-server";
 import renderBlockByType from "@/components/blocks/renderBlockByType";
+import TemplateAsideDrawer from "./TemplateAsideDrawer";
 
 /**
  * Server component that renders an ordered list of blocks for a template.
@@ -117,21 +119,68 @@ export default async function TemplateRenderer({
     }
   }
 
+  // Block shapes (horizontal = main column, vertical = side column). If the
+  // shape column is missing on an old DB, everything defaults to horizontal
+  // and the template renders as a single column exactly as before.
+  const shapeBy = new Map<string, string>();
+  const shapeRes = await sb.from("block_types").select("slug, shape");
+  if (!shapeRes.error) {
+    for (const t of shapeRes.data ?? []) {
+      shapeBy.set(t.slug as string, (t as { shape?: string }).shape ?? "horizontal");
+    }
+  }
+
+  type Rendered = { shape: string; mode: "fixed" | "hidden"; node: ReactNode };
+  const rendered: Rendered[] = [];
+  for (const row of blocks) {
+    if (!row.block) continue;
+    const isLocked = row.is_locked !== false;
+    const content =
+      !isLocked && overrides.has(row.id) ? overrides.get(row.id) : row.block.content;
+    const shape = shapeBy.get(row.block.type_slug) ?? "horizontal";
+    const mode =
+      (content as { responsive_mode?: string } | null)?.responsive_mode === "hidden"
+        ? "hidden"
+        : "fixed";
+    rendered.push({
+      shape,
+      mode,
+      node: <div key={row.id}>{renderBlockByType(row.block.type_slug, content, { pageId })}</div>,
+    });
+  }
+
+  const main = rendered.filter((r) => r.shape !== "vertical");
+  const aside = rendered.filter((r) => r.shape === "vertical");
+
+  // No vertical blocks → single column, exactly as before (backward compatible).
+  if (aside.length === 0) {
+    return <>{main.map((r) => r.node)}</>;
+  }
+
+  const fixedAside = aside.filter((r) => r.mode !== "hidden");
+  const hiddenAside = aside.filter((r) => r.mode === "hidden");
+
   return (
     <>
-      {blocks.map((row) => {
-        if (!row.block) return null;
-        const isLocked = row.is_locked !== false;
-        const content =
-          !isLocked && overrides.has(row.id)
-            ? overrides.get(row.id)
-            : row.block.content;
-        return (
-          <div key={row.id}>
-            {renderBlockByType(row.block.type_slug, content, { pageId })}
-          </div>
-        );
-      })}
+      {/* Two-column: the main column narrows; vertical blocks fill a sticky
+          side column on the right. */}
+      <div className="mx-auto w-full max-w-[1400px] px-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:px-8">
+        <div className="min-w-0">{main.map((r) => r.node)}</div>
+        <aside className="hidden lg:block">
+          <div className="sticky top-24 space-y-6 py-8">{aside.map((r) => r.node)}</div>
+        </aside>
+      </div>
+
+      {/* Narrow screens: FIXED vertical blocks stack inline below the main… */}
+      {fixedAside.length > 0 && (
+        <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 lg:hidden">
+          {fixedAside.map((r) => r.node)}
+        </div>
+      )}
+      {/* …and HIDDEN ones tuck into the left slide-out drawer. */}
+      {hiddenAside.length > 0 && (
+        <TemplateAsideDrawer>{hiddenAside.map((r) => r.node)}</TemplateAsideDrawer>
+      )}
     </>
   );
 }
