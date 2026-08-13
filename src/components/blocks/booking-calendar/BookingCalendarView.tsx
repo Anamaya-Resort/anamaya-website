@@ -416,7 +416,7 @@ function WeekRow({
         {items.length === 2 ? (
           <div className="mt-2">
             {/* Top "bun" — matches the left meat's soft grey, rounded top corners. */}
-            <div className="h-6 rounded-t-lg bg-anamaya-cream" />
+            <div className="h-6 rounded-t-lg bg-[#f7f7f7]" />
             <OklahomaBar
               r={items[0]}
               side="left"
@@ -555,7 +555,7 @@ function OklahomaBar({
   overlap?: boolean;
 }) {
   const left = side === "left";
-  const bg = active ? "bg-anamaya-green text-white" : left ? "bg-anamaya-cream" : "bg-[#ece7dd]";
+  const bg = active ? "bg-anamaya-green text-white" : left ? "bg-[#f7f7f7]" : "bg-[#ece7dd]";
   return (
     // pointer-events-none on the button + auto on the visible meat/tail so the
     // overlapping top patty doesn't swallow clicks meant for the one beneath;
