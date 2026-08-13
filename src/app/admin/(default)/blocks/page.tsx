@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { createBlock } from "./actions";
 import BlockCard from "./BlockCard";
+import { HorizontalIcon, VerticalIcon, ShapeBadge } from "@/components/admin/blocks/ShapeIcon";
+
+type Shape = "horizontal" | "vertical";
 
 export const dynamic = "force-dynamic";
 
@@ -86,8 +89,7 @@ const CATEGORY_COLORS_ACTIVE: Record<Category, string> = {
   table: "bg-orange-600 text-white ring-orange-700 hover:bg-orange-700",
 };
 
-function CategoryTag({ cat, active }: { cat: Category; active: boolean }) {
-  const href = active ? "/admin/blocks" : `/admin/blocks?tag=${encodeURIComponent(cat)}`;
+function CategoryTag({ cat, active, href }: { cat: Category; active: boolean; href: string }) {
   const cls = active ? CATEGORY_COLORS_ACTIVE[cat] : CATEGORY_COLORS[cat];
   return (
     <Link
@@ -103,12 +105,25 @@ function CategoryTag({ cat, active }: { cat: Category; active: boolean }) {
 export default async function BlocksIndex({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string }>;
+  searchParams: Promise<{ tag?: string; shape?: string }>;
 }) {
-  const { tag } = await searchParams;
+  const { tag, shape } = await searchParams;
   const selectedTag = (ALL_CATEGORIES as string[]).includes(tag ?? "")
     ? (tag as Category)
     : null;
+  const selectedShape: Shape | null =
+    shape === "horizontal" || shape === "vertical" ? shape : null;
+  // Build a /admin/blocks href with the tag/shape filters combined, so
+  // toggling one preserves the other. Pass null to clear a filter.
+  function withParams(next: { tag?: Category | null; shape?: Shape | null }): string {
+    const t = next.tag !== undefined ? next.tag : selectedTag;
+    const s = next.shape !== undefined ? next.shape : selectedShape;
+    const p = new URLSearchParams();
+    if (t) p.set("tag", t);
+    if (s) p.set("shape", s);
+    const qs = p.toString();
+    return qs ? `/admin/blocks?${qs}` : "/admin/blocks";
+  }
   const sb = supabaseServer();
   // Defensive: if migration 0008 hasn't been applied yet, the `slug`
   // column won't exist and the list page would come up empty. Try the
@@ -131,7 +146,7 @@ export default async function BlocksIndex({
   async function fetchTypes() {
     const withOverlay = await sb
       .from("block_types")
-      .select("slug, name, description, is_overlay, is_active, sort_order")
+      .select("slug, name, description, is_overlay, is_active, sort_order, shape")
       .order("sort_order")
       .order("name");
     if (!withOverlay.error) {
@@ -145,6 +160,7 @@ export default async function BlocksIndex({
       is_overlay: false,
       is_active: true,
       sort_order: 100,
+      shape: "horizontal",
     }));
   }
   const [types, blocks] = await Promise.all([fetchTypes(), fetchBlocks()]);
@@ -157,39 +173,93 @@ export default async function BlocksIndex({
   }
 
   const visibleTypes = types.filter((t) => {
-    if (!selectedTag) return true;
-    return (BLOCK_CATEGORIES[t.slug] ?? []).includes(selectedTag);
+    if (selectedTag && !(BLOCK_CATEGORIES[t.slug] ?? []).includes(selectedTag)) return false;
+    if (selectedShape && ((t as { shape?: string }).shape ?? "horizontal") !== selectedShape)
+      return false;
+    return true;
   });
 
   return (
     <div className="mx-[calc(50%-50vw)] w-screen space-y-8 px-8">
       <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-zinc-200">
-        <h1 className="text-3xl font-semibold text-anamaya-charcoal">Blocks</h1>
-        <p className="mt-2 max-w-3xl text-base text-anamaya-charcoal/70">
-          Reusable content blocks are the building pieces of every page. Edit a block once and
-          your changes flow through to every page that uses it. Create multiple blocks of the
-          same type when you need different variants for different pages. Filter by category
-          below to find the layout you need.
-        </p>
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          {ALL_CATEGORIES.map((c) => (
-            <CategoryTag key={c} cat={c} active={selectedTag === c} />
-          ))}
-          {selectedTag && (
-            <Link
-              href="/admin/blocks"
-              className="ml-1 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60 underline hover:text-anamaya-charcoal"
-            >
-              Clear
-            </Link>
-          )}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* LEFT — intro (stacks above Block Search on narrow screens) */}
+          <div>
+            <h1 className="text-3xl font-semibold text-anamaya-charcoal">Blocks</h1>
+            <p className="mt-2 text-base text-anamaya-charcoal/70">
+              Reusable content blocks are the building pieces of every page. Edit a block once and
+              your changes flow through to every page that uses it. Create multiple blocks of the
+              same type when you need different variants for different pages.
+            </p>
+          </div>
+
+          {/* RIGHT — Block Search */}
+          <div className="md:border-l md:border-zinc-200 md:pl-6">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-anamaya-charcoal/70">
+              Block Search
+            </h2>
+
+            <div className="mt-4">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/50">
+                Block Shape
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {(["horizontal", "vertical"] as Shape[]).map((sh) => {
+                  const active = selectedShape === sh;
+                  return (
+                    <Link
+                      key={sh}
+                      href={withParams({ shape: active ? null : sh })}
+                      title={active ? `Clear ${sh} filter` : `Show ${sh} blocks`}
+                      className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-wider ring-1 ring-inset transition-colors ${
+                        active
+                          ? "bg-anamaya-charcoal text-white ring-black"
+                          : "bg-white text-anamaya-charcoal/70 ring-zinc-300 hover:bg-zinc-50"
+                      }`}
+                    >
+                      {sh === "vertical" ? (
+                        <VerticalIcon className="h-4 w-4" />
+                      ) : (
+                        <HorizontalIcon className="h-4 w-4" />
+                      )}
+                      {sh}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/50">
+                Block Type
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {ALL_CATEGORIES.map((c) => (
+                  <CategoryTag
+                    key={c}
+                    cat={c}
+                    active={selectedTag === c}
+                    href={withParams({ tag: selectedTag === c ? null : c })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {(selectedTag || selectedShape) && (
+              <Link
+                href="/admin/blocks"
+                className="mt-4 inline-block text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/60 underline hover:text-anamaya-charcoal"
+              >
+                Clear all filters
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
-      {selectedTag && visibleTypes.length === 0 && (
+      {(selectedTag || selectedShape) && visibleTypes.length === 0 && (
         <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-6 text-sm italic text-anamaya-charcoal/60">
-          No block types match the <span className="font-semibold not-italic">{selectedTag}</span>{" "}
-          filter.{" "}
+          No block types match the current filters.{" "}
           <Link href="/admin/blocks" className="underline hover:text-anamaya-charcoal">
             Show all
           </Link>
@@ -211,14 +281,22 @@ export default async function BlocksIndex({
           <section key={t.slug} className="space-y-4">
             <header className="flex flex-col gap-3 rounded-lg bg-white p-5 shadow-sm ring-1 ring-zinc-200 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-anamaya-charcoal">{t.name}</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-semibold text-anamaya-charcoal">{t.name}</h2>
+                  <ShapeBadge shape={(t as { shape?: string }).shape} />
+                </div>
                 {t.description && (
                   <p className="mt-1 text-sm text-anamaya-charcoal/60">{t.description}</p>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2 md:justify-end">
                 {cats.map((c) => (
-                  <CategoryTag key={c} cat={c} active={selectedTag === c} />
+                  <CategoryTag
+                    key={c}
+                    cat={c}
+                    active={selectedTag === c}
+                    href={withParams({ tag: selectedTag === c ? null : c })}
+                  />
                 ))}
                 <form action={newBlock}>
                   <button
