@@ -414,23 +414,12 @@ function WeekRow({
             to the right; second body on the right with a tail to the left and
             a grey-tan tint so it stands out. Single / 3+ use the normal card. */}
         {items.length === 2 ? (
-          <div className="mt-2">
-            {/* Top "bun" — matches the left meat's soft grey, rounded top corners. */}
-            <div className="h-6 rounded-t-lg bg-[#f7f7f7]" />
-            <OklahomaBar
-              r={items[0]}
-              side="left"
-              active={items[0].id === selectedId}
-              onSelect={onSelect}
-            />
-            <OklahomaBar
-              r={items[1]}
-              side="right"
-              overlap
-              active={items[1].id === selectedId}
-              onSelect={onSelect}
-            />
-          </div>
+          <HamburgerPair
+            left={items[0]}
+            right={items[1]}
+            selectedId={selectedId}
+            onSelect={onSelect}
+          />
         ) : (
           items.length > 0 && (
             <div className="mt-2 flex flex-col gap-2">
@@ -535,56 +524,69 @@ function NormalCard({
 }
 
 /**
- * "Oklahoma" bar: a tall body on one side and a thin tail (carrying the
- * dates) reaching the far edge, so a retreat sharing a week still reads as a
- * full-week retreat. `side` = which side the body sits on.
+ * Two retreats in a week as an interlocking "hamburger": the LEFT retreat owns
+ * the top bun + the left patty; the RIGHT retreat owns the right patty + the
+ * bottom bun. Each is one clickable, highlightable unit; the patties meet in
+ * the middle with no gap. Each retreat's dates ride in its bun.
+ *
+ * The two units are absolutely stacked and overlap; pointer-events-none on the
+ * buttons + auto on the visible pieces keeps each half clickable underneath.
  */
-function OklahomaBar({
-  r,
-  side,
-  active,
+function HamburgerPair({
+  left,
+  right,
+  selectedId,
   onSelect,
-  overlap,
 }: {
-  r: CalRetreat;
-  side: "left" | "right";
-  active: boolean;
+  left: CalRetreat;
+  right: CalRetreat;
+  selectedId: string | null;
   onSelect: (id: string) => void;
-  /** Second patty: pull up to fully overlap the first so the two meats sit
-   *  side by side (hamburger) with their tails crossing along the bottom. */
-  overlap?: boolean;
 }) {
-  const left = side === "left";
-  const bg = active ? "bg-anamaya-green text-white" : left ? "bg-[#f7f7f7]" : "bg-[#ece7dd]";
+  const lActive = left.id === selectedId;
+  const rActive = right.id === selectedId;
+  const lBg = lActive ? "bg-anamaya-green text-white" : "bg-[#f7f7f7]";
+  const rBg = rActive ? "bg-anamaya-green text-white" : "bg-[#ece7dd]";
+  const lText = lActive ? "text-white" : "text-anamaya-charcoal/60";
+  const rText = rActive ? "text-white" : "text-anamaya-charcoal/60";
   return (
-    // pointer-events-none on the button + auto on the visible meat/tail so the
-    // overlapping top patty doesn't swallow clicks meant for the one beneath;
-    // the onClick still fires via bubbling from the auto children.
-    <button
-      onClick={() => onSelect(r.id)}
-      className={`pointer-events-none block w-full text-left ${overlap ? "-mt-[188px]" : ""} ${
-        r.isSoldOut ? "opacity-70" : ""
-      }`}
-    >
-      <div className={`flex items-end ${left ? "" : "flex-row-reverse"}`}>
-        {/* Meat (patty) — fixed height so the two patties overlap cleanly;
-            image sits on the outer edge. */}
+    <div className="relative mt-2 h-[236px]">
+      {/* LEFT retreat: top bun (full width) + left patty (left half). */}
+      <button
+        onClick={() => onSelect(left.id)}
+        className={`pointer-events-none absolute inset-0 text-left ${left.isSoldOut ? "opacity-70" : ""}`}
+      >
         <div
-          className={`pointer-events-auto flex h-[188px] basis-[46%] shrink-0 items-center gap-4 overflow-hidden px-4 ${bg} ${
-            left ? "pt-0 pb-4 flex-row rounded-bl-lg" : "pt-2 pb-6 flex-row-reverse rounded-br-lg"
-          }`}
+          className={`pointer-events-auto flex h-6 items-center rounded-t-lg px-4 text-sm font-semibold ${lBg} ${lText}`}
         >
-          <RetreatBody r={r} active={active} big imgAlign={left ? "start" : "end"} />
+          {fmtRange(left.startISO, left.endISO)}
         </div>
-        {/* Tail (thin) — crosses past the middle along the bottom, carries dates */}
         <div
-          className={`pointer-events-auto flex h-6 flex-1 items-center px-4 text-sm font-semibold ${bg} ${
-            left ? "justify-end rounded-r-lg" : "justify-start rounded-l-lg"
-          } ${active ? "text-white" : "text-anamaya-charcoal/60"}`}
+          className={`pointer-events-auto flex h-[188px] w-1/2 items-center gap-4 overflow-hidden px-4 pb-4 pt-0 ${lBg}`}
         >
-          {fmtRange(r.startISO, r.endISO)}
+          <RetreatBody r={left} active={lActive} big imgAlign="start" />
         </div>
-      </div>
-    </button>
+      </button>
+
+      {/* RIGHT retreat: right patty (right half) + bottom bun (full width),
+          pushed down 24px so the two patties line up side by side. */}
+      <button
+        onClick={() => onSelect(right.id)}
+        className={`pointer-events-none absolute inset-x-0 top-6 text-left ${right.isSoldOut ? "opacity-70" : ""}`}
+      >
+        <div className="flex justify-end">
+          <div
+            className={`pointer-events-auto flex h-[188px] w-1/2 flex-row-reverse items-center gap-4 overflow-hidden px-4 pb-0 pt-4 ${rBg}`}
+          >
+            <RetreatBody r={right} active={rActive} big imgAlign="end" />
+          </div>
+        </div>
+        <div
+          className={`pointer-events-auto flex h-6 items-center justify-end rounded-b-lg px-4 text-sm font-semibold ${rBg} ${rText}`}
+        >
+          {fmtRange(right.startISO, right.endISO)}
+        </div>
+      </button>
+    </div>
   );
 }
