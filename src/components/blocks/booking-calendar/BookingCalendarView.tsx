@@ -415,8 +415,8 @@ function WeekRow({
             a grey-tan tint so it stands out. Single / 3+ use the normal card. */}
         {items.length === 2 ? (
           <div className="mt-2">
-            {/* Top "bun" — matches the bottom tails' thickness, pure white. */}
-            <div className="h-6 rounded-t-lg bg-white" />
+            {/* Top "bun" — matches the left meat's soft grey, rounded top corners. */}
+            <div className="h-6 rounded-t-lg bg-anamaya-cream" />
             <OklahomaBar
               r={items[0]}
               side="left"
