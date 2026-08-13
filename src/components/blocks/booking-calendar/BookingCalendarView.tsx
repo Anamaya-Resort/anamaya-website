@@ -411,27 +411,35 @@ function WeekRow({
             neither looks like half a week. First body on the left with a tail
             to the right; second body on the right with a tail to the left and
             a grey-tan tint so it stands out. Single / 3+ use the normal card. */}
-        {items.length > 0 && (
-          <div className="mt-2 flex flex-col gap-2">
-            {items.length === 2
-              ? items.map((r, i) => (
-                  <OklahomaBar
-                    key={r.id}
-                    r={r}
-                    side={i === 0 ? "left" : "right"}
-                    active={r.id === selectedId}
-                    onSelect={onSelect}
-                  />
-                ))
-              : items.map((r) => (
-                  <NormalCard
-                    key={r.id}
-                    r={r}
-                    active={r.id === selectedId}
-                    onSelect={onSelect}
-                  />
-                ))}
+        {items.length === 2 ? (
+          <div className="mt-2">
+            <OklahomaBar
+              r={items[0]}
+              side="left"
+              active={items[0].id === selectedId}
+              onSelect={onSelect}
+            />
+            <OklahomaBar
+              r={items[1]}
+              side="right"
+              overlap
+              active={items[1].id === selectedId}
+              onSelect={onSelect}
+            />
           </div>
+        ) : (
+          items.length > 0 && (
+            <div className="mt-2 flex flex-col gap-2">
+              {items.map((r) => (
+                <NormalCard
+                  key={r.id}
+                  r={r}
+                  active={r.id === selectedId}
+                  onSelect={onSelect}
+                />
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>
@@ -439,7 +447,7 @@ function WeekRow({
 }
 
 /** Image + title + teacher + price — the tall "body" of a retreat card. */
-function RetreatBody({ r, active }: { r: CalRetreat; active: boolean }) {
+function RetreatBody({ r, active, big }: { r: CalRetreat; active: boolean; big?: boolean }) {
   const price = priceLabel(r);
   const spots = spotsLabel(r);
   return (
@@ -449,7 +457,9 @@ function RetreatBody({ r, active }: { r: CalRetreat; active: boolean }) {
         <img
           src={r.image}
           alt=""
-          className="h-[130px] w-[130px] shrink-0 rounded-md object-cover"
+          className={`shrink-0 rounded-md object-cover ${
+            big ? "h-[156px] w-[156px]" : "h-[130px] w-[130px]"
+          }`}
         />
       )}
       <span className="min-w-0 flex-1">
@@ -516,31 +526,41 @@ function OklahomaBar({
   side,
   active,
   onSelect,
+  overlap,
 }: {
   r: CalRetreat;
   side: "left" | "right";
   active: boolean;
   onSelect: (id: string) => void;
+  /** Second patty: pull up to fully overlap the first so the two meats sit
+   *  side by side (hamburger) with their tails crossing along the bottom. */
+  overlap?: boolean;
 }) {
   const left = side === "left";
   const bg = active ? "bg-anamaya-green text-white" : left ? "bg-anamaya-cream" : "bg-[#ece7dd]";
   return (
+    // pointer-events-none on the button + auto on the visible meat/tail so the
+    // overlapping top patty doesn't swallow clicks meant for the one beneath;
+    // the onClick still fires via bubbling from the auto children.
     <button
       onClick={() => onSelect(r.id)}
-      className={`block w-full text-left transition-all ${r.isSoldOut ? "opacity-70" : ""}`}
+      className={`pointer-events-none block w-full text-left ${overlap ? "-mt-[188px]" : ""} ${
+        r.isSoldOut ? "opacity-70" : ""
+      }`}
     >
       <div className={`flex items-end ${left ? "" : "flex-row-reverse"}`}>
-        {/* Body (tall) */}
+        {/* Meat (patty) — fixed height so the two patties overlap cleanly;
+            image sits on the outer edge. */}
         <div
-          className={`flex basis-[58%] shrink-0 items-center gap-4 px-4 py-3 ${bg} ${
-            left ? "rounded-l-lg" : "rounded-r-lg"
+          className={`pointer-events-auto flex h-[188px] basis-[46%] shrink-0 items-center gap-4 overflow-hidden p-4 ${bg} ${
+            left ? "flex-row rounded-l-lg" : "flex-row-reverse rounded-r-lg"
           }`}
         >
-          <RetreatBody r={r} active={active} />
+          <RetreatBody r={r} active={active} big />
         </div>
-        {/* Tail (thin) — reaches the far edge, carries the dates */}
+        {/* Tail (thin) — crosses past the middle along the bottom, carries dates */}
         <div
-          className={`flex h-10 flex-1 items-center px-4 text-sm font-semibold ${bg} ${
+          className={`pointer-events-auto flex h-6 flex-1 items-center px-4 text-sm font-semibold ${bg} ${
             left ? "justify-end rounded-r-lg" : "justify-start rounded-l-lg"
           } ${active ? "text-white" : "text-anamaya-charcoal/60"}`}
         >
