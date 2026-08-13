@@ -31,6 +31,7 @@ export type CalRetreat = {
   availableSpaces: number | null; // null until AO populates it
   priceFrom: number | null; // null until AO populates it
   currency: string;
+  isYtt: boolean; // teacher-training → circular teacher-headshot image
 };
 
 export type CalDay = {
@@ -201,6 +202,7 @@ export async function getBookingCalendarData(
         availableSpaces: Number.isFinite(spaces) ? spaces : null,
         priceFrom: priceFromRow(row),
         currency: (row.currency as string) || "USD",
+        isYtt: isYtt(row),
       };
     });
 

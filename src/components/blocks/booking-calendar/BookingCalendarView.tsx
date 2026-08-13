@@ -461,8 +461,10 @@ function RetreatBody({
           src={r.image}
           alt=""
           // Big (patty) image: square, pinned to the top or bottom edge per
-          // side; the text beside it stays vertically centred.
-          className={`shrink-0 rounded-md object-cover ${
+          // side; the text beside it stays vertically centred. YTT photos are
+          // circular teacher headshots, so clip them to a circle (drops the
+          // baked-in white corners) instead of a rounded square.
+          className={`shrink-0 object-cover ${r.isYtt ? "rounded-full" : "rounded-md"} ${
             big
               ? `h-[156px] w-[156px] ${imgAlign === "end" ? "self-end" : "self-start"}`
               : "h-[130px] w-[130px]"
