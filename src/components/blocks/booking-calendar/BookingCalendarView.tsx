@@ -571,7 +571,7 @@ function OklahomaBar({
             image sits on the outer edge. */}
         <div
           className={`pointer-events-auto flex h-[188px] basis-[46%] shrink-0 items-center gap-4 overflow-hidden px-4 ${bg} ${
-            left ? "pt-0 pb-4 flex-row rounded-bl-lg" : "pb-0 pt-4 flex-row-reverse rounded-br-lg"
+            left ? "pt-0 pb-4 flex-row rounded-bl-lg" : "pt-2 pb-6 flex-row-reverse rounded-br-lg"
           }`}
         >
           <RetreatBody r={r} active={active} big imgAlign={left ? "start" : "end"} />
