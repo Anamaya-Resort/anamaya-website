@@ -375,13 +375,7 @@ function WeekRow({
         </div>
       )}
 
-      <div
-        className={`rounded-xl border p-3 transition-colors ${
-          items.length
-            ? "border-anamaya-mint/60 bg-white/50"
-            : "border-transparent bg-anamaya-charcoal/[0.02]"
-        }`}
-      >
+      <div className="rounded-xl border border-anamaya-mint/60 bg-white/50 p-3 transition-colors">
         {/* 8-cell date ruler (Sat .. Sat). */}
         <div className="grid grid-cols-8 gap-1.5">
           {week.days.map((d, i) => {
@@ -396,11 +390,7 @@ function WeekRow({
                 <span className="text-[10px] uppercase leading-none text-anamaya-charcoal/40">
                   {d.dayLetter}
                 </span>
-                <span
-                  className={`mt-0.5 text-sm leading-none ${
-                    items.length ? "text-anamaya-charcoal/80" : "text-anamaya-charcoal/35"
-                  }`}
-                >
+                <span className="mt-0.5 text-sm leading-none text-anamaya-charcoal/80">
                   {d.dayNum}
                 </span>
               </div>
@@ -408,11 +398,9 @@ function WeekRow({
           })}
         </div>
 
-        {/* Retreat bar(s) for this week. Two in a week → an "Oklahoma" pair:
-            each spans the full week (a thin tail reaches the far edge) so
-            neither looks like half a week. First body on the left with a tail
-            to the right; second body on the right with a tail to the left and
-            a grey-tan tint so it stands out. Single / 3+ use the normal card. */}
+        {/* Two retreats → interlocking hamburger pair; one or 3+ → normal
+            cards; none → a "Private Retreat" bar (empty weeks are held
+            privately, per the calendar's convention). */}
         {items.length === 2 ? (
           <HamburgerPair
             left={items[0]}
@@ -420,19 +408,21 @@ function WeekRow({
             selectedId={selectedId}
             onSelect={onSelect}
           />
+        ) : items.length > 0 ? (
+          <div className="mt-2 flex flex-col gap-2">
+            {items.map((r) => (
+              <NormalCard
+                key={r.id}
+                r={r}
+                active={r.id === selectedId}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
         ) : (
-          items.length > 0 && (
-            <div className="mt-2 flex flex-col gap-2">
-              {items.map((r) => (
-                <NormalCard
-                  key={r.id}
-                  r={r}
-                  active={r.id === selectedId}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          )
+          <div className="mt-2 flex h-12 items-center justify-center rounded-lg bg-anamaya-mint text-sm font-semibold uppercase tracking-[0.2em] text-anamaya-green">
+            Private Retreat
+          </div>
         )}
       </div>
     </div>
