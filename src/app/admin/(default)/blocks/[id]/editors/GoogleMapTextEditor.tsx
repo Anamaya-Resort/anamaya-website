@@ -36,6 +36,7 @@ function normalize(c: GoogleMapTextContent | null | undefined): GoogleMapTextCon
     embed_url: c?.embed_url ?? "",
     full_width_map: c?.full_width_map ?? false,
     flower_frame: c?.flower_frame ?? false,
+    frame_image_url: c?.frame_image_url ?? "",
 
     html: c?.html ?? "",
     text_color: c?.text_color ?? "",
@@ -323,6 +324,20 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
             <span className="text-sm text-anamaya-charcoal">
               Flower frame — flank the full-width map left &amp; right (50% opacity)
             </span>
+          </label>
+          <label className="block sm:col-span-2">
+            <span className={labelCls}>Frame bracket image URL (optional)</span>
+            <input
+              className={inputCls}
+              value={draft.frame_image_url ?? ""}
+              onChange={(e) => patch({ frame_image_url: e.target.value })}
+              placeholder="https://…/flower-divider-green-1800px.webp"
+            />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              A horizontal divider image; it&rsquo;s rotated 90° into vertical
+              side brackets (left &amp; right mirror each other). Leave blank to
+              use the small sideways-flower motif.
+            </p>
           </label>
           <label className="block sm:col-span-2">
             <span className={labelCls}>Open-in-Maps link text</span>

@@ -155,16 +155,41 @@ export default function GoogleMapTextBlock({
   // Full-width, centered map with no text column (e.g. a My Maps routes map).
   if (fullWidth) {
     const flower = content?.flower_frame === true;
-    const flowerImg = (flip: boolean) => (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src="/journal/flower-sideways-right.webp"
-        alt=""
-        aria-hidden
-        className={`hidden shrink-0 self-center opacity-50 sm:block${flip ? " -scale-x-100" : ""}`}
-        style={{ width: "clamp(44px, 6vw, 92px)" }}
-      />
-    );
+    const frameUrl = (content?.frame_image_url ?? "").trim();
+    const frameH = hasFixedHeight ? containerHeightPx : 460;
+    // right=true is the right-hand bracket; the two mirror each other.
+    const bracket = (right: boolean) =>
+      frameUrl ? (
+        <div
+          className="relative hidden shrink-0 self-center overflow-visible sm:block"
+          style={{ width: 46, height: frameH }}
+          aria-hidden
+        >
+          {/* A horizontal divider image rotated 90° into a vertical bracket. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={frameUrl}
+            alt=""
+            className="absolute left-1/2 top-1/2 max-w-none"
+            style={{
+              width: frameH * 0.92,
+              height: "auto",
+              opacity: 0.5,
+              transformOrigin: "center",
+              transform: `translate(-50%, -50%) rotate(${right ? -90 : 90}deg)`,
+            }}
+          />
+        </div>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src="/journal/flower-sideways-right.webp"
+          alt=""
+          aria-hidden
+          className={`hidden shrink-0 self-center opacity-50 sm:block${right ? "" : " -scale-x-100"}`}
+          style={{ width: "clamp(44px, 6vw, 92px)" }}
+        />
+      );
     return (
       <section
         className="w-full"
@@ -174,14 +199,14 @@ export default function GoogleMapTextBlock({
           className="mx-auto flex w-full items-stretch gap-3 px-6 sm:gap-6"
           style={{ maxWidth: containerWidth }}
         >
-          {flower && flowerImg(true)}
+          {flower && bracket(false)}
           <div
             className="relative w-full overflow-hidden"
-            style={{ height: hasFixedHeight ? containerHeightPx : 460, borderRadius: radius }}
+            style={{ height: frameH, borderRadius: radius }}
           >
             {mapInner}
           </div>
-          {flower && flowerImg(false)}
+          {flower && bracket(true)}
         </div>
       </section>
     );

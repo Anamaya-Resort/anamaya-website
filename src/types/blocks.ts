@@ -524,9 +524,12 @@ export type GoogleMapTextContent = BlockCta & {
   embed_url?: string;
   /** Show the map full-width with no text column (large + centered). */
   full_width_map?: boolean;
-  /** Flank the (full-width) map left & right with the sideways-flower motif
-   *  at 50% opacity. */
+  /** Flank the (full-width) map left & right with a decorative bracket at
+   *  50% opacity. */
   flower_frame?: boolean;
+  /** Bracket image (e.g. a horizontal flower-divider). Rotated 90° into
+   *  vertical side pieces, mirrored left/right. Empty = sideways-flower motif. */
+  frame_image_url?: string;
 
   // ── Text ────────────────────────────────────────────────────────────
   html?: string;
