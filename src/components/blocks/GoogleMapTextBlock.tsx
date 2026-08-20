@@ -178,7 +178,7 @@ export default function GoogleMapTextBlock({
               opacity: 0.5,
               filter: frameFilter,
               transformOrigin: "center",
-              transform: `translate(-50%, -50%) rotate(${right ? -90 : 90}deg)`,
+              transform: `translate(-50%, -50%) rotate(${right ? 90 : -90}deg)`,
             }}
           />
         </div>
@@ -198,7 +198,7 @@ export default function GoogleMapTextBlock({
         style={{ backgroundColor: bg, color, paddingTop: padY, paddingBottom: padY }}
       >
         <div
-          className="mx-auto flex w-full items-stretch gap-3 px-6 sm:gap-6"
+          className="mx-auto flex w-full items-stretch gap-1.5 px-6 sm:gap-3"
           style={{ maxWidth: containerWidth }}
         >
           {flower && bracket(false)}
