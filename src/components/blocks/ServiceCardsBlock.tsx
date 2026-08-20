@@ -78,15 +78,13 @@ export default async function ServiceCardsBlock({
       <LayoutWidths content={c} defaultMaxContentPx={containerWidth}>
         {heading && (
           <div className="svcc-headwrap">
-            <h2 className="svcc-heading">{heading}</h2>
             {showDivider && (
-              <div className="svcc-ctitle" aria-hidden>
-                <span className="svcc-fl svcc-fl-l" />
+              <div className="svcc-orn-top" aria-hidden>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className="svcc-orn" src={DIVIDER_RED} alt="" />
-                <span className="svcc-fl svcc-fl-r" />
               </div>
             )}
+            <h2 className="svcc-heading">{heading}</h2>
           </div>
         )}
 
@@ -293,7 +291,7 @@ const cssScoped = `
 /* Overall heading + optional divider */
 .svccards .svcc-headwrap { text-align: center; margin-bottom: 22px; padding: 0 24px; }
 .svccards .svcc-heading { font-family: var(--font-heading); font-weight: 600; font-size: clamp(28px, 4vw, 44px); letter-spacing: .06em; text-transform: uppercase; color: var(--svcc-title); margin: 0; }
-.svccards .svcc-ctitle { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 14px; }
+.svccards .svcc-orn-top { display: flex; justify-content: center; margin: 0 0 24px; }
 .svccards .svcc-orn { width: min(420px, 62%); height: auto; opacity: .92; }
 .svccards .svcc-fl { flex: none; width: 30px; height: 26px; opacity: .5; background: url(${FLOWER}) center/contain no-repeat; }
 .svccards .svcc-fl-l { transform: scaleX(-1); }
