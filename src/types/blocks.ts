@@ -530,6 +530,9 @@ export type GoogleMapTextContent = BlockCta & {
   /** Bracket image (e.g. a horizontal flower-divider). Rotated 90° into
    *  vertical side pieces, mirrored left/right. Empty = sideways-flower motif. */
   frame_image_url?: string;
+  /** CSS filter applied to the bracket image, e.g. to recolor a green
+   *  divider to dark grey: "brightness(0) invert(0.28)". */
+  frame_filter?: string;
 
   // ── Text ────────────────────────────────────────────────────────────
   html?: string;

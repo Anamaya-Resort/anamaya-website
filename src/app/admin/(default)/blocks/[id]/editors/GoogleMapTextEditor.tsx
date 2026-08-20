@@ -37,6 +37,7 @@ function normalize(c: GoogleMapTextContent | null | undefined): GoogleMapTextCon
     full_width_map: c?.full_width_map ?? false,
     flower_frame: c?.flower_frame ?? false,
     frame_image_url: c?.frame_image_url ?? "",
+    frame_filter: c?.frame_filter ?? "",
 
     html: c?.html ?? "",
     text_color: c?.text_color ?? "",
@@ -337,6 +338,19 @@ function Form({ state }: { state: BlockEditorState<GoogleMapTextContent> }) {
               A horizontal divider image; it&rsquo;s rotated 90° into vertical
               side brackets (left &amp; right mirror each other). Leave blank to
               use the small sideways-flower motif.
+            </p>
+          </label>
+          <label className="block sm:col-span-2">
+            <span className={labelCls}>Bracket image filter (optional)</span>
+            <input
+              className={inputCls}
+              value={draft.frame_filter ?? ""}
+              onChange={(e) => patch({ frame_filter: e.target.value })}
+              placeholder="brightness(0) invert(0.28)  — recolors to dark grey"
+            />
+            <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
+              CSS filter applied to the bracket image, e.g. to recolor a green
+              divider to dark grey. Leave blank for the image&rsquo;s own color.
             </p>
           </label>
           <label className="block sm:col-span-2">

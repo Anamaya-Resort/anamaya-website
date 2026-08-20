@@ -156,6 +156,7 @@ export default function GoogleMapTextBlock({
   if (fullWidth) {
     const flower = content?.flower_frame === true;
     const frameUrl = (content?.frame_image_url ?? "").trim();
+    const frameFilter = (content?.frame_filter ?? "").trim() || undefined;
     const frameH = hasFixedHeight ? containerHeightPx : 460;
     // right=true is the right-hand bracket; the two mirror each other.
     const bracket = (right: boolean) =>
@@ -175,6 +176,7 @@ export default function GoogleMapTextBlock({
               width: frameH * 0.92,
               height: "auto",
               opacity: 0.5,
+              filter: frameFilter,
               transformOrigin: "center",
               transform: `translate(-50%, -50%) rotate(${right ? -90 : 90}deg)`,
             }}
