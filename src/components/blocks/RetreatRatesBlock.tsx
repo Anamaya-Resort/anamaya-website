@@ -35,7 +35,10 @@ function formatPrice(n: unknown, currency: string): string | null {
   const num = Number(n);
   if (!Number.isFinite(num) || num <= 0) return null;
   const symbol = currency === "USD" ? "$" : "";
-  return `${symbol}${Number.isInteger(num) ? num : num.toFixed(2)}`;
+  const body = Number.isInteger(num)
+    ? num.toLocaleString("en-US")
+    : num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${symbol}${body}`;
 }
 
 /**
