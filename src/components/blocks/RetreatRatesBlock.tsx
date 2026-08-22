@@ -1,6 +1,6 @@
 import type { RetreatRatesContent, RetreatRateTier } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
-import { aoSupabaseOrNull } from "@/lib/ao-supabase";
+import { aoSupabaseAdminOrNull } from "@/lib/ao-supabase";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MONTHS = [
@@ -59,7 +59,7 @@ function tiersFromPricingOptions(opts: unknown, currency: string): RetreatRateTi
 async function resolveLive(retreatId: string | undefined): Promise<Resolved | null> {
   const id = retreatId?.trim();
   if (!id || !UUID_RE.test(id)) return null;
-  const ao = aoSupabaseOrNull();
+  const ao = aoSupabaseAdminOrNull();
   if (!ao) return null;
 
   const { data, error } = await ao

@@ -1,6 +1,6 @@
 import type { RetreatLeaderContent } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
-import { aoSupabaseOrNull } from "@/lib/ao-supabase";
+import { aoSupabaseAdminOrNull } from "@/lib/ao-supabase";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -18,7 +18,7 @@ type ResolvedLeader = {
 async function resolveLeader(id: string | undefined): Promise<ResolvedLeader | null> {
   const trimmed = id?.trim();
   if (!trimmed || !UUID_RE.test(trimmed)) return null;
-  const ao = aoSupabaseOrNull();
+  const ao = aoSupabaseAdminOrNull();
   if (!ao) return null;
 
   const { data: person, error } = await ao
