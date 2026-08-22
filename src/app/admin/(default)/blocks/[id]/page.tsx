@@ -42,6 +42,8 @@ import ServiceCardsEditor from "./editors/ServiceCardsEditor";
 import FaqEditor from "./editors/FaqEditor";
 import ReactionsEditor from "./editors/ReactionsEditor";
 import InfoCardEditor from "./editors/InfoCardEditor";
+import RetreatLeaderEditor from "./editors/RetreatLeaderEditor";
+import RetreatRatesEditor from "./editors/RetreatRatesEditor";
 import SmallFormOverImageEditor from "./editors/SmallFormOverImageEditor";
 import GoogleMapTextEditor from "./editors/GoogleMapTextEditor";
 import TestimonialsEditor from "./editors/TestimonialsEditor";
@@ -509,6 +511,30 @@ export default async function EditBlock({
 
       {block.type_slug === "info_card" && (
         <InfoCardEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "retreat_leader" && (
+        <RetreatLeaderEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "retreat_rates" && (
+        <RetreatRatesEditor
           blockId={id}
           name={block.name}
           slug={block.slug}

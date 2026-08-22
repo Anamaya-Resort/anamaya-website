@@ -38,6 +38,8 @@ import TestimonialsBlock from "./TestimonialsBlock";
 import ImageSlideshowBlock from "./ImageSlideshowBlock";
 import ReactionsBlock from "./ReactionsBlock";
 import InfoCardBlock from "./InfoCardBlock";
+import RetreatLeaderBlock from "./RetreatLeaderBlock";
+import RetreatRatesBlock from "./RetreatRatesBlock";
 
 /** Renders a single block-usage by dispatching on type. Null if unknown. */
 export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
@@ -86,6 +88,8 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "image_slideshow": return <ImageSlideshowBlock content={content} />;
     case "reactions":      return <ReactionsBlock content={content} />;
     case "info_card":      return <InfoCardBlock content={content} />;
+    case "retreat_leader": return <RetreatLeaderBlock content={content} />;
+    case "retreat_rates":  return <RetreatRatesBlock content={content} />;
     default: {
       console.warn(`[blocks] unknown block type: ${usage.block.type_slug}`);
       return null;

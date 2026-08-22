@@ -91,6 +91,8 @@ const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set([
   "service_menu",
   "service_cards",
   "testimonials",
+  "retreat_leader",
+  "retreat_rates",
 ]);
 
 // 15px checkerboard via two stacked linear-gradients. No image asset.
@@ -252,6 +254,20 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
         <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
           Booking Calendar — save to see the iframe preview (interactive; live
           from AnamayaOS)
+        </div>
+      );
+    case "retreat_leader":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
+          Retreat Leader — save to see the iframe preview (live from AnamayaOS
+          when linked, else the manual bio)
+        </div>
+      );
+    case "retreat_rates":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
+          Retreat Overview & Rates — save to see the iframe preview (live from
+          AnamayaOS when linked, else the manual fallback)
         </div>
       );
     case "featured_by_search":

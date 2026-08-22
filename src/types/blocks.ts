@@ -686,6 +686,29 @@ export type GalleryContent = LayoutWidthsContent & SectionFrame & {
 };
 
 /**
+ * Room Grid — the accommodations index. Cards are 100% live from AnamayaOS
+ * `rooms` (see src/lib/rooms.ts); this content only holds display settings.
+ */
+export type RoomGridContent = LayoutWidthsContent & SectionFrame & {
+  heading?: string;
+  intro?: string;
+  bg_color?: string;
+  padding_y_px?: number;
+};
+
+/**
+ * Room Detail — a single accommodation page. WHICH room to show is resolved
+ * server-side from the page it renders on (pageId -> url_inventory.url_path
+ * -> AnamayaOS rooms.slug), not from this content — so the same block
+ * instance serves all 14 room pages. This content only holds display
+ * settings.
+ */
+export type RoomDetailContent = LayoutWidthsContent & {
+  bg_color?: string;
+  padding_y_px?: number;
+};
+
+/**
  * Person card — used for retreat-leader, teacher, guest-speaker bios.
  * Composes a photo + name + credentials line + rich-text body + link.
  * "side-by-side" puts the photo to the left of the text; "stacked"
@@ -1317,6 +1340,63 @@ export type InfoCardContent = {
   text_color?: string;
 };
 
+/**
+ * Retreat Leader — VERTICAL block for a retreat template's side column.
+ * One instance per teacher (co-taught retreats stack two of these in the
+ * aside). Prefers live AnamayOS data when `ao_person_id` is set and the
+ * lookup succeeds; otherwise renders the manual fields, which the retreat
+ * conversion pipeline pre-fills from the bio scraped off the legacy page.
+ * Never blank — same "AO live OR manual fallback" pattern as
+ * DetailsRatesDynamicBlock / ServiceCardsBlock.
+ */
+export type RetreatLeaderContent = {
+  responsive_mode?: "fixed" | "hidden";
+  /** AnamayOS persons.id (uuid). When set + resolvable, live name/photo/bio
+   *  from persons + retreat_leader_profiles are used instead of the manual
+   *  fields below. */
+  ao_person_id?: string;
+  role?: string; // "Lead Teacher" | "Co-Teacher" | "Guest Teacher" | free text
+  name?: string;
+  photo_url?: string;
+  bio_html?: string;
+  link_label?: string;
+  link_href?: string;
+  bg_color?: string;
+  text_color?: string;
+};
+
+/** One room/rate line for RetreatRatesContent's manual fallback tier list. */
+export type RetreatRateTier = {
+  name: string; // e.g. "Dorm", "Double"
+  price: string; // pre-formatted, e.g. "$1,595"
+  note?: string;
+};
+
+/**
+ * Retreat Overview & Rates — HORIZONTAL block for a retreat template's main
+ * column (typically placed right under the hero). Dates, starting price,
+ * a per-room-type price breakdown, a spots-left note, and the Book/Enquire
+ * button — pulled live from the AnamayOS retreat record (`retreats` table:
+ * start_date/end_date/pricing_options/available_spaces/is_sold_out/
+ * registration_link) when `retreat_id` is set and reachable. Falls back to
+ * the manual fields (pre-filled from the legacy page's scraped pricing at
+ * conversion time) otherwise — never renders empty.
+ */
+export type RetreatRatesContent = {
+  /** AnamayOS retreats.id (uuid). Live source when set. */
+  retreat_id?: string;
+  heading?: string; // default "Dates & Rates"
+  manual_dates_text?: string;
+  manual_tiers?: RetreatRateTier[];
+  manual_spots_text?: string;
+  manual_cta_label?: string;
+  manual_cta_href?: string;
+  bg_color?: string;
+  text_color?: string;
+  container_width_px?: number;
+  padding_y_px?: number;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -1356,7 +1436,11 @@ export type BlockTypeSlug =
   | "reactions"
   | "booking_calendar"
   | "service_cards"
-  | "info_card";
+  | "info_card"
+  | "room_grid"
+  | "room_detail"
+  | "retreat_leader"
+  | "retreat_rates";
 
 export type BlockRecord = {
   id: string;
