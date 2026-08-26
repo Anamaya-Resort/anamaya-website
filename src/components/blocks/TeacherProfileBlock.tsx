@@ -45,11 +45,17 @@ async function resolveTeacher(id: string | undefined): Promise<ResolvedTeacher |
 }
 
 /**
- * Teacher Profile — the main block of the single-yoga_teacher template.
- * One shared instance across all teacher pages; each page's real content
+ * Teacher Profile — the main block of the single-retreat_leader template.
+ * One shared instance across all leader pages; each page's real content
  * comes from a per-page override (see the type doc). Renders nothing
  * (rather than a broken empty page) when there's neither a live nor a
  * manual name to show.
+ *
+ * Layout: a soft header band (circular portrait, name, credentials,
+ * specialty pills) over the bio in a readable centered column, closing
+ * with a row of "Connect" pill links. The circular portrait is a
+ * deliberate one-off shape for a person's photo — every other card-style
+ * block on the site uses rounded-lg.
  */
 export default async function TeacherProfileBlock({ content }: { content: TeacherProfileContent }) {
   const c = content ?? {};
@@ -64,52 +70,60 @@ export default async function TeacherProfileBlock({ content }: { content: Teache
   const bg = resolveBrandColor(c.bg_color) ?? "#ffffff";
   const text = resolveBrandColor(c.text_color) ?? undefined;
   const specialties = Array.isArray(c.specialties) ? c.specialties.filter(Boolean) : [];
+  const hasLinks = Boolean(c.website_url || c.instagram_handle);
 
   return (
-    <section className="w-full px-6 py-16" style={{ backgroundColor: bg, color: text }}>
-      <div className="mx-auto flex max-w-4xl flex-col items-center gap-8 text-center sm:flex-row sm:items-start sm:text-left">
-        {photo && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photo}
-            alt={name}
-            className="aspect-square w-48 shrink-0 rounded-lg object-cover shadow-sm"
-          />
-        )}
-        <div className="min-w-0">
-          <h1 className="font-heading text-3xl font-semibold text-anamaya-charcoal">{name}</h1>
+    <article style={{ backgroundColor: bg, color: text }}>
+      <header className="bg-anamaya-cream px-6 py-16 text-center">
+        <div className="mx-auto max-w-2xl">
+          {photo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photo}
+              alt={name}
+              className="mx-auto aspect-square w-40 rounded-full object-cover shadow-md ring-4 ring-white sm:w-48"
+            />
+          )}
+          <h1 className="mt-6 font-heading text-4xl font-semibold leading-tight text-anamaya-charcoal sm:text-5xl">
+            {name}
+          </h1>
           {credentials && (
-            <p className="mt-1 text-sm font-semibold uppercase tracking-wider text-anamaya-green">
+            <p className="mt-2 text-sm font-semibold uppercase tracking-[0.15em] text-anamaya-green">
               {credentials}
             </p>
           )}
           {specialties.length > 0 && (
-            <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
               {specialties.map((s, i) => (
                 <span
                   key={i}
-                  className="rounded-full bg-anamaya-mint/30 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70"
+                  className="rounded-full border border-anamaya-mint bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/70"
                 >
                   {s}
                 </span>
               ))}
             </div>
           )}
+        </div>
+      </header>
+
+      {(bio || hasLinks) && (
+        <div className="px-6 py-16">
           {bio && (
             <div
-              className="prose-anamaya prose-anamaya-block mt-5"
+              className="prose-anamaya prose-anamaya-block mx-auto max-w-2xl text-[1.05rem] leading-relaxed"
               // eslint-disable-next-line react/no-danger
               dangerouslySetInnerHTML={{ __html: bio }}
             />
           )}
-          {(c.website_url || c.instagram_handle) && (
-            <div className="mt-5 flex flex-wrap justify-center gap-4 sm:justify-start">
+          {hasLinks && (
+            <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-4">
               {c.website_url && (
                 <a
                   href={c.website_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-semibold text-anamaya-green underline underline-offset-2 hover:text-anamaya-green-dark"
+                  className="rounded-full border border-anamaya-green px-5 py-2 text-sm font-semibold uppercase tracking-wider text-anamaya-green transition-colors hover:bg-anamaya-green hover:text-white"
                 >
                   Website
                 </a>
@@ -119,7 +133,7 @@ export default async function TeacherProfileBlock({ content }: { content: Teache
                   href={`https://instagram.com/${c.instagram_handle.replace(/^@/, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-semibold text-anamaya-green underline underline-offset-2 hover:text-anamaya-green-dark"
+                  className="rounded-full border border-anamaya-green px-5 py-2 text-sm font-semibold uppercase tracking-wider text-anamaya-green transition-colors hover:bg-anamaya-green hover:text-white"
                 >
                   @{c.instagram_handle.replace(/^@/, "")}
                 </a>
@@ -127,7 +141,7 @@ export default async function TeacherProfileBlock({ content }: { content: Teache
             </div>
           )}
         </div>
-      </div>
-    </section>
+      )}
+    </article>
   );
 }
