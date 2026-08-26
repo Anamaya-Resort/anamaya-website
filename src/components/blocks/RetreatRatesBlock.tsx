@@ -142,23 +142,23 @@ export default async function RetreatRatesBlock({ content }: { content: RetreatR
           </div>
 
           {tiers.length > 0 && (
-            <div className="flex flex-col gap-y-2 sm:col-start-2">
-              {[tiers.slice(0, Math.ceil(tiers.length / 2)), tiers.slice(Math.ceil(tiers.length / 2))]
-                .filter((row) => row.length > 0)
-                .map((row, r) => (
-                  <div key={r} className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-                    {row.map((t, i) => (
-                      <div key={i} className="text-center">
-                        <div className="text-xs uppercase tracking-wider text-anamaya-charcoal/50">
-                          {t.name}
-                        </div>
-                        <div className="font-heading text-xl font-semibold text-anamaya-green">
-                          {t.price}
-                        </div>
-                      </div>
-                    ))}
+            // Fixed column count -> exactly 2 rows, always -- unlike flex-wrap,
+            // a CSS grid never spawns an extra row just because one cell's
+            // text is wide; the cell just grows taller instead.
+            <div
+              className="grid gap-x-4 gap-y-3 sm:col-start-2"
+              style={{ gridTemplateColumns: `repeat(${Math.max(1, Math.ceil(tiers.length / 2))}, minmax(0, 1fr))` }}
+            >
+              {tiers.map((t, i) => (
+                <div key={i} className="text-center">
+                  <div className="text-xs uppercase tracking-wider text-anamaya-charcoal/50">
+                    {t.name}
                   </div>
-                ))}
+                  <div className="font-heading text-xl font-semibold text-anamaya-green">
+                    {t.price}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
