@@ -82,6 +82,21 @@ export const POST_TYPES: PostTypeConfig[] = [
     icon: "Mountain",
   },
   {
+    // The AnamayOS-driven teacher/leader profile pages (any retreat type --
+    // yoga, fitness, art, wellness, etc., not just yoga). Separate from the
+    // legacy "yoga-teachers" / "guest-yoga-teachers" WP-scraped buckets
+    // below, which are the old site's narrower yoga-only categories.
+    slug: "retreat-leaders",
+    postType: "retreat_leader",
+    label: "Retreat Leader",
+    pluralLabel: "Retreat Leaders",
+    templateSlug: "single-retreat_leader",
+    hierarchical: false,
+    columns: ["title", "date"],
+    taxonomies: [],
+    icon: "User",
+  },
+  {
     slug: "accommodations",
     postType: "accommodations",
     label: "Accommodation",
