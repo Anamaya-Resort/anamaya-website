@@ -124,7 +124,7 @@ export default async function RetreatRatesBlock({ content }: { content: RetreatR
   return (
     <section style={{ backgroundColor: bg, color: text, paddingTop: padY, paddingBottom: padY }}>
       <div className="mx-auto w-full px-4" style={{ maxWidth: maxW }}>
-        <div className="flex flex-col gap-6 rounded-2xl border border-anamaya-mint/60 bg-white/60 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-6 rounded-lg border border-anamaya-mint/60 bg-white/60 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             {c.heading && (
               <h3 className="font-heading text-lg font-semibold text-anamaya-charcoal">

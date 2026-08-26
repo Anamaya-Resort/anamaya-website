@@ -61,7 +61,7 @@ export default async function RetreatLeaderBlock({ content }: { content: Retreat
   return (
     <aside className="mx-auto w-full max-w-[360px]" style={{ color: text }}>
       <div
-        className="overflow-hidden rounded-2xl border border-anamaya-mint/50 shadow-sm"
+        className="overflow-hidden rounded-lg border border-anamaya-mint/50 shadow-sm"
         style={{ backgroundColor: bg }}
       >
         {photo && (
