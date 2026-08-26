@@ -142,17 +142,23 @@ export default async function RetreatRatesBlock({ content }: { content: RetreatR
           </div>
 
           {tiers.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 sm:col-start-2 sm:justify-self-center">
-              {tiers.map((t, i) => (
-                <div key={i} className="text-center">
-                  <div className="text-xs uppercase tracking-wider text-anamaya-charcoal/50">
-                    {t.name}
+            <div className="flex flex-col gap-y-2 sm:col-start-2">
+              {[tiers.slice(0, Math.ceil(tiers.length / 2)), tiers.slice(Math.ceil(tiers.length / 2))]
+                .filter((row) => row.length > 0)
+                .map((row, r) => (
+                  <div key={r} className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                    {row.map((t, i) => (
+                      <div key={i} className="text-center">
+                        <div className="text-xs uppercase tracking-wider text-anamaya-charcoal/50">
+                          {t.name}
+                        </div>
+                        <div className="font-heading text-xl font-semibold text-anamaya-green">
+                          {t.price}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="font-heading text-xl font-semibold text-anamaya-green">
-                    {t.price}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
 
