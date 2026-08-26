@@ -1417,6 +1417,8 @@ export type TeacherProfileContent = {
   name?: string;
   credentials?: string; // e.g. "RYT-500 · Embodied Rewilding™ founder"
   photo_url?: string;
+  /** Wide hero photo behind the name. Falls back to photo_url when unset. */
+  banner_url?: string;
   bio_html?: string;
   specialties?: string[];
   website_url?: string;

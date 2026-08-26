@@ -19,6 +19,7 @@ function normalize(c: TeacherProfileContent | null | undefined): TeacherProfileC
     name: c?.name ?? "",
     credentials: c?.credentials ?? "",
     photo_url: c?.photo_url ?? "",
+    banner_url: c?.banner_url ?? "",
     bio_html: c?.bio_html ?? "",
     specialties: Array.isArray(c?.specialties) ? c!.specialties! : [],
     website_url: c?.website_url ?? "",
@@ -101,11 +102,20 @@ function Form({ state }: { state: BlockEditorState<TeacherProfileContent> }) {
             />
           </label>
           <label className="block sm:col-span-2">
-            <span className={labelCls}>Photo URL</span>
+            <span className={labelCls}>Photo URL (portrait)</span>
             <input
               className={inputCls}
               value={draft.photo_url ?? ""}
               onChange={(e) => patch({ photo_url: e.target.value })}
+            />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className={labelCls}>Banner URL (wide hero photo)</span>
+            <input
+              className={inputCls}
+              value={draft.banner_url ?? ""}
+              onChange={(e) => patch({ banner_url: e.target.value })}
+              placeholder="Leave blank to reuse the portrait"
             />
           </label>
           <label className="block sm:col-span-2">
