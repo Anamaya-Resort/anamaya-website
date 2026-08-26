@@ -18,7 +18,7 @@ export default function ImageOverlayBlock({ content }: { content: ImageOverlayCo
   return (
     <section
       className="relative w-full overflow-hidden"
-      style={{ height, backgroundColor: bg }}
+      style={{ height, backgroundColor: bg, borderRadius: content?.corner_radius_px || undefined }}
     >
       {content?.image_url && (() => {
         // ≤100%: width/height % of the section (shrinks to fit, never crops).

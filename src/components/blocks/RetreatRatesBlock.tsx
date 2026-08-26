@@ -144,7 +144,7 @@ export default async function RetreatRatesBlock({ content }: { content: RetreatR
           {tiers.length > 0 && (
             <div className="flex flex-wrap gap-x-6 gap-y-2">
               {tiers.map((t, i) => (
-                <div key={i} className="text-right">
+                <div key={i} className="text-center">
                   <div className="text-xs uppercase tracking-wider text-anamaya-charcoal/50">
                     {t.name}
                   </div>

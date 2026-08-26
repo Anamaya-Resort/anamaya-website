@@ -418,6 +418,11 @@ export type ImageOverlayLine = {
 export type ImageOverlayContent = BlockCta & {
   image_url?: string;
   image_alt?: string;
+  /** Corner radius in px applied to the whole section. 0/undefined (default)
+   *  = square — most heroes bleed to the page edge and should stay square.
+   *  Opt in only when the block sits inside a contained column next to
+   *  other rounded cards (e.g. a retreat template's main column). */
+  corner_radius_px?: number;
   /**
    * How the image fills the section:
    *  - "cover"   (default): fill the section, crop edges to match aspect
