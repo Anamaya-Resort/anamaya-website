@@ -1402,6 +1402,29 @@ export type RetreatRatesContent = {
   padding_y_px?: number;
 };
 
+/**
+ * Teacher Profile — the yoga-teacher template's main block. One shared
+ * block + template (`single-yoga_teacher`) is reused across every teacher
+ * page; each page's actual name/photo/bio is a per-page override
+ * (page_block_overrides), the same mechanism blog posts already use to
+ * share one template. Prefers live AnamayOS data when `ao_person_id` is
+ * set and resolvable (persons + retreat_leader_profiles); otherwise the
+ * manual fields. Once teachers self-register in AnamayOS, existing pages
+ * just need their override's ao_person_id filled in to go live.
+ */
+export type TeacherProfileContent = {
+  ao_person_id?: string;
+  name?: string;
+  credentials?: string; // e.g. "RYT-500 · Embodied Rewilding™ founder"
+  photo_url?: string;
+  bio_html?: string;
+  specialties?: string[];
+  website_url?: string;
+  instagram_handle?: string;
+  bg_color?: string;
+  text_color?: string;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -1445,7 +1468,8 @@ export type BlockTypeSlug =
   | "room_grid"
   | "room_detail"
   | "retreat_leader"
-  | "retreat_rates";
+  | "retreat_rates"
+  | "teacher_profile";
 
 export type BlockRecord = {
   id: string;

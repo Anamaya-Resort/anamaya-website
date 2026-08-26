@@ -40,6 +40,7 @@ import ReactionsBlock from "./ReactionsBlock";
 import InfoCardBlock from "./InfoCardBlock";
 import RetreatLeaderBlock from "./RetreatLeaderBlock";
 import RetreatRatesBlock from "./RetreatRatesBlock";
+import TeacherProfileBlock from "./TeacherProfileBlock";
 
 /**
  * Renders a block from its type slug and resolved content. The single
@@ -103,6 +104,7 @@ export default function renderBlockByType(
     case "info_card":             return <InfoCardBlock content={content} />;
     case "retreat_leader":        return <RetreatLeaderBlock content={content} />;
     case "retreat_rates":         return <RetreatRatesBlock content={content} />;
+    case "teacher_profile":       return <TeacherProfileBlock content={content} />;
     default:                      return null;
   }
 }

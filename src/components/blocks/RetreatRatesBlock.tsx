@@ -124,8 +124,8 @@ export default async function RetreatRatesBlock({ content }: { content: RetreatR
   return (
     <section style={{ backgroundColor: bg, color: text, paddingTop: padY, paddingBottom: padY }}>
       <div className="mx-auto w-full px-4" style={{ maxWidth: maxW }}>
-        <div className="flex flex-col gap-6 rounded-lg border border-anamaya-mint/60 bg-white/60 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-6 rounded-lg border border-anamaya-mint/60 bg-white/60 p-6 sm:grid sm:grid-cols-3 sm:items-center sm:gap-4">
+          <div className="rounded-lg bg-zinc-50 p-4 sm:col-start-1 sm:justify-self-start">
             {c.heading && (
               <h3 className="font-heading text-lg font-semibold text-anamaya-charcoal">
                 {c.heading}
@@ -142,7 +142,7 @@ export default async function RetreatRatesBlock({ content }: { content: RetreatR
           </div>
 
           {tiers.length > 0 && (
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 sm:col-start-2 sm:justify-self-center">
               {tiers.map((t, i) => (
                 <div key={i} className="text-center">
                   <div className="text-xs uppercase tracking-wider text-anamaya-charcoal/50">
@@ -161,7 +161,7 @@ export default async function RetreatRatesBlock({ content }: { content: RetreatR
               href={cta_href}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 rounded-full bg-anamaya-green px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark"
+              className="shrink-0 justify-self-center rounded-full bg-anamaya-green px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-anamaya-green-dark sm:col-start-3 sm:justify-self-end"
             >
               {cta_label}
             </a>

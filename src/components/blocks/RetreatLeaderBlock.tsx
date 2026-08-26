@@ -76,7 +76,13 @@ export default async function RetreatLeaderBlock({ content }: { content: Retreat
           )}
           {name && (
             <h3 className="mt-1 font-heading text-xl font-semibold leading-tight text-anamaya-charcoal">
-              {name}
+              {c.link_href ? (
+                <a href={c.link_href} className="hover:text-anamaya-green">
+                  {name}
+                </a>
+              ) : (
+                name
+              )}
             </h3>
           )}
           {bio && (
