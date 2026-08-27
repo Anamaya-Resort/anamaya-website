@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getRetreatBySlug } from "@/lib/retreats";
 import ProseHtml from "@/components/ProseHtml";
 import { BlockByType } from "@/components/blocks/BlockRenderer";
+import TemplateRenderer from "@/components/templates/TemplateRenderer";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,14 @@ export default async function RetreatPage({
   const { slug } = await params;
   const r = await getRetreatBySlug(slug);
   if (!r) notFound();
+
+  // Converted retreats render via the block/template system instead of
+  // this legacy hardcoded layout. Mirrors the generic catch-all route's
+  // own cms_template_id check -- this specific dynamic route just never
+  // had it, since it predates the retreat template existing at all.
+  if (r.cms_template_id) {
+    return <TemplateRenderer templateId={r.cms_template_id} pageId={r.id} />;
+  }
 
   return (
     <>

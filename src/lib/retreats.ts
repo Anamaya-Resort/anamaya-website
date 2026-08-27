@@ -20,6 +20,10 @@ export type RetreatCard = {
 export type RetreatDetail = RetreatCard & {
   wp_id: number;
   body_html: string;
+  /** Set once this legacy page has been converted to the new block/
+   *  template system. When set, the retreat route should render via
+   *  TemplateRenderer(cms_template_id, id) instead of this legacy body. */
+  cms_template_id: string | null;
   author: { display_name: string; slug: string; avatar_url: string | null } | null;
   seo: {
     title: string | null;
@@ -204,7 +208,9 @@ export async function getRetreatBySlug(slug: string): Promise<RetreatDetail | nu
   // modified first — first row is the winner.
   const { data: rows } = await sb
     .from("url_inventory")
-    .select("id, url, title, wp_id, date_published, date_modified, featured_media_wp_id, author_id, source_site")
+    .select(
+      "id, url, title, wp_id, date_published, date_modified, featured_media_wp_id, author_id, source_site, cms_template_id",
+    )
     .in("source_site", ["v1", "v2"])
     .eq("post_type", "retreat")
     .ilike("url", `%/retreat/${slug}/%`)
@@ -300,6 +306,7 @@ export async function getRetreatBySlug(slug: string): Promise<RetreatDetail | nu
     category,
     wp_id: row.wp_id ?? 0,
     body_html,
+    cms_template_id: row.cms_template_id ?? null,
     author,
     seo: seoMeta
       ? {
