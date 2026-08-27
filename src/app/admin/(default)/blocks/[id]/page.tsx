@@ -45,6 +45,8 @@ import InfoCardEditor from "./editors/InfoCardEditor";
 import RetreatLeaderEditor from "./editors/RetreatLeaderEditor";
 import RetreatRatesEditor from "./editors/RetreatRatesEditor";
 import TeacherProfileEditor from "./editors/TeacherProfileEditor";
+import TeacherUpcomingRetreatsEditor from "./editors/TeacherUpcomingRetreatsEditor";
+import TeacherPastRetreatsEditor from "./editors/TeacherPastRetreatsEditor";
 import SmallFormOverImageEditor from "./editors/SmallFormOverImageEditor";
 import GoogleMapTextEditor from "./editors/GoogleMapTextEditor";
 import TestimonialsEditor from "./editors/TestimonialsEditor";
@@ -548,6 +550,30 @@ export default async function EditBlock({
       )}
       {block.type_slug === "teacher_profile" && (
         <TeacherProfileEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "teacher_retreats_upcoming" && (
+        <TeacherUpcomingRetreatsEditor
+          blockId={id}
+          name={block.name}
+          slug={block.slug}
+          content={block.content}
+          onSave={saveAll}
+          brandTokens={brandTokens}
+          variants={siblings}
+          typeName={type?.name ?? block.type_slug}
+        />
+      )}
+      {block.type_slug === "teacher_retreats_past" && (
+        <TeacherPastRetreatsEditor
           blockId={id}
           name={block.name}
           slug={block.slug}

@@ -1427,6 +1427,33 @@ export type TeacherProfileContent = {
   text_color?: string;
 };
 
+/**
+ * Teacher's Retreats — upcoming and past variants of the same content
+ * shape (mirrors FeaturedRetreatsContent + its RetreatCard). Live from
+ * AnamayOS: every public/active retreat where `ao_person_id` is the
+ * leader (`retreats.leader_person_id`) or a co-teacher
+ * (`retreat_teachers.person_id`). Renders nothing at all when there are
+ * no matching retreats for that direction — an empty "Upcoming Retreats"
+ * section would just be noise on a page that's otherwise all real content.
+ */
+export type TeacherRetreatsContent = LayoutWidthsContent & {
+  ao_person_id?: string;
+  heading?: string;
+  subheading?: string;
+  register_label?: string;
+  /** `{slug}` -> AO website_slug. Default `/retreats/{slug}/`. */
+  url_pattern?: string;
+  bg_color?: string;
+  text_color?: string;
+  heading_color?: string;
+  card_bg_color?: string;
+  card_border_color?: string;
+  card_border_width_px?: number;
+  card_corner_radius_px?: number;
+  padding_y_px?: number;
+  container_width_px?: number;
+};
+
 export type BlockTypeSlug =
   | "rich_text"
   | "hero"
@@ -1471,7 +1498,9 @@ export type BlockTypeSlug =
   | "room_detail"
   | "retreat_leader"
   | "retreat_rates"
-  | "teacher_profile";
+  | "teacher_profile"
+  | "teacher_retreats_upcoming"
+  | "teacher_retreats_past";
 
 export type BlockRecord = {
   id: string;

@@ -32,6 +32,8 @@ import InfoCardBlock from "./InfoCardBlock";
 import RetreatLeaderBlock from "./RetreatLeaderBlock";
 import RetreatRatesBlock from "./RetreatRatesBlock";
 import TeacherProfileBlock from "./TeacherProfileBlock";
+import TeacherUpcomingRetreatsBlock from "./TeacherUpcomingRetreatsBlock";
+import TeacherPastRetreatsBlock from "./TeacherPastRetreatsBlock";
 import ServiceMenuBlock from "./ServiceMenuBlock";
 import ServiceCardsBlock from "./ServiceCardsBlock";
 import SmallFormOverImageBlock from "./SmallFormOverImageBlock";
@@ -110,6 +112,8 @@ export default async function Shortcode({
     case "retreat_leader":   return <RetreatLeaderBlock content={content} />;
     case "retreat_rates":    return <RetreatRatesBlock content={content} />;
     case "teacher_profile":  return <TeacherProfileBlock content={content} />;
+    case "teacher_retreats_upcoming": return <TeacherUpcomingRetreatsBlock content={content} />;
+    case "teacher_retreats_past": return <TeacherPastRetreatsBlock content={content} />;
     case "service_menu":      return <ServiceMenuBlock content={content} />;
     case "service_cards":     return <ServiceCardsBlock content={content} />;
     // No pageId via the shortcode path (block-preview iframe / direct use),

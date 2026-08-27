@@ -41,6 +41,8 @@ import InfoCardBlock from "./InfoCardBlock";
 import RetreatLeaderBlock from "./RetreatLeaderBlock";
 import RetreatRatesBlock from "./RetreatRatesBlock";
 import TeacherProfileBlock from "./TeacherProfileBlock";
+import TeacherUpcomingRetreatsBlock from "./TeacherUpcomingRetreatsBlock";
+import TeacherPastRetreatsBlock from "./TeacherPastRetreatsBlock";
 
 /**
  * Renders a block from its type slug and resolved content. The single
@@ -105,6 +107,8 @@ export default function renderBlockByType(
     case "retreat_leader":        return <RetreatLeaderBlock content={content} />;
     case "retreat_rates":         return <RetreatRatesBlock content={content} />;
     case "teacher_profile":       return <TeacherProfileBlock content={content} />;
+    case "teacher_retreats_upcoming": return <TeacherUpcomingRetreatsBlock content={content} />;
+    case "teacher_retreats_past":     return <TeacherPastRetreatsBlock content={content} />;
     default:                      return null;
   }
 }

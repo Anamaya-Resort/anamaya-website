@@ -41,6 +41,8 @@ import InfoCardBlock from "./InfoCardBlock";
 import RetreatLeaderBlock from "./RetreatLeaderBlock";
 import RetreatRatesBlock from "./RetreatRatesBlock";
 import TeacherProfileBlock from "./TeacherProfileBlock";
+import TeacherUpcomingRetreatsBlock from "./TeacherUpcomingRetreatsBlock";
+import TeacherPastRetreatsBlock from "./TeacherPastRetreatsBlock";
 
 /** Renders a single block-usage by dispatching on type. Null if unknown. */
 export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
@@ -92,6 +94,8 @@ export default function BlockRenderer({ usage }: { usage: BlockUsage | null }) {
     case "retreat_leader": return <RetreatLeaderBlock content={content} />;
     case "retreat_rates":  return <RetreatRatesBlock content={content} />;
     case "teacher_profile": return <TeacherProfileBlock content={content} />;
+    case "teacher_retreats_upcoming": return <TeacherUpcomingRetreatsBlock content={content} />;
+    case "teacher_retreats_past": return <TeacherPastRetreatsBlock content={content} />;
     default: {
       console.warn(`[blocks] unknown block type: ${usage.block.type_slug}`);
       return null;
