@@ -107,8 +107,8 @@ export default function renderBlockByType(
     case "retreat_leader":        return <RetreatLeaderBlock content={content} />;
     case "retreat_rates":         return <RetreatRatesBlock content={content} />;
     case "teacher_profile":       return <TeacherProfileBlock content={content} />;
-    case "teacher_retreats_upcoming": return <TeacherUpcomingRetreatsBlock content={content} />;
-    case "teacher_retreats_past":     return <TeacherPastRetreatsBlock content={content} />;
+    case "teacher_retreats_upcoming": return <TeacherUpcomingRetreatsBlock content={content} pageId={ctx?.pageId} />;
+    case "teacher_retreats_past":     return <TeacherPastRetreatsBlock content={content} pageId={ctx?.pageId} />;
     default:                      return null;
   }
 }

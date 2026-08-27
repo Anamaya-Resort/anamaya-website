@@ -1,8 +1,63 @@
 import "server-only";
 import { aoSupabaseAdminOrNull } from "@/lib/ao-supabase";
+import { supabaseServerOrNull } from "@/lib/supabase-server";
 import type { RetreatCardData } from "@/components/blocks/RetreatCard";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type VariantBlockWithType = { id: string; block: { type_slug: string } | { type_slug: string }[] | null };
+
+/**
+ * The AnamayOS person ID that a page's Teacher Profile block resolves to
+ * (its per-page override, if the page has one) -- the single source of
+ * truth this page's teacher-retreats blocks should follow, so the admin
+ * only ever has to set one ID per page instead of one per block.
+ *
+ * Deliberately does NOT fall back to the profile block's own (shared,
+ * master) content -- that master content is placeholder/demo data
+ * (see 0073's migration comment), and a real page with no override yet
+ * should show nothing, never a stranger's data.
+ */
+export async function resolvePersonIdForPage(pageId: string): Promise<string | null> {
+  const sb = supabaseServerOrNull();
+  if (!sb) return null;
+
+  const { data: page } = await sb
+    .from("url_inventory")
+    .select("cms_template_id")
+    .eq("id", pageId)
+    .maybeSingle();
+  const templateId = page?.cms_template_id;
+  if (!templateId) return null;
+
+  const { data: variant } = await sb
+    .from("page_template_variants")
+    .select("id")
+    .eq("page_template_id", templateId)
+    .eq("is_default", true)
+    .maybeSingle();
+  if (!variant) return null;
+
+  const { data: variantBlocks } = await sb
+    .from("page_template_variant_blocks")
+    .select("id, block:blocks(type_slug)")
+    .eq("page_template_variant_id", variant.id)
+    .order("sort_order");
+  const profileRow = ((variantBlocks ?? []) as VariantBlockWithType[]).find((r) => {
+    const b = Array.isArray(r.block) ? r.block[0] : r.block;
+    return b?.type_slug === "teacher_profile";
+  });
+  if (!profileRow) return null;
+
+  const { data: override } = await sb
+    .from("page_block_overrides")
+    .select("content")
+    .eq("variant_block_id", profileRow.id)
+    .eq("url_inventory_id", pageId)
+    .maybeSingle();
+  const id = (override?.content as { ao_person_id?: string } | null)?.ao_person_id;
+  return id && id.trim() ? id.trim() : null;
+}
 
 const RETREAT_COLS =
   "id, name, excerpt, description, start_date, end_date, feature_image_url, images, website_slug, registration_link, external_link";

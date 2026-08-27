@@ -39,16 +39,18 @@ export function TeacherRetreatsForm({ state }: { state: BlockEditorState<Teacher
 
   return (
     <div className="space-y-6">
-      <section className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
+      <section className="rounded-md border border-anamaya-green/30 bg-anamaya-mint/10 p-4">
         <header className="mb-3">
-          <h4 className="text-sm font-semibold text-anamaya-charcoal">Which teacher</h4>
+          <h4 className="text-sm font-semibold text-anamaya-charcoal">Which teacher (automatic)</h4>
           <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
-            The same AnamayOS person ID set on this page&rsquo;s Teacher Profile block. Set on
-            each page as a per-page override, same as the profile block.
+            On a real teacher page, this always follows THAT page&rsquo;s Teacher Profile block
+            automatically -- nothing to set here. The field below only affects this shared
+            block&rsquo;s own preview (e.g. in the template editor), so it always shows real
+            sample cards instead of an empty box.
           </p>
         </header>
         <label className="block">
-          <span className={labelCls}>AnamayOS person ID</span>
+          <span className={labelCls}>AnamayOS person ID (preview only)</span>
           <input
             className={inputCls}
             value={draft.ao_person_id ?? ""}
