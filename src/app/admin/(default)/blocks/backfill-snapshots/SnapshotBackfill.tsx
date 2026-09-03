@@ -18,8 +18,8 @@ type Result = { name: string; ok: boolean; reason?: string };
 
 // How long to let a block settle after the iframe's load event, so images,
 // fonts, and async/server-only blocks (faq, featured_*, calendars) finish.
-const SETTLE_MS = 2000;
-const HARD_TIMEOUT_MS = 12000;
+const SETTLE_MS = 1200;
+const HARD_TIMEOUT_MS = 10000;
 
 export default function SnapshotBackfill({ blocks }: { blocks: B[] }) {
   const [running, setRunning] = useState(false);
@@ -54,7 +54,11 @@ export default function SnapshotBackfill({ blocks }: { blocks: B[] }) {
       let res: { ok: boolean; reason?: string };
       try {
         await loadPreview(b.slug);
-        res = await captureAndUploadBlockSnapshot(b.id, wrapRef.current as HTMLElement);
+        res = await captureAndUploadBlockSnapshot(
+          b.id,
+          wrapRef.current as HTMLElement,
+          { pixelRatio: 1 },
+        );
       } catch (e) {
         res = { ok: false, reason: e instanceof Error ? e.message : String(e) };
       }

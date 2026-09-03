@@ -111,11 +111,15 @@ function CategoryTag({ cat, active, href }: { cat: Category; active: boolean; hr
   );
 }
 
-/** Which section a block type sits in on the block maker, by page position:
- *  Header (top bar + hero), Footer (the UI footers), Body for everything else.
- *  (This is separate from "Block Area" = Standard/Side/Floating, the filter.) */
-function sectionOf(slug: string): "header" | "body" | "footer" {
+/** Which section a block type sits in on the block maker: Header (top bar +
+ *  hero), Footer (UI footers), Floating (the floating-area overlays like the AI
+ *  agent + side menu), Body for everything else. */
+function sectionOf(
+  slug: string,
+  shape: string | undefined,
+): "header" | "body" | "floating" | "footer" {
   if (slug.startsWith("ui_footer")) return "footer";
+  if (shape === "floating") return "floating";
   if (slug === "ui_top" || slug === "hero") return "header";
   return "body";
 }
@@ -199,19 +203,20 @@ export default async function BlocksIndex({
     return true;
   });
 
-  // Group into Header / Body / Footer, alphabetised by name within each.
-  const bySection = (s: "header" | "body" | "footer") =>
+  // Group into Header / Body / Floating / Footer, alphabetised within each.
+  const bySection = (s: "header" | "body" | "floating" | "footer") =>
     visibleTypes
-      .filter((t) => sectionOf(t.slug) === s)
+      .filter((t) => sectionOf(t.slug, (t as { shape?: string }).shape) === s)
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name));
   const groups: {
-    key: "header" | "body" | "footer";
+    key: "header" | "body" | "floating" | "footer";
     label: string;
     types: typeof visibleTypes;
   }[] = [
     { key: "header", label: "Header Blocks", types: bySection("header") },
     { key: "body", label: "Body Blocks", types: bySection("body") },
+    { key: "floating", label: "Floating Blocks", types: bySection("floating") },
     { key: "footer", label: "Footer Blocks", types: bySection("footer") },
   ];
 

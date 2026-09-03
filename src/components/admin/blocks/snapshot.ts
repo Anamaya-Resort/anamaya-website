@@ -27,6 +27,7 @@ import { uploadBlockSnapshot } from "@/app/admin/(default)/blocks/actions";
 export async function captureAndUploadBlockSnapshot(
   blockId: string,
   node: HTMLElement,
+  opts?: { pixelRatio?: number },
 ): Promise<{ ok: boolean; reason?: string }> {
   try {
     console.log("[snapshot] capturing", blockId);
@@ -42,11 +43,11 @@ export async function captureAndUploadBlockSnapshot(
         waitForImagesLoaded(inner),
         waitForFonts(iframe.contentDocument),
       ]);
-      return await captureAndUpload(blockId, inner);
+      return await captureAndUpload(blockId, inner, opts);
     }
     await Promise.all([waitForImagesLoaded(node), waitForFonts(document)]);
     console.log("[snapshot] images + fonts ready");
-    return await captureAndUpload(blockId, node);
+    return await captureAndUpload(blockId, node, opts);
   } catch (e) {
     console.error("[snapshot] failed:", e);
     return { ok: false, reason: e instanceof Error ? e.message : String(e) };
@@ -70,9 +71,10 @@ async function waitForFonts(doc: Document): Promise<void> {
 async function captureAndUpload(
   blockId: string,
   node: HTMLElement,
+  opts?: { pixelRatio?: number },
 ): Promise<{ ok: boolean; reason?: string }> {
   const canvas = await toCanvas(node, {
-    pixelRatio: 1.5,
+    pixelRatio: opts?.pixelRatio ?? 1.5,
     // cacheBust forces fresh GETs for image/font URLs, side-stepping
     // cases where the browser served a tainted cross-origin response
     // earlier in the session and the canvas would otherwise come back
