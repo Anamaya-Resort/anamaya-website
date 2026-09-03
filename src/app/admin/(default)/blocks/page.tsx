@@ -3,16 +3,17 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { createBlock } from "./actions";
 import BlockCard from "./BlockCard";
-import { HorizontalIcon, VerticalIcon, ShapeBadge } from "@/components/admin/blocks/ShapeIcon";
+import { HorizontalIcon, VerticalIcon, FloatingIcon, ShapeBadge } from "@/components/admin/blocks/ShapeIcon";
 
-type Shape = "horizontal" | "vertical";
+type Shape = "horizontal" | "vertical" | "floating";
 
-// The stored value stays "horizontal"/"vertical"; these are the user-facing
-// labels for the "Block Area" filter. See docs/BLOCK_AREA_NOMENCLATURE.md for
-// the plan to rename the underlying data/code names to match.
+// The stored value stays "horizontal"/"vertical"/"floating"; these are the
+// user-facing "Block Area" labels. See docs/BLOCK_AREA_NOMENCLATURE.md for the
+// plan to rename the underlying data/code names to match.
 const SHAPE_LABELS: Record<Shape, string> = {
   horizontal: "Standard Blocks",
   vertical: "Side Blocks",
+  floating: "Floating Blocks",
 };
 
 export const dynamic = "force-dynamic";
@@ -110,15 +111,12 @@ function CategoryTag({ cat, active, href }: { cat: Category; active: boolean; hr
   );
 }
 
-/** Which area a block type belongs to on the block maker, by where it sits on
- *  a page: Header (top bar + heroes/CTA), Floating (overlay chrome like the AI
- *  agent + side menu), Footer (the UI footers), and Body for everything else. */
-function sectionOf(
-  slug: string,
-): "header" | "body" | "floating" | "footer" {
+/** Which section a block type sits in on the block maker, by page position:
+ *  Header (top bar + hero), Footer (the UI footers), Body for everything else.
+ *  (This is separate from "Block Area" = Standard/Side/Floating, the filter.) */
+function sectionOf(slug: string): "header" | "body" | "footer" {
   if (slug.startsWith("ui_footer")) return "footer";
-  if (slug === "ui_agent" || slug === "ui_side_menu_right") return "floating";
-  if (slug === "ui_top" || slug === "hero" || slug === "cta_banner") return "header";
+  if (slug === "ui_top" || slug === "hero") return "header";
   return "body";
 }
 
@@ -132,7 +130,9 @@ export default async function BlocksIndex({
     ? (tag as Category)
     : null;
   const selectedShape: Shape | null =
-    shape === "horizontal" || shape === "vertical" ? shape : null;
+    shape === "horizontal" || shape === "vertical" || shape === "floating"
+      ? shape
+      : null;
   // Build a /admin/blocks href with the tag/shape filters combined, so
   // toggling one preserves the other. Pass null to clear a filter.
   function withParams(next: { tag?: Category | null; shape?: Shape | null }): string {
@@ -199,20 +199,19 @@ export default async function BlocksIndex({
     return true;
   });
 
-  // Group into Header / Body / Floating / Footer, alphabetised within each.
-  const bySection = (s: "header" | "body" | "floating" | "footer") =>
+  // Group into Header / Body / Footer, alphabetised by name within each.
+  const bySection = (s: "header" | "body" | "footer") =>
     visibleTypes
       .filter((t) => sectionOf(t.slug) === s)
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name));
   const groups: {
-    key: "header" | "body" | "floating" | "footer";
+    key: "header" | "body" | "footer";
     label: string;
     types: typeof visibleTypes;
   }[] = [
     { key: "header", label: "Header Blocks", types: bySection("header") },
     { key: "body", label: "Body Blocks", types: bySection("body") },
-    { key: "floating", label: "Floating Blocks", types: bySection("floating") },
     { key: "footer", label: "Footer Blocks", types: bySection("footer") },
   ];
 
@@ -249,9 +248,15 @@ export default async function BlocksIndex({
                 Block Area
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {(["horizontal", "vertical"] as Shape[]).map((sh) => {
+                {(["horizontal", "vertical", "floating"] as Shape[]).map((sh) => {
                   const active = selectedShape === sh;
                   const label = SHAPE_LABELS[sh];
+                  const Icon =
+                    sh === "vertical"
+                      ? VerticalIcon
+                      : sh === "floating"
+                        ? FloatingIcon
+                        : HorizontalIcon;
                   return (
                     <Link
                       key={sh}
@@ -263,11 +268,7 @@ export default async function BlocksIndex({
                           : "bg-white text-anamaya-charcoal/70 ring-zinc-300 hover:bg-zinc-50"
                       }`}
                     >
-                      {sh === "vertical" ? (
-                        <VerticalIcon className="h-4 w-4" />
-                      ) : (
-                        <HorizontalIcon className="h-4 w-4" />
-                      )}
+                      <Icon className="h-4 w-4" />
                       {label}
                     </Link>
                   );

@@ -39,18 +39,46 @@ export function VerticalIcon({ className }: { className?: string }) {
   );
 }
 
+/** Floating = overlay chrome (AI agent, side menu) that sits over the page. */
+export function FloatingIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      aria-hidden
+    >
+      <rect x="2.5" y="3.5" width="19" height="17" rx="2" opacity="0.45" />
+      <rect x="13" y="12.5" width="7" height="7" rx="1.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 /** Small labeled badge used on block cards / section headers. The stored value
- *  is still "horizontal"/"vertical" (see docs/BLOCK_AREA_NOMENCLATURE.md); the
- *  user-facing labels are "Standard"/"Side". */
+ *  is still "horizontal"/"vertical"/"floating" (see
+ *  docs/BLOCK_AREA_NOMENCLATURE.md); the user-facing labels are
+ *  "Standard"/"Side"/"Floating". */
 export function ShapeBadge({ shape }: { shape: string | null | undefined }) {
-  const side = shape === "vertical";
+  const area =
+    shape === "vertical" ? "side" : shape === "floating" ? "floating" : "standard";
+  const label = area === "side" ? "Side" : area === "floating" ? "Floating" : "Standard";
+  const title =
+    area === "side"
+      ? "Side block (side column)"
+      : area === "floating"
+        ? "Floating block (overlay)"
+        : "Standard block (main column)";
+  const Icon =
+    area === "side" ? VerticalIcon : area === "floating" ? FloatingIcon : HorizontalIcon;
   return (
     <span
-      title={side ? "Side block (side column)" : "Standard block (main column)"}
+      title={title}
       className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 ring-1 ring-inset ring-zinc-200"
     >
-      {side ? <VerticalIcon className="h-3.5 w-3.5" /> : <HorizontalIcon className="h-3.5 w-3.5" />}
-      {side ? "Side" : "Standard"}
+      <Icon className="h-3.5 w-3.5" />
+      {label}
     </span>
   );
 }

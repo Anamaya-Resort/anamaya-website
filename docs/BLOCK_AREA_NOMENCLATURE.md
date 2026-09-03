@@ -19,7 +19,7 @@ is internally consistent. Until then, the `SHAPE_LABELS` map in
 | Concept | Now (debt) | Target |
 |---|---|---|
 | DB column on `block_types` | `shape` | `area` |
-| stored values | `"horizontal"` / `"vertical"` | `"standard"` / `"side"` |
+| stored values | `"horizontal"` / `"vertical"` / `"floating"` | `"standard"` / `"side"` / `"floating"` |
 | URL filter param | `?shape=` | `?area=` |
 | TS type | `Shape` | `BlockArea` |
 | icon exports | `HorizontalIcon` / `VerticalIcon` | `StandardIcon` / `SideIcon` |
