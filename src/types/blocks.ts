@@ -1436,6 +1436,23 @@ export type TeacherProfileContent = {
  * no matching retreats for that direction — an empty "Upcoming Retreats"
  * section would just be noise on a page that's otherwise all real content.
  */
+/**
+ * Retreat Title — two lines: the retreat's name, and a status line below
+ * it that's computed live from AnamayOS (never authored):
+ *   - "RETREAT HAS ENDED"        end_date is in the past
+ *   - "CURRENTLY IN PROGRESS"    today falls between start/end date
+ *   - "RETREAT IS FULL"          upcoming but sold out / no spaces left
+ *   - (nothing)                  upcoming and still bookable
+ * The title itself prefers AnamayOS's own `name` (live) over
+ * `manual_title`, so a retreat with no name-line status quirks (e.g. a
+ * date change) never goes stale on the page.
+ */
+export type RetreatTitleContent = {
+  retreat_id?: string;
+  manual_title?: string;
+  padding_y_px?: number;
+};
+
 export type TeacherRetreatsContent = LayoutWidthsContent & {
   ao_person_id?: string;
   heading?: string;
@@ -1500,7 +1517,8 @@ export type BlockTypeSlug =
   | "retreat_rates"
   | "teacher_profile"
   | "teacher_retreats_upcoming"
-  | "teacher_retreats_past";
+  | "teacher_retreats_past"
+  | "retreat_title";
 
 export type BlockRecord = {
   id: string;

@@ -96,6 +96,7 @@ const IFRAME_PREVIEW_TYPES: ReadonlySet<string> = new Set([
   "teacher_profile",
   "teacher_retreats_upcoming",
   "teacher_retreats_past",
+  "retreat_title",
 ]);
 
 // 15px checkerboard via two stacked linear-gradients. No image asset.
@@ -286,6 +287,13 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
         <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
           {typeSlug === "teacher_retreats_upcoming" ? "Upcoming" : "Past"} Retreats — save to see
           the iframe preview (live from AnamayaOS; renders nothing when this teacher has none)
+        </div>
+      );
+    case "retreat_title":
+      return (
+        <div className="flex h-32 items-center justify-center bg-anamaya-cream/60 text-center text-xs italic text-anamaya-charcoal/60">
+          Retreat Title — save to see the iframe preview (name + live status
+          line from AnamayaOS: in progress / ended / full / bookable)
         </div>
       );
     case "featured_by_search":
