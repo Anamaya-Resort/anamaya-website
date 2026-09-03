@@ -279,7 +279,7 @@ export default async function BlocksIndex({
 
         return (
           <section key={t.slug} className="space-y-4">
-            <header className="flex flex-col gap-3 rounded-lg bg-white p-5 shadow-sm ring-1 ring-zinc-200 md:flex-row md:items-center md:justify-between">
+            <header className="flex flex-col gap-3 rounded-lg bg-[#e8e0da] p-5 shadow-sm ring-1 ring-zinc-200 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-lg font-semibold text-anamaya-charcoal">{t.name}</h2>
