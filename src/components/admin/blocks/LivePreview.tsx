@@ -155,10 +155,10 @@ const LivePreview = forwardRef<HTMLDivElement, Props>(function LivePreview(
                 transform: "translate3d(0,0,0)",
               }}
             >
-              <BlockRender typeSlug={typeSlug} content={content} />
+              <BlockRender typeSlug={typeSlug} content={content} preview />
             </div>
           ) : (
-            <BlockRender typeSlug={typeSlug} content={content} />
+            <BlockRender typeSlug={typeSlug} content={content} preview />
           )}
         </div>
       </div>
@@ -209,11 +209,23 @@ function IframePreview({ slug }: { slug: string }) {
 
 export default LivePreview;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: any }) {
+function BlockRender({
+  typeSlug,
+  content,
+  preview,
+}: {
+  typeSlug: BlockTypeSlug;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  content: any;
+  /** In the editor we render in preview mode so an as-yet-empty block
+   *  (empty pricing table, gallery, rich text, …) shows representative
+   *  sample content instead of collapsing to nothing. Blocks that have
+   *  real content render it; the flag only fills genuine blanks. */
+  preview?: boolean;
+}) {
   switch (typeSlug) {
     case "press_bar":      return <PressBarBlock content={content} />;
-    case "rich_text":      return <RichTextBlock content={content} />;
+    case "rich_text":      return <RichTextBlock content={content} preview={preview} />;
     case "cta_banner":     return <CtaBannerBlock content={content} />;
     case "hero":           return <HeroBlock content={content} />;
     case "rich_bg":        return <RichBgBlock content={content} />;
@@ -225,9 +237,9 @@ function BlockRender({ typeSlug, content }: { typeSlug: BlockTypeSlug; content: 
     case "divider":        return <DividerBlock content={content} />;
     case "quote":          return <QuoteBlock content={content} />;
     case "date_range":     return <DateRangeBlock content={content} />;
-    case "pricing_table":  return <PricingTableBlock content={content} />;
+    case "pricing_table":  return <PricingTableBlock content={content} preview={preview} />;
     case "feature_list":   return <FeatureListBlock content={content} />;
-    case "gallery":        return <GalleryBlock content={content} />;
+    case "gallery":        return <GalleryBlock content={content} preview={preview} />;
     case "person_card":    return <PersonCardBlock content={content} />;
     case "raw_html":       return <RawHtmlBlock content={content} />;
     case "ui_top":            return <UiTopBlock content={content} />;

@@ -75,6 +75,11 @@ async function captureAndUpload(
 ): Promise<{ ok: boolean; reason?: string }> {
   const canvas = await toCanvas(node, {
     pixelRatio: opts?.pixelRatio ?? 1.5,
+    // html-to-image auto-shrinks text it thinks will overflow, and that
+    // squeeze makes wrapped lines collapse and overlap the element below
+    // (a two-line quote landing on its attribution, a tier name on its
+    // price). Disabling auto-scale renders text at its true size/flow.
+    skipAutoScale: true,
     // cacheBust forces fresh GETs for image/font URLs, side-stepping
     // cases where the browser served a tainted cross-origin response
     // earlier in the session and the canvas would otherwise come back

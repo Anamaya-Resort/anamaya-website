@@ -4,7 +4,15 @@ import SnapshotBackfill from "./SnapshotBackfill";
 
 export const dynamic = "force-dynamic";
 
-export default async function BackfillSnapshotsPage() {
+export default async function BackfillSnapshotsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>;
+}) {
+  // ?all=1 re-captures EVERY block (not just the ones with no snapshot yet),
+  // used after a capture-engine fix so existing snapshots get rebuilt too.
+  const { all } = await searchParams;
+  const regenerateAll = all === "1";
   const sb = supabaseServer();
   const { data } = await sb
     .from("blocks")
@@ -12,7 +20,7 @@ export default async function BackfillSnapshotsPage() {
     .order("type_slug")
     .order("name");
   const missing = (data ?? [])
-    .filter((b) => !b.snapshot_url)
+    .filter((b) => regenerateAll || !b.snapshot_url)
     .map((b) => ({ id: b.id as string, slug: b.slug as string, name: b.name as string }));
 
   return (
