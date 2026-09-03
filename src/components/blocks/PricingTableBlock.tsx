@@ -9,7 +9,7 @@ import LayoutWidths from "./shared/LayoutWidths";
 // overflows onto the price below it.
 const SAMPLE_TIERS: PricingTier[] = [
   { name: "Vinyasa", price: "$45", note: "90-minute morning flow" },
-  { name: "Sound Bath", price: "$60", note: "Crystal-bowl journey", highlight: true },
+  { name: "Meditation", price: "$60", note: "Crystal-bowl sound journey", highlight: true },
   { name: "Immersion", price: "$180", note: "Movement, breath & rest" },
 ];
 
