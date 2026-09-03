@@ -5,10 +5,12 @@ import DecorationOverlay from "./shared/DecorationOverlay";
 import LayoutWidths from "./shared/LayoutWidths";
 
 // Admin block-preview only: sample tiers so an empty table still renders.
+// Names are kept to a single line — a wrapping name in the snapshot capture
+// overflows onto the price below it.
 const SAMPLE_TIERS: PricingTier[] = [
-  { name: "Sunrise Vinyasa", price: "$45", note: "90-minute morning flow" },
-  { name: "Sound Healing", price: "$60", note: "Crystal-bowl journey", highlight: true },
-  { name: "Full-Day Immersion", price: "$180", note: "Movement, breath & rest" },
+  { name: "Vinyasa", price: "$45", note: "90-minute morning flow" },
+  { name: "Sound Bath", price: "$60", note: "Crystal-bowl journey", highlight: true },
+  { name: "Immersion", price: "$180", note: "Movement, breath & rest" },
 ];
 
 /**
