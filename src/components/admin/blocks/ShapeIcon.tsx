@@ -39,16 +39,18 @@ export function VerticalIcon({ className }: { className?: string }) {
   );
 }
 
-/** Small labeled badge used on block cards / section headers. */
+/** Small labeled badge used on block cards / section headers. The stored value
+ *  is still "horizontal"/"vertical" (see docs/BLOCK_AREA_NOMENCLATURE.md); the
+ *  user-facing labels are "Standard"/"Side". */
 export function ShapeBadge({ shape }: { shape: string | null | undefined }) {
-  const vertical = shape === "vertical";
+  const side = shape === "vertical";
   return (
     <span
-      title={vertical ? "Vertical block (side column)" : "Horizontal block (main column)"}
+      title={side ? "Side block (side column)" : "Standard block (main column)"}
       className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 ring-1 ring-inset ring-zinc-200"
     >
-      {vertical ? <VerticalIcon className="h-3.5 w-3.5" /> : <HorizontalIcon className="h-3.5 w-3.5" />}
-      {vertical ? "Vertical" : "Horizontal"}
+      {side ? <VerticalIcon className="h-3.5 w-3.5" /> : <HorizontalIcon className="h-3.5 w-3.5" />}
+      {side ? "Side" : "Standard"}
     </span>
   );
 }

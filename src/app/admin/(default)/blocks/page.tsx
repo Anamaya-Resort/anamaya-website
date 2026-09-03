@@ -7,6 +7,14 @@ import { HorizontalIcon, VerticalIcon, ShapeBadge } from "@/components/admin/blo
 
 type Shape = "horizontal" | "vertical";
 
+// The stored value stays "horizontal"/"vertical"; these are the user-facing
+// labels for the "Block Area" filter. See docs/BLOCK_AREA_NOMENCLATURE.md for
+// the plan to rename the underlying data/code names to match.
+const SHAPE_LABELS: Record<Shape, string> = {
+  horizontal: "Standard Blocks",
+  vertical: "Side Blocks",
+};
+
 export const dynamic = "force-dynamic";
 
 type Category =
@@ -102,12 +110,15 @@ function CategoryTag({ cat, active, href }: { cat: Category; active: boolean; hr
   );
 }
 
-/** Which section a block type belongs to on the block maker. Footer = the UI
- *  footer blocks; Header = the other UI chrome (top bar, side menu, agent);
- *  everything else is a body / content block. */
-function sectionOf(slug: string): "header" | "body" | "footer" {
+/** Which area a block type belongs to on the block maker, by where it sits on
+ *  a page: Header (top bar + heroes/CTA), Floating (overlay chrome like the AI
+ *  agent + side menu), Footer (the UI footers), and Body for everything else. */
+function sectionOf(
+  slug: string,
+): "header" | "body" | "floating" | "footer" {
   if (slug.startsWith("ui_footer")) return "footer";
-  if (slug.startsWith("ui_")) return "header";
+  if (slug === "ui_agent" || slug === "ui_side_menu_right") return "floating";
+  if (slug === "ui_top" || slug === "hero" || slug === "cta_banner") return "header";
   return "body";
 }
 
@@ -188,19 +199,20 @@ export default async function BlocksIndex({
     return true;
   });
 
-  // Group into Header / Body / Footer, alphabetised by name within each.
-  const bySection = (s: "header" | "body" | "footer") =>
+  // Group into Header / Body / Floating / Footer, alphabetised within each.
+  const bySection = (s: "header" | "body" | "floating" | "footer") =>
     visibleTypes
       .filter((t) => sectionOf(t.slug) === s)
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name));
   const groups: {
-    key: "header" | "body" | "footer";
+    key: "header" | "body" | "floating" | "footer";
     label: string;
     types: typeof visibleTypes;
   }[] = [
     { key: "header", label: "Header Blocks", types: bySection("header") },
     { key: "body", label: "Body Blocks", types: bySection("body") },
+    { key: "floating", label: "Floating Blocks", types: bySection("floating") },
     { key: "footer", label: "Footer Blocks", types: bySection("footer") },
   ];
 
@@ -234,16 +246,17 @@ export default async function BlocksIndex({
 
             <div className="mt-4">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-anamaya-charcoal/50">
-                Block Shape
+                Block Area
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {(["horizontal", "vertical"] as Shape[]).map((sh) => {
                   const active = selectedShape === sh;
+                  const label = SHAPE_LABELS[sh];
                   return (
                     <Link
                       key={sh}
                       href={withParams({ shape: active ? null : sh })}
-                      title={active ? `Clear ${sh} filter` : `Show ${sh} blocks`}
+                      title={active ? `Clear ${label} filter` : `Show ${label}`}
                       className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-wider ring-1 ring-inset transition-colors ${
                         active
                           ? "bg-anamaya-charcoal text-white ring-black"
@@ -255,7 +268,7 @@ export default async function BlocksIndex({
                       ) : (
                         <HorizontalIcon className="h-4 w-4" />
                       )}
-                      {sh}
+                      {label}
                     </Link>
                   );
                 })}
@@ -304,8 +317,8 @@ export default async function BlocksIndex({
         if (g.types.length === 0) return null;
         return (
           <div key={g.key} className="space-y-8">
-            <div className="rounded-lg bg-anamaya-charcoal px-6 py-5 shadow-sm">
-              <h2 className="text-3xl font-bold uppercase tracking-wide text-white">
+            <div className="rounded-lg bg-anamaya-charcoal px-6 py-2.5 shadow-sm">
+              <h2 className="text-[26px] font-bold uppercase tracking-wide text-white">
                 {g.label}
               </h2>
             </div>
