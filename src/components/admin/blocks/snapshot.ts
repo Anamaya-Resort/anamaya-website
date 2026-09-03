@@ -1,6 +1,6 @@
 "use client";
 
-import { toCanvas } from "html-to-image";
+import { toCanvas, getFontEmbedCSS } from "html-to-image";
 import { uploadBlockSnapshot } from "@/app/admin/(default)/blocks/actions";
 
 /**
@@ -31,6 +31,16 @@ export async function captureAndUploadBlockSnapshot(
 ): Promise<{ ok: boolean; reason?: string }> {
   try {
     console.log("[snapshot] capturing", blockId);
+    // Embed the app's @font-face rules (custom heading/body fonts) from
+    // the MAIN document. When we capture a node inside the preview iframe,
+    // html-to-image otherwise fails to inline those fonts, so its SVG
+    // clone falls back to a wider system font and re-wraps text — the
+    // wrapped line then overflows and overlaps the element below (a
+    // two-line quote landing on its attribution, a tier name on its
+    // price). Passing the embedded CSS makes the clone use the real font
+    // and match the on-screen layout. Same fonts load in the iframe, so
+    // one computation covers both capture paths.
+    const fontEmbedCSS = await getFontEmbedCSS(document.body).catch(() => undefined);
     // If the live preview is an iframe (used for async/server-only
     // blocks like featured_retreats and testimonials), the iframe
     // content is what we actually want to snapshot — the wrapper has
@@ -43,11 +53,11 @@ export async function captureAndUploadBlockSnapshot(
         waitForImagesLoaded(inner),
         waitForFonts(iframe.contentDocument),
       ]);
-      return await captureAndUpload(blockId, inner, opts);
+      return await captureAndUpload(blockId, inner, { ...opts, fontEmbedCSS });
     }
     await Promise.all([waitForImagesLoaded(node), waitForFonts(document)]);
     console.log("[snapshot] images + fonts ready");
-    return await captureAndUpload(blockId, node, opts);
+    return await captureAndUpload(blockId, node, { ...opts, fontEmbedCSS });
   } catch (e) {
     console.error("[snapshot] failed:", e);
     return { ok: false, reason: e instanceof Error ? e.message : String(e) };
@@ -71,10 +81,13 @@ async function waitForFonts(doc: Document): Promise<void> {
 async function captureAndUpload(
   blockId: string,
   node: HTMLElement,
-  opts?: { pixelRatio?: number },
+  opts?: { pixelRatio?: number; fontEmbedCSS?: string },
 ): Promise<{ ok: boolean; reason?: string }> {
   const canvas = await toCanvas(node, {
     pixelRatio: opts?.pixelRatio ?? 1.5,
+    // Precomputed @font-face CSS from the app's main document, so the
+    // clone renders with the real fonts instead of a re-wrapping fallback.
+    fontEmbedCSS: opts?.fontEmbedCSS,
     // html-to-image auto-shrinks text it thinks will overflow, and that
     // squeeze makes wrapped lines collapse and overlap the element below
     // (a two-line quote landing on its attribution, a tier name on its
