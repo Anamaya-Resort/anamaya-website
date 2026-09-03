@@ -14,7 +14,26 @@ import VisitorAgent from "@/components/ai/VisitorAgent";
  * Visibility still gates on /api/ai/agent-config — when the tenant
  * has the agent disabled, VisitorAgent renders nothing.
  */
-export default function UiAgentBlock({ content }: { content: UiAgentContent }) {
+export default function UiAgentBlock({
+  content,
+  preview,
+}: {
+  content: UiAgentContent;
+  /** Admin block-preview only: wrap the floating agent in a sized in-flow
+   *  box so the snapshot has real height. Never set on public paths. */
+  preview?: boolean;
+}) {
   const c = content ?? {};
-  return <VisitorAgent propertyId={c.property_id_scope ?? null} />;
+  const agent = <VisitorAgent propertyId={c.property_id_scope ?? null} />;
+  // Admin preview: the agent's chrome is position:fixed, so on its own it
+  // leaves the preview body ~0-tall. A sized relative wrapper gives the
+  // snapshot visible height regardless of whether the agent is enabled.
+  if (preview) {
+    return (
+      <div className="relative w-full" style={{ height: 360 }}>
+        {agent}
+      </div>
+    );
+  }
+  return agent;
 }

@@ -33,10 +33,51 @@ type AoRetreat = RetreatCardData & {
  * Silent on AO failure — if env vars are missing or the query fails it
  * renders an inline empty state rather than crashing the page.
  */
+// Admin preview only: two sample upcoming retreats, same-origin images so the
+// snapshot canvas is never tainted. "#" book links (no live Retreat Guru).
+const SAMPLE_RETREATS: AoRetreat[] = [
+  {
+    id: "sample-1",
+    name: "Sunrise Vinyasa Immersion",
+    excerpt: "A week of morning flows, breathwork, and clifftop rest above the Pacific.",
+    description: null,
+    start_date: "2026-10-03",
+    end_date: "2026-10-10",
+    feature_image_url: "/yoga_retreat_costarica.webp",
+    images: null,
+    website_slug: "sunrise-vinyasa",
+    registration_link: "#",
+    external_link: null,
+    tagline: "Morning flows and clifftop rest.",
+    is_sold_out: false,
+    registration_status: null,
+  },
+  {
+    id: "sample-2",
+    name: "Sound Healing Retreat",
+    excerpt: "Crystal bowls, guided meditation, and deep relaxation by the sea.",
+    description: null,
+    start_date: "2026-10-24",
+    end_date: "2026-10-31",
+    feature_image_url: "/costarica_wellness_retreats.webp",
+    images: null,
+    website_slug: "sound-healing",
+    registration_link: "#",
+    external_link: null,
+    tagline: "Crystal bowls by the sea.",
+    is_sold_out: false,
+    registration_status: null,
+  },
+];
+
 export default async function RetreatsCalendarBlock({
   content,
+  preview,
 }: {
   content: RetreatsCalendarContent;
+  /** Admin block-preview only: render sample retreats instead of hitting
+   *  AnamayOS (unreachable in the preview iframe). Never set publicly. */
+  preview?: boolean;
 }) {
   const c = content ?? {};
   const heading = c.heading ?? "Upcoming Retreats";
@@ -55,7 +96,7 @@ export default async function RetreatsCalendarBlock({
   const cardBorderWidth = clamp(c.card_border_width_px ?? 1, 0, 10);
   const cardRadius = clamp(c.card_corner_radius_px ?? 8, 0, 40);
 
-  const retreats = await fetchUpcoming(maxCount);
+  const retreats = preview ? SAMPLE_RETREATS : await fetchUpcoming(maxCount);
   const groups = groupByMonth
     ? groupByMonthLabel(retreats)
     : [{ key: "all", label: "", items: retreats }];

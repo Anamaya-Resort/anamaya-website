@@ -4,13 +4,31 @@ import CtaButton from "./shared/CtaButton";
 import DecorationOverlay from "./shared/DecorationOverlay";
 import LayoutWidths from "./shared/LayoutWidths";
 
+// Admin block-preview only: sample tiers so an empty table still renders.
+const SAMPLE_TIERS: PricingTier[] = [
+  { name: "Sunrise Vinyasa", price: "$45", note: "90-minute morning flow" },
+  { name: "Sound Healing", price: "$60", note: "Crystal-bowl journey", highlight: true },
+  { name: "Full-Day Immersion", price: "$180", note: "Movement, breath & rest" },
+];
+
 /**
  * Pricing table — N tiers in a responsive grid. `price` is a free-form
  * string so "Sold out", "From $1,234", and "Pay what you can" all work
  * without the block needing to know about currency formatting.
  */
-export default function PricingTableBlock({ content }: { content: PricingTableContent }) {
-  const tiers = content?.tiers ?? [];
+export default function PricingTableBlock({
+  content,
+  preview,
+}: {
+  content: PricingTableContent;
+  /** Admin block-preview only: render sample tiers when the table is empty
+   *  so the design shows. Never set on public render paths. */
+  preview?: boolean;
+}) {
+  const tiers =
+    preview && (content?.tiers ?? []).length === 0
+      ? SAMPLE_TIERS
+      : content?.tiers ?? [];
   if (tiers.length === 0) return null;
 
   const bg = resolveBrandColor(content?.bg_color) ?? "transparent";

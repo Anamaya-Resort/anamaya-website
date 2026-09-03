@@ -77,18 +77,30 @@ function Heart({ level }: { level: number }) {
   );
 }
 
-export default function ReactionsBlock({ content }: { content: ReactionsContent | null }) {
+export default function ReactionsBlock({
+  content,
+  preview,
+}: {
+  content: ReactionsContent | null;
+  /** Admin block-preview only: seed a representative "loved" state and skip
+   *  the view/reaction pings so the bar shows with no post attached. */
+  preview?: boolean;
+}) {
   const c = content ?? {};
-  const heading = c.heading ?? "";
+  // In preview, fall back to a sample heading so the bar reads as populated.
+  const heading = c.heading ?? (preview ? "Enjoyed this post?" : "");
   const question = c.modal_question ?? "How do you feel about this post?";
   const padY = c.padding_y_px ?? 40;
   const align = c.align ?? "center";
 
-  const [level, setLevel] = useState(0);
+  // Preview seeds a "Loved" reaction so the heart shows at full size.
+  const [level, setLevel] = useState(preview ? 2 : 0);
   const [open, setOpen] = useState(false);
   const pathRef = useRef<string>("");
 
   useEffect(() => {
+    // Admin preview: no real post path, so don't read storage or ping the API.
+    if (preview) return;
     const path = window.location.pathname;
     pathRef.current = path;
     setLevel(readStore()[path] || 0);
@@ -99,7 +111,7 @@ export default function ReactionsBlock({ content }: { content: ReactionsContent 
       keepalive: true,
       body: JSON.stringify({ path }),
     }).catch(() => {});
-  }, []);
+  }, [preview]);
 
   const choose = useCallback((next: number) => {
     const path = pathRef.current;
@@ -147,6 +159,11 @@ export default function ReactionsBlock({ content }: { content: ReactionsContent 
             {LABELS[level]}
           </span>
         </div>
+        {preview && (
+          <span className="text-xs italic text-anamaya-charcoal/50">
+            Loved by 128 readers
+          </span>
+        )}
       </div>
 
       {open && (

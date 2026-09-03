@@ -19,7 +19,15 @@ const SCROLL_THRESHOLD_VH = 0.4;
  * back to a static rendering so the block-editor LivePreview still
  * shows something representative.
  */
-export default function UiTopBlock({ content }: { content: UiTopContent }) {
+export default function UiTopBlock({
+  content,
+  preview,
+}: {
+  content: UiTopContent;
+  /** Admin block-preview only: render the bar in-flow (not fixed) inside a
+   *  sized wrapper so the snapshot has real height. Never set publicly. */
+  preview?: boolean;
+}) {
   const c = content ?? {};
   const z = c.overlay_z ?? 40;
   const lightmodeWhenOverVideo = c.lightmode_when_over_video !== false;
@@ -53,10 +61,14 @@ export default function UiTopBlock({ content }: { content: UiTopContent }) {
 
   const lightMode = lightmodeWhenOverVideo && overVideo && !scrolled;
 
-  return (
+  const bar = (
     <header
       className={[
-        "fixed top-0 left-0 right-0 w-full transition-all duration-300",
+        // Admin preview: in-flow (relative) so the wrapper below gives the
+        // snapshot real height; public path stays fixed to the viewport top.
+        preview
+          ? "relative w-full transition-all duration-300"
+          : "fixed top-0 left-0 right-0 w-full transition-all duration-300",
         lightMode
           ? "bg-anamaya-charcoal/50 backdrop-blur-sm"
           : "bg-white/95 shadow-sm backdrop-blur-sm",
@@ -116,4 +128,17 @@ export default function UiTopBlock({ content }: { content: UiTopContent }) {
       </div>
     </header>
   );
+
+  // Admin preview: wrap the in-flow bar in a sized relative box so the
+  // snapshot captures real height (the fixed bar would otherwise leave the
+  // preview body ~0-tall).
+  if (preview) {
+    return (
+      <div className="relative w-full" style={{ height: 140 }}>
+        {bar}
+      </div>
+    );
+  }
+
+  return bar;
 }

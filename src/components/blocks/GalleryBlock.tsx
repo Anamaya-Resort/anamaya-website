@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { GalleryContent } from "@/types/blocks";
+import type { GalleryContent, GalleryImage } from "@/types/blocks";
 import { resolveBrandColor } from "@/config/brand-tokens";
 import Lightbox from "@/components/Lightbox";
 import DecorationOverlay from "./shared/DecorationOverlay";
@@ -13,8 +13,30 @@ import LayoutWidths from "./shared/LayoutWidths";
  * keys / swipe to cycle. Works for retreat photo galleries, room photos,
  * teacher headshot rolls, etc.
  */
-export default function GalleryBlock({ content }: { content: GalleryContent }) {
-  const images = content?.images ?? [];
+// Admin block-preview only: same-origin photos so an empty gallery still has
+// visible tiles (an external URL here would taint the snapshot canvas).
+const SAMPLE_IMAGES: GalleryImage[] = [
+  { url: "/yoga_shala.webp", alt: "" },
+  { url: "/yoga_retreat_costarica.webp", alt: "" },
+  { url: "/costarica_wellness_retreats.webp", alt: "" },
+  { url: "/yoga_shala.webp", alt: "" },
+  { url: "/yoga_retreat_costarica.webp", alt: "" },
+  { url: "/costarica_wellness_retreats.webp", alt: "" },
+];
+
+export default function GalleryBlock({
+  content,
+  preview,
+}: {
+  content: GalleryContent;
+  /** Admin block-preview only: render sample photos when the gallery is
+   *  empty so the design shows. Never set on public render paths. */
+  preview?: boolean;
+}) {
+  const images =
+    preview && (content?.images ?? []).length === 0
+      ? SAMPLE_IMAGES
+      : content?.images ?? [];
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   const layout = content?.layout ?? "grid";

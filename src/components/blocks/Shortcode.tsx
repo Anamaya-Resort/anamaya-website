@@ -26,6 +26,7 @@ import UiFooterLegalBlock from "./UiFooterLegalBlock";
 import FeaturedRetreatsBlock from "./FeaturedRetreatsBlock";
 import FeaturedBySearchBlock from "./FeaturedBySearchBlock";
 import FaqBlock from "./FaqBlock";
+import ReactionsBlock from "./ReactionsBlock";
 import RetreatsCalendarBlock from "./RetreatsCalendarBlock";
 import BookingCalendarBlock from "./BookingCalendarBlock";
 import InfoCardBlock from "./InfoCardBlock";
@@ -83,7 +84,7 @@ export default async function Shortcode({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const content = data.content as any;
   switch (data.type_slug as BlockTypeSlug) {
-    case "rich_text":      return <RichTextBlock content={content} />;
+    case "rich_text":      return <RichTextBlock content={content} preview={preview} />;
     case "hero":           return <HeroBlock content={content} />;
     case "cta_banner":     return <CtaBannerBlock content={content} />;
     case "press_bar":      return <PressBarBlock content={content} />;
@@ -96,21 +97,21 @@ export default async function Shortcode({
     case "divider":        return <DividerBlock content={content} />;
     case "quote":          return <QuoteBlock content={content} />;
     case "date_range":     return <DateRangeBlock content={content} />;
-    case "pricing_table":  return <PricingTableBlock content={content} />;
+    case "pricing_table":  return <PricingTableBlock content={content} preview={preview} />;
     case "feature_list":   return <FeatureListBlock content={content} />;
-    case "gallery":        return <GalleryBlock content={content} />;
+    case "gallery":        return <GalleryBlock content={content} preview={preview} />;
     case "person_card":    return <PersonCardBlock content={content} />;
     case "raw_html":       return <RawHtmlBlock content={content} />;
-    case "ui_top":            return <UiTopBlock content={content} />;
+    case "ui_top":            return <UiTopBlock content={content} preview={preview} />;
     case "ui_side_menu_right": return <UiSideMenuRightBlock content={content} />;
-    case "ui_agent":          return <UiAgentBlock content={content} />;
+    case "ui_agent":          return <UiAgentBlock content={content} preview={preview} />;
     case "ui_footer_main":    return <UiFooterMainBlock content={content} />;
     case "ui_footer_legal":   return <UiFooterLegalBlock content={content} />;
     case "featured_retreats": return <FeaturedRetreatsBlock content={content} />;
-    case "retreats_calendar": return <RetreatsCalendarBlock content={content} />;
-    case "booking_calendar": return <BookingCalendarBlock content={content} />;
+    case "retreats_calendar": return <RetreatsCalendarBlock content={content} preview={preview} />;
+    case "booking_calendar": return <BookingCalendarBlock content={content} preview={preview} />;
     case "info_card":        return <InfoCardBlock content={content} />;
-    case "retreat_leader":   return <RetreatLeaderBlock content={content} />;
+    case "retreat_leader":   return <RetreatLeaderBlock content={content} preview={preview} />;
     case "retreat_rates":    return <RetreatRatesBlock content={content} />;
     case "teacher_profile":  return <TeacherProfileBlock content={content} />;
     case "teacher_retreats_upcoming": return <TeacherUpcomingRetreatsBlock content={content} />;
@@ -126,6 +127,10 @@ export default async function Shortcode({
     // admin block-preview (preview=true) it shows sample questions so the
     // design is visible; anywhere else it shows its "add me to a page" hint.
     case "faq":                return <FaqBlock content={content} preview={preview} />;
+    // Reactions read the live page path at runtime, so the shortcode path
+    // has no post context. In the admin block-preview (preview=true) it
+    // renders a representative bar so the design is visible.
+    case "reactions":          return <ReactionsBlock content={content} preview={preview} />;
     case "small_form_over_image": return <SmallFormOverImageBlock content={content} />;
     case "google_map_with_text":  return <GoogleMapTextBlock content={content} />;
     case "two_column":     return <TwoColumnBlock content={content} />;

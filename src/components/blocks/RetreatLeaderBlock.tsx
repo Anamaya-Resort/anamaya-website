@@ -46,8 +46,47 @@ async function resolveLeader(id: string | undefined): Promise<ResolvedLeader | n
  * One instance per teacher. Prefers live AnamayOS data (`ao_person_id`);
  * falls back to the manual name/photo/bio fields set on the block.
  */
-export default async function RetreatLeaderBlock({ content }: { content: RetreatLeaderContent }) {
+export default async function RetreatLeaderBlock({
+  content,
+  preview,
+}: {
+  content: RetreatLeaderContent;
+  /** Admin block-preview only: when the block has no real leader attached,
+   *  render a sample profile card so the design shows. Never set publicly. */
+  preview?: boolean;
+}) {
   const c = content ?? {};
+
+  // Admin preview with no leader configured: a same-origin sample card so the
+  // block has visible height (skips the live AO lookup entirely).
+  if (preview && !c.ao_person_id && !c.name && !c.bio_html && !c.photo_url) {
+    return (
+      <aside className="mx-auto w-full max-w-[360px]">
+        <div className="overflow-hidden rounded-lg border border-anamaya-mint/50 bg-white shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/yoga_retreat_costarica.webp"
+            alt="Maya Sol"
+            className="aspect-square w-full object-cover"
+          />
+          <div className="p-5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-anamaya-green">
+              Lead Facilitator
+            </div>
+            <h3 className="mt-1 font-heading text-xl font-semibold leading-tight text-anamaya-charcoal">
+              Maya Sol
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-anamaya-charcoal">
+              Maya has guided ocean-side yoga and breathwork retreats in
+              Montezuma for over a decade, weaving gentle movement with deep
+              rest.
+            </p>
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
   const live = await resolveLeader(c.ao_person_id);
   const name = live?.name || c.name || "";
   const photo = live?.photo_url || c.photo_url || null;
