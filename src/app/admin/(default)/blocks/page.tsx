@@ -216,6 +216,14 @@ export default async function BlocksIndex({
               your changes flow through to every page that uses it. Create multiple blocks of the
               same type when you need different variants for different pages.
             </p>
+            {blocks.filter((b) => !b.snapshot_url).length > 0 && (
+              <Link
+                href="/admin/blocks/backfill-snapshots"
+                className="mt-3 inline-block text-sm font-semibold text-[#2271b1] hover:underline"
+              >
+                Generate {blocks.filter((b) => !b.snapshot_url).length} missing previews →
+              </Link>
+            )}
           </div>
 
           {/* RIGHT — Block Search */}
