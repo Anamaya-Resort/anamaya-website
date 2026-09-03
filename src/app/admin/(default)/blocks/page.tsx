@@ -102,6 +102,15 @@ function CategoryTag({ cat, active, href }: { cat: Category; active: boolean; hr
   );
 }
 
+/** Which section a block type belongs to on the block maker. Footer = the UI
+ *  footer blocks; Header = the other UI chrome (top bar, side menu, agent);
+ *  everything else is a body / content block. */
+function sectionOf(slug: string): "header" | "body" | "footer" {
+  if (slug.startsWith("ui_footer")) return "footer";
+  if (slug.startsWith("ui_")) return "header";
+  return "body";
+}
+
 export default async function BlocksIndex({
   searchParams,
 }: {
@@ -178,6 +187,22 @@ export default async function BlocksIndex({
       return false;
     return true;
   });
+
+  // Group into Header / Body / Footer, alphabetised by name within each.
+  const bySection = (s: "header" | "body" | "footer") =>
+    visibleTypes
+      .filter((t) => sectionOf(t.slug) === s)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
+  const groups: {
+    key: "header" | "body" | "footer";
+    label: string;
+    types: typeof visibleTypes;
+  }[] = [
+    { key: "header", label: "Header Blocks", types: bySection("header") },
+    { key: "body", label: "Body Blocks", types: bySection("body") },
+    { key: "footer", label: "Footer Blocks", types: bySection("footer") },
+  ];
 
   return (
     <div className="mx-[calc(50%-50vw)] w-screen space-y-8 px-8">
@@ -267,18 +292,27 @@ export default async function BlocksIndex({
         </div>
       )}
 
-      {visibleTypes.map((t) => {
-        async function newBlock() {
-          "use server";
-          const id = await createBlock(t.slug, `New ${t.name}`);
-          redirect(`/admin/blocks/${id}`);
-        }
-
-        const cats = BLOCK_CATEGORIES[t.slug] ?? [];
-        const items = byType.get(t.slug) ?? [];
-
+      {groups.map((g) => {
+        if (g.types.length === 0) return null;
         return (
-          <section key={t.slug} className="space-y-4">
+          <div key={g.key} className="space-y-8">
+            <div className="rounded-lg bg-anamaya-charcoal px-6 py-5 shadow-sm">
+              <h2 className="text-3xl font-bold uppercase tracking-wide text-white">
+                {g.label}
+              </h2>
+            </div>
+            {g.types.map((t) => {
+              async function newBlock() {
+                "use server";
+                const id = await createBlock(t.slug, `New ${t.name}`);
+                redirect(`/admin/blocks/${id}`);
+              }
+
+              const cats = BLOCK_CATEGORIES[t.slug] ?? [];
+              const items = byType.get(t.slug) ?? [];
+
+              return (
+                <section key={t.slug} className="space-y-4">
             <header className="flex flex-col gap-3 rounded-lg bg-[#e8e0da] p-5 shadow-sm ring-1 ring-zinc-200 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -329,7 +363,10 @@ export default async function BlocksIndex({
                 No {t.name.toLowerCase()} blocks yet.
               </p>
             )}
-          </section>
+                </section>
+              );
+            })}
+          </div>
         );
       })}
     </div>
