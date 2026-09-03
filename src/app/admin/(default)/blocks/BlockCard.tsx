@@ -74,17 +74,21 @@ export default function BlockCard({ block }: { block: Block }) {
             [#{block.slug}]
           </code>
         </div>
-        <div className="flex flex-1 items-center justify-center bg-zinc-50">
+        {/* Fixed-aspect thumbnail. Snapshots have wildly different native
+            heights (a 4:3 hero, a 3-screens-tall list), so we crop each to a
+            consistent wide tile showing the top — a clean, uniform preview
+            grid regardless of the captured image's shape. */}
+        <div className="aspect-[16/9] w-full overflow-hidden bg-zinc-50">
           {block.snapshot_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={block.snapshot_url}
               alt=""
-              className="block h-auto w-full"
+              className="block h-full w-full object-cover object-top"
               loading="lazy"
             />
           ) : (
-            <div className="px-4 py-10 text-xs italic text-anamaya-charcoal/40">
+            <div className="flex h-full items-center justify-center px-4 text-xs italic text-anamaya-charcoal/40">
               No preview
             </div>
           )}
