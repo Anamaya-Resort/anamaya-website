@@ -10,6 +10,35 @@ import { getSessionUser } from "@/lib/session";
 
 const WP_HOSTS = ["anamayastg.wpenginepowered.com", "anamaya.com"];
 
+/**
+ * Body HTML captured after the snapshot asset-rewrite step no longer points
+ * at the WP hosts — every <img src> was rewritten to our own `snapshot`
+ * bucket. Those pages therefore looked image-less to the gallery extractor
+ * (23 of 113 ended up with no hero and no gallery). Treat our storage host
+ * as a source host too.
+ */
+const SNAPSHOT_HOST = (() => {
+  try {
+    return new URL(process.env.SUPABASE_URL ?? "").host;
+  } catch {
+    return "";
+  }
+})();
+const SOURCE_HOSTS = [...WP_HOSTS, SNAPSHOT_HOST].filter(Boolean);
+
+/**
+ * Snapshot assets have content-hashed filenames, so the name-based
+ * image_import_denylist ("flower-divider", "Book-now") cannot match them.
+ * Fall back to shape: dividers are long and thin, CTA chips and icons are
+ * small. Judged only after import, when real dimensions are known.
+ */
+function isDecorativeShape(width: number | null, height: number | null): boolean {
+  if (!width || !height) return false;
+  const ratio = width / height;
+  if (ratio >= 4 || ratio <= 0.25) return true;
+  return width < 200 || height < 120;
+}
+
 type ExtractOutcome = {
   url_inventory_id: string;
   retreat_imports_id: string;
@@ -59,7 +88,7 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
     title: invRow.title ?? "",
     url: invRow.url ?? "",
     bodyHtml,
-    sourceHosts: WP_HOSTS,
+    sourceHosts: SOURCE_HOSTS,
   });
 
   // AI-based body extraction. Two parallel calls: one for leaders +
@@ -136,6 +165,7 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
   let skipped = 0;
   const skipped_details: SkippedImage[] = [];
   const urlMap = new Map<string, string>();
+  const dims = new Map<string, { w: number | null; h: number | null }>();
 
   for (const item of imagePlan) {
     const result = await importImage({
@@ -146,6 +176,7 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
     });
     if (result.ok) {
       urlMap.set(item.url, result.image.ao_public_url);
+      dims.set(item.url, { w: result.image.width, h: result.image.height });
       if (result.image.reused) reused++;
       else imported++;
     } else {
@@ -162,8 +193,16 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
   const rewritten: ExtractedRetreat = {
     ...retreat,
     gallery_images: retreat.gallery_images
-      .map((g) => ({ ...g, url: urlMap.get(g.url) ?? g.url }))
-      .filter((g) => urlMap.has(g.url) || g.url.startsWith("http") === false || !WP_HOSTS.some((h) => g.url.includes(h))),
+      // Keep only images we actually imported, and judge decorative shape on
+      // the ORIGINAL url — the previous filter ran after the rewrite and so
+      // tested a storage url against a map keyed by the source url, which
+      // never matched.
+      .filter((g) => urlMap.has(g.url))
+      .filter((g) => {
+        const d = dims.get(g.url);
+        return !isDecorativeShape(d?.w ?? null, d?.h ?? null);
+      })
+      .map((g) => ({ ...g, url: urlMap.get(g.url) as string })),
     retreat_leaders: retreat.retreat_leaders.map((l) => ({
       ...l,
       photo_url: l.photo_url ? urlMap.get(l.photo_url) ?? l.photo_url : undefined,
