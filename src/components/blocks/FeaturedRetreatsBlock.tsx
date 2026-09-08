@@ -37,7 +37,7 @@ export default async function FeaturedRetreatsBlock({
   const subheading = c.subheading ?? "";
   const numberToShow = Math.max(1, Math.min(50, c.max_count ?? 6));
   const registerLabel = c.register_label ?? "Register Now";
-  const urlPattern = c.url_pattern || "/retreats/{slug}/";
+  const urlPattern = c.url_pattern || "/retreat/{slug}/";
   const containerWidth = c.container_width_px ?? 1200;
   const padY = c.padding_y_px ?? 64;
   const bg = resolveBrandColor(c.bg_color) ?? "transparent";

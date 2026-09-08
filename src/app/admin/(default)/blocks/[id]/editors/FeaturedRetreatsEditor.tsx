@@ -22,7 +22,7 @@ function normalize(c: FeaturedRetreatsContent | null | undefined): FeaturedRetre
     subheading: c?.subheading ?? "",
     max_count: c?.max_count ?? 5,
     register_label: c?.register_label ?? "Register Now",
-    url_pattern: c?.url_pattern ?? "/retreats/{slug}/",
+    url_pattern: c?.url_pattern ?? "/retreat/{slug}/",
     bg_color: c?.bg_color ?? "",
     text_color: c?.text_color ?? "",
     heading_color: c?.heading_color ?? "",
@@ -125,7 +125,7 @@ function Form({ state }: { state: BlockEditorState<FeaturedRetreatsContent> }) {
               className={inputCls}
               value={draft.url_pattern ?? ""}
               onChange={(e) => patch({ url_pattern: e.target.value })}
-              placeholder="/retreats/{slug}/"
+              placeholder="/retreat/{slug}/"
             />
             <p className="mt-1 text-[11px] italic text-anamaya-charcoal/60">
               <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[11px]">

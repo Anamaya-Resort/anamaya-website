@@ -19,7 +19,7 @@ export function normalizeTeacherRetreats(
     heading: c?.heading ?? defaultHeading,
     subheading: c?.subheading ?? "",
     register_label: c?.register_label ?? defaultRegisterLabel,
-    url_pattern: c?.url_pattern ?? "/retreats/{slug}/",
+    url_pattern: c?.url_pattern ?? "/retreat/{slug}/",
     bg_color: c?.bg_color ?? "",
     text_color: c?.text_color ?? "",
     heading_color: c?.heading_color ?? "",

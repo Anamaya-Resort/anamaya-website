@@ -49,31 +49,63 @@ export async function pushStagedRetreatToAO(
 
   const slug = deriveSlug(staging.url_path);
 
-  const retreatRow = {
+  // Only write fields the extraction actually recovered. The scraper
+  // routinely returns nothing for dates, itinerary, what_is_included,
+  // what_to_expect and who_is_this_for — and AO already holds correct
+  // dates from Retreat Guru. Sending null/[] for those would wipe good
+  // data and, in the case of dates, drop the retreat out of every
+  // date-filtered calendar and website block.
+  const whatToExpect =
+    data.what_to_expect_text ?? (data.what_to_expect_html ? stripHtml(data.what_to_expect_html) : null);
+  const whoIsThisFor =
+    data.who_is_this_for_text ?? (data.who_is_this_for_html ? stripHtml(data.who_is_this_for_html) : null);
+
+  const retreatRow: Record<string, unknown> = {
     name: data.name,
-    tagline: data.tagline ?? null,
-    start_date: data.dates_start ?? null,
-    end_date: data.dates_end ?? null,
-    location_name: data.location ?? null,
-    what_is_included: data.whats_included ?? [],
-    what_to_expect: data.what_to_expect_text ?? (data.what_to_expect_html ? stripHtml(data.what_to_expect_html) : null),
-    who_is_this_for: data.who_is_this_for_text ?? (data.who_is_this_for_html ? stripHtml(data.who_is_this_for_html) : null),
-    itinerary: data.itinerary ?? [],
     website_slug: slug,
     is_active: true,
     updated_at: new Date().toISOString(),
   };
+  if (data.tagline) retreatRow.tagline = data.tagline;
+  if (data.location) retreatRow.location_name = data.location;
+  // Dates are deliberately NOT pushed. Retreat Guru is the booking system
+  // of record for them and the 4-hourly sync keeps AO matching it. The
+  // scraped WordPress page is often a stale edition: "Survive and Thrive"
+  // scrapes as 2027-03-06 while RG (and AO) correctly say 2027-02-27 —
+  // 03-06 is actually Pura Vida Haven's week. Writing scraped dates would
+  // reintroduce that error and drop retreats out of date-filtered blocks.
+  if (data.dates_start || data.dates_end) {
+    warnings.push(
+      `scraped dates (${data.dates_start ?? "?"} to ${data.dates_end ?? "?"}) ignored — Retreat Guru is authoritative for dates`,
+    );
+  }
+  if (data.whats_included?.length) retreatRow.what_is_included = data.whats_included;
+  if (whatToExpect) retreatRow.what_to_expect = whatToExpect;
+  if (whoIsThisFor) retreatRow.who_is_this_for = whoIsThisFor;
+  if (data.itinerary?.length) retreatRow.itinerary = data.itinerary;
 
   let ao_retreat_id: string;
   let created = false;
 
-  if (staging.ao_retreat_id) {
+  // AO already holds every retreat from the Retreat Guru sync, so a blind
+  // insert here is how duplicates get made (it is exactly how AO ended up
+  // with two "Art of Thriving" rows). If staging has no link yet, look for
+  // the existing retreat this page describes before creating anything:
+  // match on website_slug, then on the anamaya.com URL that the RG import
+  // stores in program_info.alternate_url. Recurring retreats reuse one page
+  // across years, so prefer the soonest UPCOMING edition.
+  let linkedId = staging.ao_retreat_id as string | null;
+  if (!linkedId) {
+    linkedId = await findExistingAoRetreat(ao, slug, warnings);
+  }
+
+  if (linkedId) {
     const { error } = await ao
       .from("retreats")
       .update(retreatRow)
-      .eq("id", staging.ao_retreat_id);
+      .eq("id", linkedId);
     if (error) throw new Error(`retreats update: ${error.message}`);
-    ao_retreat_id = staging.ao_retreat_id;
+    ao_retreat_id = linkedId;
   } else {
     const { data: inserted, error } = await ao
       .from("retreats")
@@ -194,7 +226,7 @@ function nameSlug(name: string): string {
 
 /**
  * Find or create person rows for every leader on the retreat, then upsert
- * teacher_profiles + retreat_teachers links. Idempotent across re-pushes:
+ * retreat_leader_profiles + retreat_teachers links. Idempotent across re-pushes:
  * matches existing persons by full_name (case-insensitive) before creating
  * a new placeholder row. Placeholder emails use a reserved
  * `imported.anamaya.local` domain so admins can spot synthetic rows and
@@ -223,7 +255,7 @@ async function upsertRetreatLeaders(
     idsByName.set(leader.name.toLowerCase().replace(/\s+/g, " ").trim(), personId);
 
     await ao
-      .from("teacher_profiles")
+      .from("retreat_leader_profiles")
       .upsert(
         {
           person_id: personId,
@@ -420,4 +452,49 @@ async function replaceTestimonials(
   }));
   const { error } = await ao.from("general_testimonials").insert(rows);
   if (error) throw new Error(`general_testimonials insert: ${error.message}`);
+}
+
+/**
+ * Find the AO retreat a scraped page describes, so a push updates it
+ * instead of inserting a duplicate alongside the Retreat-Guru-synced row.
+ * Returns null only when nothing plausible exists, in which case the
+ * caller creates a genuinely new retreat.
+ */
+async function findExistingAoRetreat(
+  ao: SupabaseClient,
+  slug: string,
+  warnings: string[],
+): Promise<string | null> {
+  if (!slug) return null;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const pick = (rows: { id: string; start_date: string | null; end_date: string | null }[]) => {
+    if (rows.length === 0) return null;
+    const upcoming = rows
+      .filter((r) => (r.end_date ?? "") >= today)
+      .sort((a, b) => (a.start_date ?? "").localeCompare(b.start_date ?? ""));
+    if (upcoming.length > 0) return upcoming[0].id;
+    const past = [...rows].sort((a, b) => (b.start_date ?? "").localeCompare(a.start_date ?? ""));
+    return past[0].id;
+  };
+
+  const { data: bySlug } = await ao
+    .from("retreats")
+    .select("id, start_date, end_date")
+    .eq("website_slug", slug)
+    .eq("is_active", true);
+  const slugHit = pick((bySlug ?? []) as { id: string; start_date: string | null; end_date: string | null }[]);
+  if (slugHit) return slugHit;
+
+  const { data: byUrl } = await ao
+    .from("retreats")
+    .select("id, start_date, end_date")
+    .eq("is_active", true)
+    .ilike("program_info->>alternate_url", `%/retreat/${slug}/%`);
+  const urlHit = pick((byUrl ?? []) as { id: string; start_date: string | null; end_date: string | null }[]);
+  if (urlHit) {
+    warnings.push(`linked to existing AO retreat via program_info.alternate_url (slug "${slug}")`);
+    return urlHit;
+  }
+  return null;
 }

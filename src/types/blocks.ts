@@ -1208,7 +1208,7 @@ export type FeaturedBySearchContent = LayoutWidthsContent & {
   use_page_context?: boolean;
   search_terms?: string;        // the phrase to match when use_page_context = false
   register_label?: string;      // CTA button label; default "Register Now"
-  url_pattern?: string;         // per-retreat URL; `{slug}` → AO website_slug; default "/retreats/{slug}/"
+  url_pattern?: string;         // per-retreat URL; `{slug}` → AO website_slug; default "/retreat/{slug}/" (singular — the plural form 404s)
   bg_color?: string;
   text_color?: string;
   heading_color?: string;

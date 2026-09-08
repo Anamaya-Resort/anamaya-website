@@ -27,7 +27,7 @@ export default function TeacherRetreatsSection({
   const heading = c.heading ?? defaultHeading;
   const subheading = c.subheading ?? "";
   const registerLabel = c.register_label ?? defaultRegisterLabel;
-  const urlPattern = c.url_pattern || "/retreats/{slug}/";
+  const urlPattern = c.url_pattern || "/retreat/{slug}/";
   const containerWidth = c.container_width_px ?? 1200;
   const padY = c.padding_y_px ?? 56;
   const bg = resolveBrandColor(c.bg_color) ?? "transparent";

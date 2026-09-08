@@ -31,7 +31,7 @@ export default async function FeaturedBySearchBlock({
   const subheading = c.subheading ?? "";
   const numberToShow = Math.max(1, Math.min(50, c.max_count ?? 4));
   const registerLabel = c.register_label ?? "Register Now";
-  const urlPattern = c.url_pattern || "/retreats/{slug}/";
+  const urlPattern = c.url_pattern || "/retreat/{slug}/";
   const padY = c.padding_y_px ?? 64;
   const bg = resolveBrandColor(c.bg_color) ?? "transparent";
   const textColor = resolveBrandColor(c.text_color) ?? undefined;
