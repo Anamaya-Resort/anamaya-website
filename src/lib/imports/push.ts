@@ -336,6 +336,18 @@ async function ensurePerson(
     .maybeSingle();
   if (existing?.id) return existing.id;
 
+  // The placeholder email is unique, and an earlier import may have created
+  // this leader under a slightly different name spelling ("Chloe Haddad "
+  // vs "Chloe Haddad"), which the name match above misses. Without this the
+  // insert below fails on idx_persons_email and aborts the whole push.
+  const { data: byEmail } = await ao
+    .from("persons")
+    .select("id")
+    .eq("email", placeholderEmail)
+    .limit(1)
+    .maybeSingle();
+  if (byEmail?.id) return byEmail.id;
+
   const { data: created, error } = await ao
     .from("persons")
     .insert({
