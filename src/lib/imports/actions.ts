@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
-import { decode, extractRetreat, type ExtractedRetreat } from "./retreat-extractor";
+import {
+  decode,
+  descriptionIsGrounded,
+  extractRetreat,
+  looksLikePriceNote,
+  recoverWorkshopDescription,
+  type ExtractedRetreat,
+} from "./retreat-extractor";
 import { extractRetreatBodyAI, extractRetreatWorkshopsAI } from "./retreat-ai-extractor";
 import { importImage, type ImageBucket, type SkippedImage } from "./images";
 import { pushStagedRetreatToAO, type PushResult } from "./push";
@@ -125,7 +132,35 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
       // Empty AI workshops still wins — the regex fallback at best returns
       // a stray description sentence under a "workshop" heading, which is
       // worse than nothing.
-      retreat.workshops = aiWorkshops.workshops;
+      retreat.workshops = aiWorkshops.workshops.map((w) => {
+        // The AI sometimes returns a workshop with no blurb even though the
+        // source has one right after its heading ("Daily Meditations",
+        // "Yoga Lifestylist Session" both lost real copy this way). Recover
+        // it, and separately mark package/offer rows so they stay in the
+        // price table without rendering as an empty prose heading.
+        const aiDesc =
+          w.description_html && w.description_html.trim().length > 0 ? w.description_html : "";
+        // Discard anything the model did not actually read off the page,
+        // then fall back to the prose following the title in the source.
+        const grounded = aiDesc && descriptionIsGrounded(bodyHtml, aiDesc) ? aiDesc : "";
+        if (aiDesc && !grounded) {
+          warnings.push(
+            `workshop "${w.title}": AI description was not found in the source page and was discarded as fabricated`,
+          );
+        }
+        const description_html = grounded || recoverWorkshopDescription(bodyHtml, w.title ?? "");
+        // NOTE: spreading `...w` would carry the original (possibly
+        // fabricated) description straight back in whenever the
+        // replacement is empty, silently undoing the discard above. Assign
+        // the field explicitly instead.
+        const out = {
+          ...w,
+          ...(looksLikePriceNote(w.title ?? "") ? { is_price_note: true } : {}),
+        };
+        if (description_html) out.description_html = description_html;
+        else delete out.description_html;
+        return out;
+      });
     } else {
       warnings.push(`AI workshops extraction failed: ${aiWorkshops.reason}`);
     }

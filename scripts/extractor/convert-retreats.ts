@@ -25,6 +25,7 @@ const VB = {
   title: "ea266e9c-2980-454b-b1a1-8eab474c3a77",
   rates: "ca30fa78-411b-434c-acfa-0996a9a70fcf",
   description: "c229572b-1c0d-446e-8c7c-f05b2852bb92",
+  details: "f75bb99c-68a2-43a1-89d4-68bfca03fad5",
   workshopsPricing: "403e929f-18cd-4fde-a6e1-685237575195",
   workshopsDetails: "aa9b32a9-9236-45b4-b6ea-4b386021a0d4",
   gallery: "d384555b-4b04-4acc-8826-de4825a1ec0e",
@@ -41,6 +42,10 @@ const ONLY = (process.argv.find((a) => a.startsWith("--only=")) ?? "")
  *  Regenerating them from extracted_json would flatten that, so already
  *  converted pages are left alone unless --force says otherwise. */
 const FORCE = process.argv.includes("--force");
+/** Write ONLY the Retreat Details slot, leaving every other block as-is.
+ *  Used to give the hand-curated pages the new section without replacing
+ *  their curated copy with generated content. */
+const DETAILS_ONLY = process.argv.includes("--details-only");
 
 function env(k: string): string {
   const v = process.env[k];
@@ -59,6 +64,7 @@ const ao = (): SupabaseClient =>
 type Leader = { name?: string; role?: string; bio_html?: string; photo_url?: string };
 type Workshop = {
   title?: string;
+  is_price_note?: boolean;
   description_html?: string;
   price_single?: number | null;
   price_full?: number | null;
@@ -70,6 +76,7 @@ type Extracted = {
   tagline?: string;
   description_html?: string;
   dates_text?: string;
+  retreat_details_html?: string;
   dates_start?: string;
   dates_end?: string;
   pricing_tiers?: { name?: string; price?: string; note?: string }[];
@@ -97,9 +104,17 @@ function workshopNote(w: Workshop): string | undefined {
   return w.session_duration_minutes ? `${w.session_duration_minutes}-minute workshop` : undefined;
 }
 
-/** The long-form workshop section: heading, price line, then its copy. */
+/**
+ * The long-form workshop section. Rows are skipped when they are a
+ * package/offer price line, or when there is genuinely no copy for them —
+ * an empty heading reads as a bug. Verified against source before
+ * enabling this: of 6 description-less workshops across all 113 pages, 3
+ * were package-price rows, 2 had copy the AI missed (now recovered by the
+ * extractor) and only 1 was truly empty.
+ */
 function workshopsDetailHtml(ws: Workshop[]): string {
   return ws
+    .filter((w) => !w.is_price_note && (w.description_html ?? "").trim().length > 0)
     .map((w) => {
       const bits: string[] = [`<h3>${w.title ?? ""}</h3>`];
       const note = workshopNote(w);
@@ -161,7 +176,7 @@ async function main() {
       skipped++;
       continue;
     }
-    if (!FORCE && rows.some((r) => r.cms_template_id)) {
+    if (!FORCE && !DETAILS_ONLY && rows.some((r) => r.cms_template_id)) {
       skipped++;
       continue;
     }
@@ -226,10 +241,16 @@ async function main() {
         ...(regLink ? { manual_cta_href: regLink } : {}),
       },
       [VB.description]: e.description_html ? { html: e.description_html, padding_y_px: 48 } : {},
+      [VB.details]: e.retreat_details_html
+        ? { html: e.retreat_details_html, padding_y_px: 40 }
+        : {},
       [VB.workshopsPricing]:
         ws.length > 0
           ? {
-              heading: "Optional Workshops",
+              // Several retreats include their workshops in the retreat price;
+              // calling those "Optional Workshops" next to an empty price
+              // column is misleading.
+              heading: ws.some((x) => priceLabel(x) !== "") ? "Optional Workshops" : "Included Workshops",
               intro: "",
               tiers: ws.map((x) => {
                 const t: Record<string, unknown> = { name: x.title, price: priceLabel(x) };
@@ -266,8 +287,11 @@ async function main() {
       continue;
     }
 
+    const slots = DETAILS_ONLY
+      ? Object.entries(content).filter(([vb]) => vb === VB.details)
+      : Object.entries(content);
     const payload = targets.flatMap((id) =>
-      Object.entries(content).map(([vb, c]) => ({
+      slots.map(([vb, c]) => ({
         url_inventory_id: id,
         variant_block_id: vb,
         content: c,

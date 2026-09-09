@@ -27,6 +27,12 @@ export type ExtractedItineraryDay = {
 };
 
 export type ExtractedWorkshop = {
+  /**
+   * True when the row is a package/offer price line rather than a real
+   * workshop ("PACKAGE PRICE: For all 4 workshops is $150"). It belongs in
+   * the price table but must not render as a prose heading.
+   */
+  is_price_note?: boolean;
   title: string;
   description?: string;
   description_html?: string;
@@ -96,6 +102,14 @@ export type ExtractedRetreat = {
   workshops: ExtractedWorkshop[];
   gallery_images: { url: string; alt?: string }[];
   testimonials: ExtractedTestimonial[];
+
+  /**
+   * The legacy "RETREAT DETAILS" section: what the week includes, daily
+   * programming, and the excursions list. Present on 112 of 113 legacy
+   * pages and previously dropped entirely, because nothing in the schema
+   * held it and `whats_included` came back empty on every page.
+   */
+  retreat_details_html?: string;
 
   /** Original WP-Engine image URLs collected from the page (pre-import). */
   source_image_urls: string[];
@@ -429,6 +443,109 @@ function extractItinerary(html: string): ExtractedItineraryDay[] {
 }
 
 /** Pull pricing notes that look like workshop entries. */
+/**
+ * Capture the "RETREAT DETAILS" block. Kept as HTML so the lists (daily
+ * programming, included workshops, excursions) survive intact.
+ */
+export function extractRetreatDetails(html: string): string | undefined {
+  const sec =
+    findSectionByHeading(html, /^\s*retreat\s+details\s*:?\s*$/i) ??
+    findSectionByHeading(html, /what\s+you.{0,3}ll\s+experience/i);
+  if (!sec) return undefined;
+  // Drop the heading itself; the template renders its own.
+  const body = sec.replace(/^<h([1-4])\b[^>]*>[\s\S]*?<\/h\1>/i, "").trim();
+  return stripTags(body).length > 40 ? body : undefined;
+}
+
+/**
+ * Is this blurb actually present in the page it came from?
+ *
+ * gpt-4o-mini occasionally invents a workshop description when the page
+ * only lists the workshop's name — "Glass Walk Ritual" on the mermaid
+ * retreat got a confident, entirely fabricated paragraph. Publishing
+ * invented copy as Anamaya's own is worse than showing nothing, so any
+ * blurb that cannot be found in the source is discarded.
+ *
+ * Verbatim-substring, not similarity: the model quotes the page almost
+ * word for word when it is working from real copy. Measured over all 382
+ * extracted workshop blurbs this flagged 3, all of them correctly.
+ */
+export function descriptionIsGrounded(sourceHtml: string, descriptionHtml: string): boolean {
+  const norm = (x: string) =>
+    stripTags(x)
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const src = norm(sourceHtml);
+  const desc = norm(descriptionHtml);
+  if (desc.length < 25) return true; // too short to judge; keep it
+  const windows = [
+    desc.slice(Math.floor(desc.length / 5), Math.floor(desc.length / 5) + 45),
+    desc.slice(Math.floor(desc.length / 2), Math.floor(desc.length / 2) + 45),
+    desc.slice(Math.max(0, desc.length - 60), Math.max(0, desc.length - 60) + 45),
+  ].map((w) => w.trim());
+  return windows.some((w) => w.length >= 25 && src.includes(w));
+}
+
+/** Package/offer rows masquerading as workshops. */
+export function looksLikePriceNote(title: string): boolean {
+  const t = (title ?? "").toLowerCase();
+  if (/^\s*\*{2,}/.test(title ?? "")) return true;
+  return (
+    /package\s*price/.test(t) ||
+    /\bfor all (three|four|two|\d+)\b/.test(t) ||
+    /\benjoy both\b/.test(t) ||
+    /\ball\s+\d+\s+workshops\b/.test(t)
+  );
+}
+
+/**
+ * Openings that mean "a new section starts here", not "this workshop is
+ * described as follows".
+ */
+const SECTION_STOP_WORDS = [
+  "excursion",
+  "rates for retreat",
+  "retreat prices",
+  "retreat dates",
+  "retreat details",
+  "book your retreat",
+  "what you",
+  "all excursions",
+  "testimonial",
+  "optional workshop",
+  "workshops (included)",
+  "daily programming",
+];
+
+/**
+ * When the AI returns a workshop with no blurb, take the prose that
+ * immediately follows its heading in the source. Two real workshops were
+ * losing genuine copy this way ("Daily Meditations", "Yoga Lifestylist
+ * Session"), so this recovers rather than discards.
+ */
+export function recoverWorkshopDescription(html: string, title: string): string | undefined {
+  if (!title) return undefined;
+  const esc = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sec = findSectionByHeading(html, new RegExp(`^\\s*${esc}\\s*:?\\s*$`, "i"));
+  if (sec) {
+    const body = sec.replace(/^<h([1-4])\b[^>]*>[\s\S]*?<\/h\1>/i, "").trim();
+    if (stripTags(body).length > 25) return body;
+  }
+  // Not a heading — find the title inline and take the sentence after it.
+  // Guarded by a stop-list: on the mermaid retreat "Glass Walk Ritual" is
+  // the last item of a bare list and the next words are the Excursions
+  // section, so an unguarded grab attributed the excursion list to the
+  // workshop. Better to return nothing and let the caller omit the row.
+  const idx = html.search(new RegExp(esc, "i"));
+  if (idx < 0) return undefined;
+  const tail = stripTags(html.slice(idx + title.length)).replace(/^[\s:–—-]+/, "").trim();
+  if (SECTION_STOP_WORDS.some((k) => tail.toLowerCase().startsWith(k))) return undefined;
+  const sentence = tail.split(/(?<=[.!?])\s/).slice(0, 2).join(" ").trim();
+  return sentence.length > 25 ? `<p>${sentence}</p>` : undefined;
+}
+
 function extractWorkshops(html: string): ExtractedWorkshop[] {
   const section = findSectionByHeading(html, /workshop/i);
   if (!section) return [];
@@ -630,6 +747,7 @@ export function extractRetreat(input: ExtractInput): ExtractResult {
       workshops,
       gallery_images: galleryImages,
       testimonials,
+      retreat_details_html: extractRetreatDetails(bodyHtml),
       source_image_urls: sourceImageUrls,
     },
     warnings,
