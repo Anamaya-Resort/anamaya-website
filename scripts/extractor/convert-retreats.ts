@@ -163,10 +163,38 @@ async function main() {
     invBySlug.get(s)!.push(row);
   }
 
+  /**
+   * A slug can have two staged rows, one per source site (v1 and v2), and
+   * they are not equally good — one page's capture may be missing its
+   * gallery, or be empty entirely. Processing both meant whichever came
+   * last won, which blanked yoga-with-natalia-chaverri (6 tiers, 3
+   * workshops and a leader replaced by an empty capture). Keep only the
+   * richest row per slug.
+   */
+  const score = (e: Extracted) =>
+    (e.pricing_tiers?.length ?? 0) +
+    (e.retreat_leaders?.length ?? 0) * 2 +
+    (e.workshops?.length ?? 0) +
+    (e.gallery_images?.length ?? 0) +
+    (e.description_html ? 5 : 0) +
+    (e.retreat_details_html ? 5 : 0);
+  const bestBySlug = new Map<string, (typeof staged)[number]>();
+  for (const st of staged ?? []) {
+    const slug = slugOf(st.url_path);
+    const prev = bestBySlug.get(slug);
+    if (
+      !prev ||
+      score((st.extracted_json ?? {}) as Extracted) >
+        score((prev.extracted_json ?? {}) as Extracted)
+    ) {
+      bestBySlug.set(slug, st);
+    }
+  }
+
   let converted = 0;
   let skipped = 0;
 
-  for (const st of staged ?? []) {
+  for (const st of bestBySlug.values()) {
     const slug = slugOf(st.url_path);
     if (ONLY.length > 0 && !ONLY.includes(slug)) continue;
     const e = (st.extracted_json ?? {}) as Extracted;

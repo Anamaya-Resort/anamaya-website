@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 import {
+  bioIsGrounded,
   decode,
   descriptionIsGrounded,
   extractRetreat,
@@ -110,7 +111,19 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
 
     if (aiBody.ok) {
       if (aiBody.leaders.length > 0) {
-        retreat.retreat_leaders = aiBody.leaders;
+        // Drop any bio the model did not actually read off the page. On a
+        // page that named a teacher once and carried no biography, it
+        // invented a whole professional history for her. The leader is
+        // kept (name, photo, AO link); only the unsupported prose goes.
+        retreat.retreat_leaders = aiBody.leaders.map((l) => {
+          if (!l.bio_html?.trim()) return l;
+          if (bioIsGrounded(bodyHtml, l.bio_html)) return l;
+          warnings.push(
+            `leader "${l.name}": bio was not found in the source page and was discarded as fabricated`,
+          );
+          const { bio_html: _discarded, ...rest } = l;
+          return rest;
+        });
         const idx = warnings.indexOf("could not identify retreat leader/teacher");
         if (idx !== -1) warnings.splice(idx, 1);
         const missingBio = aiBody.leaders.filter((l) => !l.bio_html?.trim()).map((l) => l.name);

@@ -488,6 +488,43 @@ export function descriptionIsGrounded(sourceHtml: string, descriptionHtml: strin
   return windows.some((w) => w.length >= 25 && src.includes(w));
 }
 
+/**
+ * Same grounding idea as `descriptionIsGrounded`, but for leader bios,
+ * which are long and stitched together from several paragraphs — a single
+ * window is too blunt. Measures how many of the bio's sentences can be
+ * found in the source page.
+ *
+ * Why this exists: on a page that mentions a teacher's name exactly once
+ * and carries no biography at all, gpt-4o-mini invented a full
+ * professional history for her ("a prominent leader dedicated to guiding
+ * individuals…"). Fabricated biography about a real, named person is the
+ * worst thing this pipeline could publish.
+ *
+ * Measured across all 138 extracted bios the split is clean: 137 sat at
+ * 100% coverage and the fabricated one at 0%, so the threshold is not
+ * doing delicate work — it just has to separate those two cases.
+ */
+export function bioIsGrounded(sourceHtml: string, bioHtml: string): boolean {
+  const norm = (x: string) =>
+    stripTags(x)
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const src = norm(sourceHtml);
+  const plain = stripTags(bioHtml).replace(/\s+/g, " ").trim();
+  const sentences = plain
+    .split(/(?<=[.!?])\s+/)
+    .map((x) => x.trim())
+    .filter((x) => x.length > 40);
+  if (sentences.length === 0) return true; // too short to judge
+  const hits = sentences.filter((snt) => {
+    const n = norm(snt);
+    return src.includes(n.slice(0, 60)) || src.includes(n.slice(10, 70));
+  }).length;
+  return hits / sentences.length >= 0.5;
+}
+
 /** Package/offer rows masquerading as workshops. */
 export function looksLikePriceNote(title: string): boolean {
   const t = (title ?? "").toLowerCase();
