@@ -121,8 +121,9 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
           warnings.push(
             `leader "${l.name}": bio was not found in the source page and was discarded as fabricated`,
           );
-          const { bio_html: _discarded, ...rest } = l;
-          return rest;
+          const stripped = { ...l };
+          delete stripped.bio_html;
+          return stripped;
         });
         const idx = warnings.indexOf("could not identify retreat leader/teacher");
         if (idx !== -1) warnings.splice(idx, 1);
@@ -134,8 +135,25 @@ export async function extractRetreatToStaging(url_inventory_id: string): Promise
         }
       }
       if (aiBody.description_html) {
-        retreat.description_html = aiBody.description_html;
-        retreat.description_text = aiBody.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        // Same fabrication guard as bios, but the description is the page's
+        // core copy, so a false positive would gut the page. Calibrated
+        // against all 115 legacy pages: 105 are verbatim, the lowest
+        // legitimate one is 78%, and the one proven fabrication elsewhere
+        // scored 0%. bioIsGrounded's 0.5 threshold sits safely between.
+        // Below it the copy is dropped; between 0.5 and 0.9 it is kept but
+        // flagged, since honest variation there is usually the model
+        // silently fixing a typo in the source ("vitlity" -> "vitality").
+        if (!bioIsGrounded(bodyHtml, aiBody.description_html)) {
+          warnings.push(
+            "retreat description was not found in the source page and was discarded as fabricated",
+          );
+        } else {
+          retreat.description_html = aiBody.description_html;
+          retreat.description_text = aiBody.description_html
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
       }
     } else {
       warnings.push(`AI body extraction failed: ${aiBody.reason}`);
