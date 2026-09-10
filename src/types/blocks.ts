@@ -681,7 +681,18 @@ export type GalleryImage = {
 };
 export type GalleryContent = LayoutWidthsContent & SectionFrame & {
   heading?: string;
+  /**
+   * Images pasted into this block. Ignored when gallery_code is set.
+   */
   images: GalleryImage[];
+  /**
+   * An AnamayaOS gallery code (gallery_1, gallery_2, ...). When set,
+   * the block renders that gallery's current contents instead of the
+   * literal list above, so curating once in AnamayaOS updates every
+   * page and template that references the code. Same arrangement as
+   * the room grid, which holds display settings only.
+   */
+  gallery_code?: string;
   layout?: "grid" | "masonry" | "carousel";
   columns?: 2 | 3 | 4 | 5;
   /** Click image to open full-size in a lightbox. Default true. */
