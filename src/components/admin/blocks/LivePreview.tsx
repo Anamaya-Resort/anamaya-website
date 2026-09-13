@@ -17,7 +17,7 @@ import QuoteBlock from "@/components/blocks/QuoteBlock";
 import DateRangeBlock from "@/components/blocks/DateRangeBlock";
 import PricingTableBlock from "@/components/blocks/PricingTableBlock";
 import FeatureListBlock from "@/components/blocks/FeatureListBlock";
-import GalleryBlock from "@/components/blocks/GalleryBlock";
+import GalleryBlockLive from "@/components/blocks/GalleryBlockLive";
 import PersonCardBlock from "@/components/blocks/PersonCardBlock";
 import RawHtmlBlock from "@/components/blocks/RawHtmlBlock";
 import UiTopBlock from "@/components/blocks/UiTopBlock";
@@ -239,7 +239,7 @@ function BlockRender({
     case "date_range":     return <DateRangeBlock content={content} />;
     case "pricing_table":  return <PricingTableBlock content={content} preview={preview} />;
     case "feature_list":   return <FeatureListBlock content={content} />;
-    case "gallery":        return <GalleryBlock content={content} preview={preview} />;
+    case "gallery":        return <GalleryBlockLive content={content} preview={preview} />;
     case "person_card":    return <PersonCardBlock content={content} />;
     case "raw_html":       return <RawHtmlBlock content={content} />;
     case "ui_top":            return <UiTopBlock content={content} />;
