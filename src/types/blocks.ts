@@ -673,11 +673,19 @@ export type FeatureListContent = LayoutWidthsContent & BlockCta & SectionFrame &
 
 /** Image gallery — uniform grid, masonry, or single-row carousel. */
 export type GalleryImage = {
+  /** The still. For a video this is its poster frame. */
   url: string;
   alt?: string;
   width?: number;
   height?: number;
   caption?: string;
+  /**
+   * Set when the gallery item is a video: the file to play. The grid
+   * still shows `url` (the poster) with a play badge; the lightbox
+   * plays this. A gallery holds whatever the library holds, so a block
+   * has to cope with footage sitting among the photographs.
+   */
+  video_url?: string;
 };
 export type GalleryContent = LayoutWidthsContent & SectionFrame & {
   heading?: string;

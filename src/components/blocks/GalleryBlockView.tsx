@@ -28,6 +28,24 @@ export const SAMPLE_IMAGES: GalleryImage[] = [
   { url: "/costarica_wellness_retreats.webp", alt: "" },
 ];
 
+/**
+ * Marks a tile as footage. A gallery can hold video as well as
+ * photographs, and a poster frame is indistinguishable from a still
+ * without it — you would click expecting a photo and get a player.
+ */
+function PlayBadge() {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm"
+    >
+      <svg viewBox="0 0 24 24" className="ml-0.5 h-4 w-4" fill="currentColor">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+    </span>
+  );
+}
+
 export default function GalleryBlockView({
   content,
   preview,
@@ -77,7 +95,7 @@ export default function GalleryBlockView({
                 key={i}
                 type="button"
                 onClick={() => lightbox && setActiveIdx(i)}
-                className="flex-shrink-0"
+                className="relative flex-shrink-0"
               >
                 <img
                   src={img.url}
@@ -87,6 +105,7 @@ export default function GalleryBlockView({
                   className="h-64 w-auto rounded object-cover"
                   loading="lazy"
                 />
+                {img.video_url && <PlayBadge />}
               </button>
             ))}
           </div>
@@ -100,7 +119,7 @@ export default function GalleryBlockView({
                 key={i}
                 type="button"
                 onClick={() => lightbox && setActiveIdx(i)}
-                className="mb-3 block w-full break-inside-avoid"
+                className="relative mb-3 block w-full break-inside-avoid"
               >
                 <img
                   src={img.url}
@@ -110,6 +129,7 @@ export default function GalleryBlockView({
                   className="w-full rounded"
                   loading="lazy"
                 />
+                {img.video_url && <PlayBadge />}
               </button>
             ))}
           </div>
@@ -123,7 +143,7 @@ export default function GalleryBlockView({
                 key={i}
                 type="button"
                 onClick={() => lightbox && setActiveIdx(i)}
-                className="aspect-square overflow-hidden rounded"
+                className="relative aspect-square overflow-hidden rounded"
               >
                 <img
                   src={img.url}
@@ -131,6 +151,7 @@ export default function GalleryBlockView({
                   className="h-full w-full object-cover transition-transform hover:scale-105"
                   loading="lazy"
                 />
+                {img.video_url && <PlayBadge />}
               </button>
             ))}
           </div>
@@ -142,6 +163,7 @@ export default function GalleryBlockView({
           url: im.url,
           alt: im.alt ?? null,
           caption: im.caption ?? null,
+          video_url: im.video_url ?? null,
         }))}
         index={lightbox ? activeIdx : null}
         onClose={() => setActiveIdx(null)}

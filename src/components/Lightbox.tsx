@@ -3,9 +3,12 @@
 import { useCallback, useEffect } from "react";
 
 export type LightboxImage = {
+  /** The still. For a video this is its poster frame. */
   url: string;
   alt?: string | null;
   caption?: string | null;
+  /** Set when the item is a video: the file to play. */
+  video_url?: string | null;
 };
 
 /**
@@ -107,8 +110,24 @@ export default function Lightbox({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="orn l" src="/journal/flower-sideways-right.webp" alt="" aria-hidden="true" />
         <div className="lb-imgwrap">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="lb-img" src={img.url} alt={img.alt ?? ""} />
+          {img.video_url ? (
+            // Same frame and glow as a photo, so opening a video does
+            // not feel like a different piece of software. Its poster
+            // shows while it loads, so the tile does not go black.
+            <video
+              key={img.video_url}
+              className="lb-img"
+              src={img.video_url}
+              poster={img.url}
+              controls
+              autoPlay
+              playsInline
+              preload="metadata"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="lb-img" src={img.url} alt={img.alt ?? ""} />
+          )}
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="orn r" src="/journal/flower-sideways-right.webp" alt="" aria-hidden="true" />

@@ -56,7 +56,7 @@ async function imagesForGalleryId(
 
   const { data: assets } = await sb
     .from("video_assets")
-    .select("id, proxy_path, width, height, file_name")
+    .select("id, proxy_path, thumb_path, mime_type, width, height, file_name")
     .in(
       "id",
       rows.map((r) => r.asset_id),
@@ -67,6 +67,8 @@ async function imagesForGalleryId(
       (assets ?? []) as {
         id: string;
         proxy_path: string | null;
+        thumb_path: string | null;
+        mime_type: string;
         width: number | null;
         height: number | null;
         file_name: string;
@@ -78,14 +80,24 @@ async function imagesForGalleryId(
   const out: GalleryImage[] = [];
   for (const r of rows) {
     const a = byId.get(r.asset_id);
-    const url = storageUrl(a?.proxy_path);
-    if (!a || !url) continue;
+    if (!a) continue;
+
+    // A video's proxy is an mp4, which cannot go in an <img>. Its
+    // still is the poster frame, and the file itself is carried
+    // separately for the lightbox to play. Without a poster there is
+    // nothing to show in the grid, so it is skipped rather than
+    // rendered as a broken tile.
+    const isVideo = a.mime_type.startsWith("video/");
+    const still = storageUrl(isVideo ? a.thumb_path : a.proxy_path);
+    if (!still) continue;
+
     out.push({
-      url,
+      url: still,
       alt: r.caption ?? a.file_name.replace(/\.[^.]+$/, ""),
       width: a.width ?? undefined,
       height: a.height ?? undefined,
       caption: r.caption ?? undefined,
+      video_url: isVideo ? (storageUrl(a.proxy_path) ?? undefined) : undefined,
     });
   }
   return out;
