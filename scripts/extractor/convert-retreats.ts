@@ -156,6 +156,23 @@ async function main() {
     .eq("post_type", "retreat");
   if (iErr) throw new Error(`url_inventory: ${iErr.message}`);
 
+  /**
+   * Leader bio pages live at /retreat-leaders/<name-slug>/. The leader card
+   * links to one when it exists. This converter previously never set
+   * link_href, so every page it wrote produced an unlinked leader card and
+   * a later backfill had to put the links back — it missed six rows. Derive
+   * the link here so conversion can no longer drop it.
+   */
+  const { data: leaderPages } = await w
+    .from("url_inventory")
+    .select("url_path")
+    .eq("post_type", "retreat_leader");
+  const leaderPageSlugs = new Set(
+    (leaderPages ?? []).map((r) => r.url_path.replace(/\/$/, "").split("/").pop() ?? ""),
+  );
+  const leaderSlug = (name: string) =>
+    name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
   const invBySlug = new Map<string, typeof inv>();
   for (const row of inv ?? []) {
     const s = slugOf(row.url_path);
@@ -244,6 +261,10 @@ async function main() {
       if (l.bio_html) c.bio_html = l.bio_html;
       if (l.photo_url) c.photo_url = l.photo_url;
       if (leaderPersonIds[idx]) c.ao_person_id = leaderPersonIds[idx];
+      // Link to the bio page only when one actually exists, so we never
+      // publish a card pointing at a 404.
+      const ls = leaderSlug(l.name ?? "");
+      if (ls && leaderPageSlugs.has(ls)) c.link_href = `/retreat-leaders/${ls}/`;
       return c;
     };
 
