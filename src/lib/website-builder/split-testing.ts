@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "crypto";
 import { supabaseServer, supabaseServerOrNull } from "@/lib/supabase-server";
 import { POST_TYPES } from "./post-types";
 import { decodeEntities } from "./decode";
@@ -343,6 +344,95 @@ export async function cloneAsVariant(args: {
   }
 
   return newId;
+}
+
+// ── Live serving: pick which version a visitor sees ──────────────────────
+export type SplitTarget = {
+  groupId: string;
+  variantId: string; // the url_inventory row to render + attribute events to
+  cmsTemplateId: string; // the template to render it with
+};
+
+// Deterministic weighted pick, so a given visitor id always resolves to the
+// same version (sticky) with no cookie write needed at render time.
+function pickWeighted<T extends { id: string; weight: number }>(
+  members: T[],
+  seed: string,
+): T {
+  const total = members.reduce((s, m) => s + Math.max(1, m.weight), 0);
+  const n = createHash("sha256").update(seed).digest().readUInt32BE(0);
+  let target = n % total;
+  for (const m of members) {
+    const w = Math.max(1, m.weight);
+    if (target < w) return m;
+    target -= w;
+  }
+  return members[members.length - 1];
+}
+
+/**
+ * Given a resolved CONTROL row (published, template-based) and a sticky
+ * visitor id, decide which member of its running test to render. Returns null
+ * when there's no active test to run (no group, not running, fewer than two
+ * usable versions, or the control has no template) — the caller then serves
+ * the control normally.
+ */
+export async function chooseSplitTarget(
+  control: {
+    id: string;
+    cms_template_id: string | null;
+    split_group_id: string | null;
+    split_variant_of: string | null;
+  },
+  visitorId: string,
+): Promise<SplitTarget | null> {
+  if (
+    !control.split_group_id ||
+    control.split_variant_of || // only the control drives the split
+    !control.cms_template_id
+  ) {
+    return null;
+  }
+  const sb = supabaseServerOrNull();
+  if (!sb) return null;
+
+  const { data: group } = await sb
+    .from("split_test_groups")
+    .select("status")
+    .eq("id", control.split_group_id)
+    .maybeSingle();
+  if (!group || group.status !== "running") return null;
+
+  const { data: memberRows } = await sb
+    .from("url_inventory")
+    .select("id, cms_template_id, split_weight, wp_status")
+    .eq("split_group_id", control.split_group_id)
+    .eq("source_site", SOURCE_SITE);
+
+  // Usable members: a template to render + not trashed. The control is
+  // published; variants are drafts but still eligible to be served here.
+  const usable = ((memberRows ?? []) as Array<{
+    id: string;
+    cms_template_id: string | null;
+    split_weight: number | null;
+    wp_status: string | null;
+  }>)
+    .filter((m) => m.cms_template_id && m.wp_status !== "trash")
+    .map((m) => ({
+      id: m.id,
+      weight: m.split_weight ?? 1,
+      cmsTemplateId: m.cms_template_id as string,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id)); // stable order for the hash
+
+  if (usable.length < 2) return null;
+
+  const chosen = pickWeighted(usable, `${visitorId}:${control.split_group_id}`);
+  return {
+    groupId: control.split_group_id,
+    variantId: chosen.id,
+    cmsTemplateId: chosen.cmsTemplateId,
+  };
 }
 
 /** Count existing variants in a group (to compute the next variant label). */

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { randomUUID } from "crypto";
 import {
   notFound,
   permanentRedirect,
@@ -8,7 +10,9 @@ import {
 import ProseHtml from "@/components/ProseHtml";
 import PageSchema from "@/components/seo/PageSchema";
 import TemplateRenderer from "@/components/templates/TemplateRenderer";
+import SplitTestTracker from "@/components/SplitTestTracker";
 import { resolveContentPath, bumpRedirectHit } from "@/lib/website-builder/resolver";
+import { chooseSplitTarget } from "@/lib/website-builder/split-testing";
 import { getAllSettings } from "@/lib/website-builder/settings";
 import { getSharingConfig } from "@/lib/website-builder/technical";
 
@@ -97,6 +101,32 @@ export default async function CatchAllPage({
       image={r.og_image_url || undefined}
     />
   );
+
+  // Split testing: if this published page is the control of a running test,
+  // pick a version for THIS visitor (sticky, server-side, no flicker) and
+  // render it at the same URL. `chooseSplitTarget` returns null when there's
+  // no active test, so normal pages are untouched.
+  const vid = (await cookies()).get("ab_vid")?.value || randomUUID();
+  const split =
+    r.split_group_id && !r.split_variant_of
+      ? await chooseSplitTarget(r, vid)
+      : null;
+  if (split) {
+    return (
+      <>
+        {schema}
+        <TemplateRenderer
+          templateId={split.cmsTemplateId}
+          pageId={split.variantId}
+        />
+        <SplitTestTracker
+          groupId={split.groupId}
+          variantId={split.variantId}
+          vid={vid}
+        />
+      </>
+    );
+  }
 
   // When the row has a CMS template assigned, render via the template
   // pipeline (with per-page overrides). The HTML body fallback only

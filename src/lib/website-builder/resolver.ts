@@ -35,6 +35,10 @@ export type ResolvedContent = {
   canonical_url: string | null;
   og_image_url: string | null;
   noindex: boolean;
+  /** Split-test group this row belongs to (null = not in a test). */
+  split_group_id: string | null;
+  /** The control's id when this row is a variant (null = this row is control). */
+  split_variant_of: string | null;
 };
 
 /**
@@ -74,7 +78,7 @@ export async function resolveContentPath(
   const { data: rows } = await sb
     .from("url_inventory")
     .select(
-      "id, title, url_path, post_type, cms_template_id, excerpt, date_published, date_modified, meta_title, meta_description, canonical_url, og_image_url, noindex",
+      "id, title, url_path, post_type, cms_template_id, excerpt, date_published, date_modified, meta_title, meta_description, canonical_url, og_image_url, noindex, split_group_id, split_variant_of",
     )
     .eq("source_site", SOURCE_SITE)
     .eq("url_kind", "content")
@@ -113,6 +117,8 @@ export async function resolveContentPath(
       canonical_url: row.canonical_url ?? null,
       og_image_url: row.og_image_url ?? null,
       noindex: !!row.noindex,
+      split_group_id: row.split_group_id ?? null,
+      split_variant_of: row.split_variant_of ?? null,
     },
   };
 }
