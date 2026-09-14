@@ -32,6 +32,14 @@ export type ListRow = {
     love_score: number; // 1·like1 + 2·like2 + 5·like3
     views: number; // unique views (staff excluded)
   };
+  /** Split-test group id when this row is a control (has variants). */
+  splitGroupId?: string | null;
+  /** Split-test label ('Original' / 'Variant A' …). */
+  splitLabel?: string | null;
+  /** True when this row is a variant nested under its original. */
+  isVariant?: boolean;
+  /** Variant sub-rows nested under a control row. */
+  variants?: ListRow[];
 };
 
 export type ListStatusCounts = {
@@ -90,7 +98,10 @@ export async function listByPostType(
     .select("*", { count: "exact" })
     .eq("source_site", SOURCE_SITE)
     .eq("post_type", postType)
-    .eq("url_kind", "content");
+    .eq("url_kind", "content")
+    // Exclude split-test variant rows from the top level + count; they are
+    // fetched separately below and nested under their original.
+    .is("split_variant_of", null);
 
   if (status === "trash") {
     query = query.eq("wp_status", "trash");
@@ -135,6 +146,8 @@ export async function listByPostType(
     cms_template_id?: string | null;
     author_id?: string | null;
     featured?: boolean | null;
+    split_group_id?: string | null;
+    split_label?: string | null;
   }>;
 
   const authorIds = [
@@ -259,7 +272,91 @@ export async function listByPostType(
         love_score: 0,
         views: 0,
       },
+    splitGroupId: r.split_group_id ?? null,
+    splitLabel: r.split_label ?? null,
   }));
+
+  // Nest split-test variants under their original (control) rows. Controls
+  // are the top-level rows that carry a split_group_id; their variant rows
+  // live elsewhere (excluded above) and are pulled in here as sub-rows.
+  const controlIds = rawRows
+    .filter((r) => r.split_group_id)
+    .map((r) => r.id);
+  if (controlIds.length) {
+    const { data: vdata } = await sb
+      .from("url_inventory")
+      .select(
+        "id,title,url_path,wp_status,date_published,date_modified,cms_template_id,split_label,split_group_id",
+      )
+      .eq("source_site", SOURCE_SITE)
+      .eq("url_kind", "content")
+      .in("split_variant_of", controlIds)
+      .order("date_published", { ascending: false, nullsFirst: false });
+
+    const vRows = (vdata ?? []) as Array<{
+      id: string;
+      title: string | null;
+      url_path: string | null;
+      wp_status: string | null;
+      date_published: string | null;
+      date_modified: string | null;
+      cms_template_id: string | null;
+      split_label: string | null;
+      split_group_id: string | null;
+    }>;
+
+    const vTplIds = [
+      ...new Set(vRows.map((v) => v.cms_template_id).filter(Boolean)),
+    ] as string[];
+    if (vTplIds.length) {
+      const { data: vtpls } = await sb
+        .from("page_templates")
+        .select("id, name")
+        .in("id", vTplIds);
+      for (const t of vtpls ?? []) templateMap.set(t.id, t.name);
+    }
+
+    // group id → the control row's id (controls are unique per group).
+    const controlIdByGroup = new Map<string, string>();
+    for (const r of rawRows) {
+      if (r.split_group_id) controlIdByGroup.set(r.split_group_id, r.id);
+    }
+
+    const variantsByControl = new Map<string, ListRow[]>();
+    for (const v of vRows) {
+      const controlId = v.split_group_id
+        ? controlIdByGroup.get(v.split_group_id)
+        : undefined;
+      if (!controlId) continue;
+      const vr: ListRow = {
+        id: v.id,
+        title: decodeEntities(v.title ?? "(no title)"),
+        url_path: v.url_path ?? "",
+        wp_status: v.wp_status ?? null,
+        date_published: v.date_published ?? null,
+        date_modified: v.date_modified ?? null,
+        author: null,
+        terms: [],
+        has_template: !!v.cms_template_id,
+        template_name: v.cms_template_id
+          ? templateMap.get(v.cms_template_id) ?? null
+          : null,
+        featured: false,
+        engagement: { like1: 0, like2: 0, like3: 0, love_score: 0, views: 0 },
+        isVariant: true,
+        splitLabel: v.split_label ?? "Variant",
+        splitGroupId: v.split_group_id ?? null,
+      };
+      const arr = variantsByControl.get(controlId) ?? [];
+      arr.push(vr);
+      variantsByControl.set(controlId, arr);
+    }
+
+    for (const row of rows) {
+      const vs = variantsByControl.get(row.id);
+      if (vs && vs.length) row.variants = vs;
+    }
+  }
 
   return {
     rows,

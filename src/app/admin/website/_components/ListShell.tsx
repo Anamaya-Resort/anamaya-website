@@ -8,6 +8,7 @@ import type { ListResult } from "@/lib/website-builder/queries";
 import { useRowSelection } from "./useRowSelection";
 import RoundCheckbox from "./RoundCheckbox";
 import { bulkTrashItems } from "../[postType]/[id]/actions";
+import { makeTestGroupFromIds } from "../split-testing/actions";
 
 const COLUMN_LABELS: Record<PostTypeColumn, string> = {
   title: "Title",
@@ -85,26 +86,45 @@ export default function ListShell({
   // bulk action. Drives every checkbox and the two Apply toolbars.
   const router = useRouter();
   const selection = useRowSelection();
-  const [bulkAction, setBulkAction] = useState<"" | "trash">("");
+  const [bulkAction, setBulkAction] = useState<"" | "trash" | "test-group">("");
+  const [busy, setBusy] = useState(false);
 
   const visibleIds = rows.map((r) => r.id);
   const allSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selection.isSelected(id));
-  const canApply = bulkAction === "trash" && selection.count > 0;
+  const canApply = bulkAction !== "" && selection.count > 0 && !busy;
+
+  function onPickAction(v: string) {
+    setBulkAction(v === "trash" || v === "test-group" ? v : "");
+  }
 
   async function handleApply() {
-    if (bulkAction !== "trash" || selection.count === 0) return;
+    if (bulkAction === "" || selection.count === 0) return;
     const ids = Array.from(selection.selected);
-    if (
-      !confirm(
-        `Move ${ids.length} ${ids.length === 1 ? "item" : "items"} to Trash?`,
-      )
-    )
-      return;
-    await bulkTrashItems(pt.slug, ids);
-    selection.clear();
-    setBulkAction("");
-    router.refresh();
+    setBusy(true);
+    try {
+      if (bulkAction === "trash") {
+        if (
+          !confirm(
+            `Move ${ids.length} ${ids.length === 1 ? "item" : "items"} to Trash?`,
+          )
+        )
+          return;
+        await bulkTrashItems(pt.slug, ids);
+      } else if (bulkAction === "test-group") {
+        const name = prompt(
+          "Name this test group (the first selected item is the original):",
+          "",
+        );
+        if (name === null) return;
+        await makeTestGroupFromIds(name, ids);
+      }
+      selection.clear();
+      setBulkAction("");
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   const taxonomyByName = (taxonomy: string) => (row: (typeof rows)[number]) =>
@@ -149,12 +169,11 @@ export default function ListShell({
               aria-label="Bulk actions"
               className="h-7 rounded-full border border-[#8c8f94] bg-white px-3 text-[13px] disabled:opacity-50"
               value={bulkAction}
-              onChange={(e) =>
-                setBulkAction(e.target.value === "trash" ? "trash" : "")
-              }
+              onChange={(e) => onPickAction(e.target.value)}
             >
               <option value="">Bulk actions</option>
               <option value="trash">Move to Trash</option>
+              <option value="test-group">Make Test Group</option>
             </select>
             <button
               type="button"
@@ -228,8 +247,8 @@ export default function ListShell({
               </tr>
             ) : (
               rows.map((row) => (
+                <Fragment key={row.id}>
                 <tr
-                  key={row.id}
                   className="border-t border-[#f0f0f1] align-top hover:bg-[#f6f7f7]"
                 >
                   <td className="px-3 py-2">
@@ -252,6 +271,17 @@ export default function ListShell({
                           </Link>
                           {badge && (
                             <span className="ml-1 text-[#1d2327]">{badge}</span>
+                          )}
+                          {(row.variants?.length || row.splitGroupId) && (
+                            <Link
+                              href="/admin/website/split-testing"
+                              className="ml-2 rounded-full bg-[#eaf6ec] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1e7e34] hover:bg-[#d7efdc]"
+                            >
+                              Test group
+                              {row.variants?.length
+                                ? ` · ${row.variants.length + 1}`
+                                : ""}
+                            </Link>
                           )}
                           <div className="mt-1 flex gap-2 text-[13px] text-[#50575e]">
                             <Link
@@ -401,6 +431,40 @@ export default function ListShell({
                     return <td key={col} className="px-3 py-2" />;
                   })}
                 </tr>
+                {row.variants?.map((v) => (
+                  <tr
+                    key={v.id}
+                    className="border-t border-[#f0f0f1] bg-[#fbfbfc] align-top hover:bg-[#f6f7f7]"
+                  >
+                    <td className="px-3 py-2">
+                      <RoundCheckbox
+                        aria-label={`Select ${v.title}`}
+                        checked={selection.isSelected(v.id)}
+                        onChange={() => selection.toggle(v.id)}
+                      />
+                    </td>
+                    <td colSpan={pt.columns.length} className="px-3 py-2">
+                      <div className="flex flex-wrap items-center gap-2 pl-6 text-[13px]">
+                        <span className="text-[#8c8f94]">↳</span>
+                        <span className="rounded-full bg-[#e7eef7] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#2271b1]">
+                          {v.splitLabel ?? "Variant"}
+                        </span>
+                        <Link
+                          href={`${basePath}/${v.id}`}
+                          className="font-semibold text-[#2271b1] hover:text-[#135e96] hover:underline"
+                        >
+                          {v.title}
+                        </Link>
+                        {statusBadge(v.wp_status) && (
+                          <span className="text-[#50575e]">
+                            {statusBadge(v.wp_status)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                </Fragment>
               ))
             )}
           </tbody>
@@ -435,12 +499,11 @@ export default function ListShell({
             aria-label="Bulk actions"
             className="h-7 rounded-full border border-[#8c8f94] bg-white px-3 disabled:opacity-50"
             value={bulkAction}
-            onChange={(e) =>
-              setBulkAction(e.target.value === "trash" ? "trash" : "")
-            }
+            onChange={(e) => onPickAction(e.target.value)}
           >
             <option value="">Bulk actions</option>
             <option value="trash">Move to Trash</option>
+            <option value="test-group">Make Test Group</option>
           </select>
           <button
             type="button"

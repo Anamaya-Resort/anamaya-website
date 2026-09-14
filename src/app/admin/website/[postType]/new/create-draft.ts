@@ -11,7 +11,7 @@ export const SOURCE_SITE = "v2";
 // unique per (source_site, url); we mint it from this base + the slug so
 // new native posts mirror the pattern migrated rows already use, e.g.
 // https://anamayastg.wpenginepowered.com/{slug}/
-const STAGING_BASE = "https://anamayastg.wpenginepowered.com";
+export const STAGING_BASE = "https://anamayastg.wpenginepowered.com";
 
 /** Lowercase, spaces/underscores→hyphens, strip non [a-z0-9-], collapse, trim. */
 export function slugify(raw: string): string {

@@ -15,6 +15,8 @@ import {
   templateLabel,
 } from "@/lib/website-builder/tracking";
 import { getAdminFaqs } from "@/lib/website-builder/faqs";
+import { getSplitContextForArticle } from "@/lib/website-builder/split-testing";
+import SplitTestingBox from "../../_components/SplitTestingBox";
 import AiTextarea from "@/components/ai/AiTextarea";
 import BodyEditor from "@/components/admin/website/BodyEditor";
 import FaqPanel from "./FaqPanel";
@@ -53,7 +55,7 @@ export default async function EditItemPage({
   const pt = getPostTypeBySlug(postTypeSlug);
   if (!pt) notFound();
 
-  const [item, templates, orgCtx, pageTracking, templateTracking, globalTracking, faqData] =
+  const [item, templates, orgCtx, pageTracking, templateTracking, globalTracking, faqData, splitContext] =
     await Promise.all([
       getItemForEdit(pt.postType, id),
       listPageTemplates(),
@@ -62,6 +64,7 @@ export default async function EditItemPage({
       getTemplateTracking(pt.templateSlug),
       getGlobalTracking(),
       getAdminFaqs(id),
+      getSplitContextForArticle(id),
     ]);
   if (!item) notFound();
   const properties = orgCtx?.properties ?? [];
@@ -518,6 +521,8 @@ export default async function EditItemPage({
 
           {/* Sidebar */}
           <aside className="space-y-4">
+            <SplitTestingBox context={splitContext} articleId={item.id} />
+
             <div className="rounded-sm border border-[#c3c4c7] bg-white">
               <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-3 py-2 text-[13px] font-semibold text-[#1d2327]">
                 Publish

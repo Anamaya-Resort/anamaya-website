@@ -24,6 +24,8 @@ import {
   HelpCircle,
   Trash2,
   Settings,
+  FlaskConical,
+  BarChart3,
 } from "lucide-react";
 import { POST_TYPES } from "@/lib/website-builder/post-types";
 
@@ -53,6 +55,8 @@ type Item = {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   children?: { label: string; href: string }[];
+  /** "dark" = a standout dark-grey tool block (Split Testing / Analytics). */
+  variant?: "dark";
 };
 
 export default function Sidebar() {
@@ -97,6 +101,18 @@ export default function Sidebar() {
     },
     { label: "FAQs", href: "/admin/website/faqs", icon: HelpCircle },
     { label: "Deleted", href: "/admin/website/deleted", icon: Trash2 },
+    {
+      label: "SPLIT TESTING",
+      href: "/admin/website/split-testing",
+      icon: FlaskConical,
+      variant: "dark",
+    },
+    {
+      label: "ANALYTICS",
+      href: "/admin/website/analytics",
+      icon: BarChart3,
+      variant: "dark",
+    },
     { label: "Settings", href: "/admin/website/settings", icon: Settings },
   ];
 
@@ -112,15 +128,19 @@ export default function Sidebar() {
         {items.map((item) => {
           const active = isActive(item.href, !!item.children);
           const Icon = item.icon;
+          const dark = item.variant === "dark";
+          const base = dark
+            ? active
+              ? "bg-[#2271b1] text-white font-semibold tracking-wide"
+              : "bg-[#3c434a] text-white font-semibold tracking-wide hover:bg-[#464d55]"
+            : active
+              ? "bg-[#2271b1] text-white font-medium"
+              : "text-zinc-300 hover:bg-[#2c3338] hover:text-white";
           return (
-            <div key={item.href}>
+            <div key={item.href} className={dark ? "mt-1" : undefined}>
               <Link
                 href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-[9px] text-[13px] leading-tight transition-colors ${
-                  active
-                    ? "bg-[#2271b1] text-white font-medium"
-                    : "text-zinc-300 hover:bg-[#2c3338] hover:text-white"
-                }`}
+                className={`flex items-center gap-2.5 px-3 py-[9px] text-[13px] leading-tight transition-colors ${base}`}
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 <span className="truncate">{item.label}</span>
