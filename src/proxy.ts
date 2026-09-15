@@ -44,6 +44,19 @@ const HARDCODED_PUBLIC: RegExp[] = [
   // Kept so the old URL reaches the catch-all router, which 301-redirects
   // it to /blog-posts via the `redirects` table (instead of the WP snapshot).
   /^\/yoga-blog-articles\/?$/,
+  // Native Book-a-Retreat page (booking_calendar block, live AnamayOS data);
+  // bypass the frozen WP snapshot so the block template wins.
+  /^\/book-retreat\/?$/,
+  // Legacy WP calendar URLs. Kept here so they reach the catch-all router and
+  // 301-redirect via the `redirects` table instead of serving a frozen snapshot
+  // whose retreat links still point at the old anamaya.com.
+  /^\/rg-calendar\/?$/,
+  /^\/retreat-calendar\/?$/,
+  /^\/calendar\/?$/,
+  /^\/calendar-all-retreats\/?$/,
+  /^\/rg-retreats\/?$/,
+  /^\/special-retreats\/?$/,
+  /^\/calendar-yoga-teacher-training\/?$/,
   /^\/preview(\/.*)?$/,
   /^\/block-preview(\/.*)?$/,
   /^\/auth(\/.*)?$/,
