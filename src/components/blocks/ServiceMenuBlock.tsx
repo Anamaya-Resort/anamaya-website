@@ -386,6 +386,7 @@ const cssScoped = `
 .svcmenu .svc-cat { padding: 26px 0 8px; }
 .svcmenu .svc-rows { display: flex; flex-direction: column; }
 .svcmenu .svc-row { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: baseline; padding: 17px 0; border-bottom: 1px solid var(--svc-line); }
+.svcmenu .svc-rows .svc-row:last-child { border-bottom: 0; }
 .svcmenu .svc-row h3 { font-family: var(--font-heading); font-weight: 600; font-size: 20px; color: var(--svc-ink); margin: 0 0 6px; letter-spacing: .01em; }
 .svcmenu .svc-row p { font-size: 14px; line-height: 1.6; color: var(--svc-soft); margin: 0; max-width: 58ch; }
 .svcmenu .svc-empty { text-align: center; padding: 60px 0; color: var(--svc-soft); font-style: italic; }
